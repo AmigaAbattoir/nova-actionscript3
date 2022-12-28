@@ -1,0 +1,33 @@
+{
+    "identifier": "com.abattoirsoftware.as3xmml",
+    "name": "AS3MXML",
+    "organization": "",
+    "description": "ActionScript 3 and MXML LSP for Nova.",
+    "version": "0.1",
+    "categories": [
+        "languages",
+    ],
+
+    "main": "main.js",
+
+    "entitlements": {
+        "process": true,
+        "requests": true,
+        "filesystem": "readwrite"
+    },
+
+    "config": [
+        {
+            "key": "as3mxml.language-server-path",
+            "title": "Language Server Path",
+            "type": "path",
+            "placeholder": "/usr/local/bin/example"
+        },
+        {
+            "key": "as3mxml.sdk.framework",
+            "title": "AIR SDK path",
+            "type": "path",
+            "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32"
+        }
+    ]
+}
