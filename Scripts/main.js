@@ -87,12 +87,17 @@ class AS3MXMLLanguageServer {
         /**
          Commands to start server from: https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text
         */
-        args.push("java");
-        args.push("-Droyalelib='" + flexSDKBase + "'");
+        /*
+        //args.push("java");
+        //args.push("-Xmx2048m");
+        args.push("-Droyalelib=\"" + flexSDKBase + "\"");
         args.push("-Dfile.encoding=UTF8");
-        args.push("-cp '" + base + "/bundled-compiler/*:" + base + "/bin/*'");
+        args.push("-cp");
+        //args.push("\"" + base + "/bundled-compiler/*;" + base + "/bin/*\"");
+        //args.push("\".:/Users/abattoir/Documents/ActualWork/Programs/Nova/AS3MXML.novaextension/language-server/bundled-compiler/*:/Users/abattoir/Documents/ActualWork/Programs/Nova/AS3MXML.novaextension/language-server/bin/*\"");
+        args.push("\"/Users/abattoir/Documents/ActualWork/Programs/Nova/AS3MXML.novaextension/language-server/bundled-compiler/*:/Users/abattoir/Documents/ActualWork/Programs/Nova/AS3MXML.novaextension/language-server/bin/*.jar\"");
         args.push("com.as3mxml.vscode.Main");
-
+*/
         if(nova.inDevMode()) {
             var argsOut = "";
             args.forEach(a => argsOut += a + " ");
@@ -100,7 +105,7 @@ class AS3MXMLLanguageServer {
         }
 
         var serverOptions = {
-            path: path,
+            path: path + "/lsp.sh",///usr/bin/java",//path,
             args: args,
             type: "stdio"
         };
@@ -117,7 +122,7 @@ class AS3MXMLLanguageServer {
         }
 */
         var clientOptions = {
-            syntaxes: ["Actionscript 3","MXML"],
+            syntaxes: ["AS3","MXML"],
             debug: true,
         };
 
