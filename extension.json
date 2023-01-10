@@ -6,6 +6,12 @@
     "version": "0.1",
     "categories": [
         "languages",
+        "clips",
+        "commands",
+        "completions",
+        "formatters",
+        "issues",
+        "key-bindings"
     ],
 
     "main": "main.js",

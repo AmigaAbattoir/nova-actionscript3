@@ -104,6 +104,7 @@ class AS3MXMLLanguageServer {
             console.log(" *** ARGS:: \\/\\/\\/\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
         }
 
+        // Hint from https://devforum.nova.app/t/empty-error-on-lsp-ondidstop/1655/4
         var serverOptions = {
             path: path + "/lsp.sh",///usr/bin/java",//path,
             args: args,

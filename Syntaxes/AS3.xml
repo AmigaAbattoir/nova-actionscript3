@@ -1,7 +1,7 @@
 <syntax name="Actionscript 3">
     <meta>
         <name>Actionscript 3</name>
-        <type>compiled</type>
+        <type>script</type>
         <preferred-file-extension>as</preferred-file-extension>
     </meta>
     <!-- File Extension Detectors -->
@@ -58,26 +58,32 @@
         <include syntax="self" collection="other_keywords" />
         <include syntax="self" collection="use_namespace" />
         <include syntax="self" collection="functions" />
+        <include syntax="self" collection="storage" />
     </scopes>
 
     <collections>
         <collection name="arithmetic_operators">
-            <scope name="keyword.operator.actionscript3">
+            <scope name="keyword.operator.actionscript.3">
                 <expression>(\+|\-|/|%|(?&lt;!:)\*)</expression>
             </scope>
         </collection>
         <collection name="array_access_operators">
-            <scope name="keyword.operator.actionscript3">
+            <scope name="keyword.operator.actionscript.3">
                 <expression>(\[|\])</expression>
             </scope>
         </collection>
         <collection name="class">
-            <scope name="meta.class.actionscript3">
+            <scope name="meta.class.actionscript.3">
+
+                <symbol type="class">
+                    <context behavior="subtree" fold-type="class"/>
+                </symbol>
+
                 <starts-with>
                     <expression>(?x) (^|\s+|;) (\b(dynamic|final|abstract)\b\s+)? (\b(internal|public)\b\s+)? (\b(dynamic|final|abstract)\b\s+)? (?=\bclass\b)</expression>
-                    <capture number="3" name="storage.modifier.actionscript3" />
-                    <capture number="5" name="storage.modifier.actionscript3" />
-                    <capture number="7" name="storage.modifier.actionscript3" />
+                    <capture number="3" name="storage.modifier.actionscript.3" />
+                    <capture number="5" name="storage.modifier.actionscript.3" />
+                    <capture number="7" name="storage.modifier.actionscript.3" />
                 </starts-with>
                 <ends-with>
                     <expression>\}</expression>
@@ -109,12 +115,22 @@
                 </subscopes>
             </scope>
         </collection>
+        <collection name="namespace_declaration">
+            <scope name="meta.namespace_declaration.actionscript.3">
+                <expression>(?x) ((\w+)\s+)? (namespace) \s+ (?:[A-Za-z0-9_\$]+)</expression>
+                <capture number="2" name="storage.modifier.actionscript.3" />
+                <capture number="3" name="storage.modifier.actionscript.3" />
+            </scope>
+        </collection>
         <collection name="class_declaration">
-            <scope name="meta.class_declaration.actionscript3">
+            <scope name="meta.class_declaration.actionscript.3">
+<!--
+                <symbol type="class"/>
+-->
                 <starts-with>
                     <expression>(?x) \b(class)\b \s+ ([\.\w]+|\*)</expression>
-                    <capture number="1" name="storage.type.class.actionscript3" />
-                    <capture number="2" name="entity.name.class.actionscript3" />
+                    <capture number="1" name="storage.type.class.actionscript.3" />
+                    <capture number="2" name="entity.name.class.actionscript.3" />
                 </starts-with>
                 <ends-with>
                     <expression>\{</expression>
@@ -127,7 +143,12 @@
             </scope>
         </collection>
         <collection name="code_block">
-            <scope name="meta.code_block.actionscript3">
+            <scope name="meta.code_block.actionscript.3">
+
+                <symbol type="block">
+                    <context behavior="subtree"/>
+                </symbol>
+
                 <starts-with>
                     <expression>\{</expression>
                 </starts-with>
@@ -163,7 +184,12 @@
             </scope>
         </collection>
         <collection name="comments">
-            <scope name="comment.block.documentation.actionscript3">
+            <scope name="comment.block.documentation.actionscript.3" spell-check="true">
+
+                <symbol type="comment">
+                    <context behavior="subtree" fold-type="comment"/>
+                </symbol>
+
                 <starts-with>
                     <expression>/\*\*(?!/)</expression>
                 </starts-with>
@@ -171,50 +197,96 @@
                     <expression>\*/</expression>
                 </ends-with>
                 <subscopes>
-                    <scope name="keyword.other.documentation.actionscript3.asdoc">
+                    <scope name="keyword.other.documentation.actionscript3.asdoc" spell-check="true">
+                        <strings>
+                            <string>@copy</string>
+                            <string>@default</string>
+                            <string>@eventType</string>
+                            <string>@example</string>
+                            <string>@exampleText</string>
+                            <string>@includeExample</string>
+                            <string>@inheritDoc</string>
+                            <string>@internal</string>
+                            <string>@param</string>
+                            <string>@private</string>
+                            <string>@return</string>
+                            <string>@see</string>
+                            <string>@since</string>
+                            <string>@throws</string>
+                        </strings>
+<!--
                         <expression>@(copy|default|eventType|example|exampleText|includeExample|inheritDoc|internal|param|private|return|see|since|throws)\b</expression>
+-->
                     </scope>
                 </subscopes>
             </scope>
-            <scope name="comment.block.actionscript3">
+            <scope name="comment.block.actionscript.3" spell-check="true">
+
+                <symbol type="comment">
+                    <context behavior="subtree" fold-type="comment"/>
+                </symbol>
+
                 <starts-with>
-                    <expression>/\*</expression>
+                    <expression>\/\*</expression>
                 </starts-with>
                 <ends-with>
-                    <expression>\*/</expression>
+                    <expression>\*\/</expression>
                 </ends-with>
                 <subscopes />
             </scope>
-            <scope name="comment.line.actionscript3">
-                <expression>//.*</expression>
+            <scope name="comment.line.actionscript.3">
+                <expression>\/\/.*</expression>
             </scope>
         </collection>
         <collection name="control_keywords">
-            <scope name="keyword.control.actionscript3">
+            <scope name="keyword.control.actionscript.3">
+                <strings>
+                    <string>if</string>
+                    <string>else</string>
+                    <string>do</string>
+                    <string>while</string>
+                    <string>for</string>
+                    <string>each</string>
+                    <string>continue</string>
+                    <string>return</string>
+                    <string>switch</string>
+                    <string>case</string>
+                    <string>default</string>
+                    <string>break</string>
+                    <string>try</string>
+                    <string>catch</string>
+                    <string>finally</string>
+                    <string>throw</string>
+                </strings>
+            <!--
                 <expression>\b(if|else|do|while|for|each|continue|return|switch|case|default|break|try|catch|finally|throw)\b</expression>
+            -->
             </scope>
         </collection>
         <collection name="dynamic_type">
             <scope>
                 <expression>(?&lt;=:)\s*(\*)</expression>
-                <capture number="1" name="support.type.actionscript3" />
+                <capture number="1" name="support.type.actionscript.3" />
             </scope>
         </collection>
         <collection name="escapes">
-            <scope name="constant.character.escape.actionscript3">
+            <scope name="constant.character.escape.actionscript.3">
                 <expression>\\(x\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]|37[0-7]?|[4-7][0-7]?|.)</expression>
             </scope>
         </collection>
         <collection name="extends">
-            <scope name="meta.extends.actionscript3">
+            <scope name="meta.extends.actionscript.3">
                 <expression>(?x) \b(extends)\b \s+ ([\.\w]+) \s* (?:, \s* ([\.\w]+))* \s*</expression>
-                <capture number="1" name="keyword.other.actionscript3" />
-                <capture number="2" name="entity.other.inherited-class.actionscript3" />
-                <capture number="3" name="entity.other.inherited-class.actionscript3" />
+                <capture number="1" name="keyword.other.actionscript.3" />
+                <capture number="2" name="entity.other.inherited-class.actionscript.3" />
+                <capture number="3" name="entity.other.inherited-class.actionscript.3" />
             </scope>
         </collection>
         <collection name="function_arguments">
-            <scope name="meta.function_arguments.actionscript3">
+            <scope name="meta.function_arguments.actionscript.3">
+
+                <symbol type="argument"/>
+
                 <starts-with>
                     <expression>\(</expression>
                 </starts-with>
@@ -227,13 +299,46 @@
                 </subscopes>
             </scope>
         </collection>
+        <collection name="parameters">
+            <scope>
+                <starts-with>
+                    <expression>(\.\.\.)?\s*([A-Za-z\_\$][A-Za-z0-9_\$]*)(?:\s*(\:)\s*(?:(?:([A-Za-z\$][A-Za-z0-9_\$]+(?:\.[A-Za-z\$][A-Za-z0-9_\$]+)*)(?:\.&lt;([A_Za_z$][A_Za_z0_9_$]+(?:.[A_Za_z$][A_Za_z0_9_$]+)*)&gt;)?)|(\*)))?(?:\s*(=))?</expression>
+                    <capture number="1" name="keyword.operator.actionscript.3" />
+                    <capture number="2" name="variable.parameter.actionscript.3" />
+                    <capture number="3" name="keyword.operator.actionscript.3" />
+                    <capture number="4" name="support.type.actionscript.3" />
+                    <capture number="5" name="support.type.actionscript.3" />
+                    <capture number="6" name="support.type.actionscript.3" />
+                    <capture number="7" name="keyword.operator.actionscript.3" />
+                </starts-with>
+                <ends-with>
+                    <expression>,|(?=\))</expression>
+                </ends-with>
+                <subscopes>
+                    <include syntax="self" collection="strings" />
+                    <include syntax="self" collection="numbers" />
+                    <include syntax="self" collection="language_constants" />
+                    <include syntax="self" collection="comments" />
+                    <include syntax="self" collection="primitive_types" />
+                    <include syntax="self" collection="primitive_error_types" />
+                    <include syntax="self" collection="dynamic_type" />
+                    <include syntax="self" collection="guess_type" />
+                    <include syntax="self" collection="guess_constant" />
+                </subscopes>
+            </scope>
+        </collection>
         <collection name="functions">
-            <scope name="meta.function.actionscript3">
+            <scope name="meta.function.actionscript.3">
+
+                <symbol type="function">
+                    <context behavior="subtree" fold-type="function"/>
+                </symbol>
+
                 <starts-with>
                     <expression>(?x) \b(function)\b (?:\s+\b(get|set)\b\s+)? \s* ([a-zA-Z0-9_\$]+\b)?</expression>
-                    <capture number="1" name="storage.type.function.actionscript3" />
-                    <capture number="2" name="storage.modifier.actionscript3" />
-                    <capture number="3" name="entity.name.function.actionscript3" />
+                    <capture number="1" name="storage.type.function.actionscript.3" />
+                    <capture number="2" name="storage.modifier.actionscript.3" />
+                    <capture number="3" name="entity.name.function.actionscript.3" />
                 </starts-with>
                 <ends-with>
                     <expression>($|;|(?=\{))</expression>
@@ -248,35 +353,38 @@
         <collection name="guess_constant">
             <scope>
                 <expression>\b([A-Z\$][A-Z0-9_]+)\b</expression>
-                <capture number="1" name="constant.other.actionscript3" />
+                <capture number="1" name="constant.other.actionscript.3" />
             </scope>
         </collection>
         <collection name="guess_type">
             <scope>
                 <expression>\b((?:[A-Za-z0-9_\$]+\.)*[A-Z][A-Z0-9]*[a-z]+[A-Za-z0-9_\$]*)\b</expression>
-                <capture number="1" name="support.type.actionscript3" />
+                <capture number="1" name="support.type.actionscript.3" />
             </scope>
         </collection>
         <collection name="implements">
-            <scope name="meta.implements.actionscript3">
+            <scope name="meta.implements.actionscript.3">
                 <expression>(?x) \b(implements)\b \s+ ([\.\w]+) \s* (?:, \s* ([\.\w]+))* \s*</expression>
-                <capture number="1" name="keyword.other.actionscript3" />
-                <capture number="2" name="entity.other.inherited-class.actionscript3" />
-                <capture number="3" name="entity.other.inherited-class.actionscript3" />
+                <capture number="1" name="keyword.other.actionscript.3" />
+                <capture number="2" name="entity.other.inherited-class.actionscript.3" />
+                <capture number="3" name="entity.other.inherited-class.actionscript.3" />
             </scope>
         </collection>
         <collection name="import">
-            <scope name="meta.import.actionscript3">
+            <scope name="meta.import.actionscript.3">
                 <expression>(?x) (^|\s+|;) \b(import)\b \s+ ([A-Za-z0-9\$_\.]+(?:\.\*)?) \s* (?=;|$)</expression>
-                <capture number="2" name="keyword.control.import.actionscript3" />
-                <capture number="3" name="support.type.actionscript3" />
+                <capture number="2" name="keyword.control.import.actionscript.3" />
+                <capture number="3" name="support.type.actionscript.3" />
             </scope>
         </collection>
         <collection name="interface">
-            <scope name="meta.interface.actionscript3">
+            <scope name="meta.interface.actionscript.3">
+
+                <symbol type="interface" />
+
                 <starts-with>
                     <expression>(?x) (^|\s+|;) (\b(internal|public)\b\s+)? (?=\binterface\b)</expression>
-                    <capture number="3" name="storage.modifier.actionscript3" />
+                    <capture number="3" name="storage.modifier.actionscript.3" />
                 </starts-with>
                 <ends-with>
                     <expression>\}</expression>
@@ -290,11 +398,11 @@
             </scope>
         </collection>
         <collection name="interface_declaration">
-            <scope name="meta.class_declaration.actionscript3">
+            <scope name="meta.class_declaration.actionscript.3">
                 <starts-with>
                     <expression>(?x) \b(interface)\b \s+ ([\.\w]+)</expression>
-                    <capture number="1" name="storage.type.interface.actionscript3" />
-                    <capture number="2" name="entity.name.class.actionscript3" />
+                    <capture number="1" name="storage.type.interface.actionscript.3" />
+                    <capture number="2" name="entity.name.class.actionscript.3" />
                 </starts-with>
                 <ends-with>
                     <expression>\{</expression>
@@ -306,35 +414,51 @@
             </scope>
         </collection>
         <collection name="language_constants">
-            <scope name="constant.language.actionscript3">
+            <scope name="constant.language.actionscript.3">
+                <strings>
+                    <string>true</string>
+                    <string>false</string>
+                    <string>null</string>
+                    <string>Infinity</string>
+                    <string>-Infinity</string>
+                    <string>NaN</string>
+                    <string>undefined</string>
+                </strings>
+<!--
                 <expression>\b(true|false|null|Infinity|-Infinity|NaN|undefined)\b</expression>
+-->
             </scope>
         </collection>
         <collection name="language_variables">
-            <scope name="variable.language.actionscript3">
+            <scope name="variable.language.actionscript.3">
+
+                <symbol type="variable" scope="global" />
+
+                <strings>
+                    <string>super</string>
+                    <string>this</string>
+                    <string>argument</string>
+                </strings>
+<!--
                 <expression>\b(super|this|arguments)\b</expression>
+-->
             </scope>
         </collection>
         <collection name="logical_operators">
-            <scope name="keyword.operator.actionscript3">
+            <scope name="keyword.operator.actionscript.3">
 <!--
-                <expression>(&amp;|&lt;|~|||&gt;|\^|!|\?)</expression>
+                <strings>
+                    <string>&amp;</string>
+                    <string>&lt;</string>
+                    <string>~</string>
+                    <string>|</string>
+                    <string>&gt;</string>
+                    <string>^</string>
+                    <string>!</string>
+                    <string>?</string>
+                </strings>
 -->
                 <expression>(&amp;|&lt;|~|\||&gt;|\^|!|\?)</expression>
-            </scope>
-        </collection>
-        <collection name="metadata">
-            <scope name="meta.metadata_info.actionscript3">
-                <starts-with>
-                    <expression>\[\s*\b(\w+)\b</expression>
-                    <capture number="1" name="keyword.other.actionscript3" />
-                </starts-with>
-                <ends-with>
-                    <expression>\]</expression>
-                </ends-with>
-                <subscopes>
-                    <include syntax="self" collection="metadata_info" />
-                </subscopes>
             </scope>
         </collection>
         <collection name="metadata_info">
@@ -348,21 +472,24 @@
                 <subscopes>
                     <scope>
                         <expression>(\w+)\s*(=)</expression>
-                        <capture number="1" name="variable.parameter.actionscript3" />
-                        <capture number="2" name="keyword.operator.actionscript3" />
+                        <capture number="1" name="variable.parameter.actionscript.3" />
+                        <capture number="2" name="keyword.operator.actionscript.3" />
                     </scope>
                     <include syntax="self" collection="strings" />
                 </subscopes>
             </scope>
         </collection>
         <collection name="method">
-            <scope name="meta.method.actionscript3">
+            <scope name="meta.method.actionscript.3">
+<!--
+                <symbol type="function"/>
+-->
                 <starts-with>
                     <expression>(?x) (^|\s+) ((\w+)\s+)? ((\w+)\s+)? ((\w+)\s+)? (\w+) (?=\s+\bfunction\b)</expression>
-                    <capture number="3" name="storage.modifier.actionscript3" />
-                    <capture number="5" name="storage.modifier.actionscript3" />
-                    <capture number="7" name="storage.modifier.actionscript3" />
-                    <capture number="8" name="storage.modifier.actionscript3" />
+                    <capture number="3" name="storage.modifier.actionscript.3" />
+                    <capture number="5" name="storage.modifier.actionscript.3" />
+                    <capture number="7" name="storage.modifier.actionscript.3" />
+                    <capture number="8" name="storage.modifier.actionscript.3" />
                 </starts-with>
                 <ends-with>
                     <expression>(?&lt;=(;|\}))</expression>
@@ -374,7 +501,7 @@
             </scope>
         </collection>
         <collection name="mxml">
-            <scope name="meta.cdata.actionscript3">
+            <scope name="meta.cdata.actionscript.3">
                 <starts-with>
                     <expression>&lt;!\[CDATA\[</expression>
                 </starts-with>
@@ -411,20 +538,13 @@
                 </subscopes>
             </scope>
         </collection>
-        <collection name="namespace_declaration">
-            <scope name="meta.namespace_declaration.actionscript3">
-                <expression>(?x) ((\w+)\s+)? (namespace) \s+ (?:[A-Za-z0-9_\$]+)</expression>
-                <capture number="2" name="storage.modifier.actionscript3" />
-                <capture number="3" name="storage.modifier.actionscript3" />
-            </scope>
-        </collection>
         <collection name="numbers">
-            <scope name="constant.numeric.actionscript3">
+            <scope name="constant.numeric.actionscript.3">
                 <expression>\b((0(x|X)[0-9a-fA-F]*)|(([0-9]+\.?[0-9]*)|(\.[0-9]+))((e|E)(\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f)?\b</expression>
             </scope>
         </collection>
         <collection name="object_literal">
-            <scope name="meta.object_literal.actionscript3">
+            <scope name="meta.object_literal.actionscript.3">
                 <starts-with>
                     <expression>\{</expression>
                 </starts-with>
@@ -452,20 +572,33 @@
             </scope>
         </collection>
         <collection name="other_keywords">
-            <scope name="keyword.other.actionscript3">
+            <scope name="keyword.other.actionscript.3">
+                <strings>
+                    <string>as</string>
+                    <string>delete</string>
+                    <string>in</string>
+                    <string>instanceof</string>
+                    <string>is</string>
+                    <string>native</string>
+                    <string>new</string>
+                    <string>to</string>
+                    <string>typeof</string>
+                </strings>
+<!--
                 <expression>\b(as|delete|in|instanceof|is|native|new|to|typeof)\b</expression>
+-->
             </scope>
         </collection>
         <collection name="other_operators">
-            <scope name="keyword.operator.actionscript3">
+            <scope name="keyword.operator.actionscript.3">
                 <expression>(\.|=)</expression>
             </scope>
         </collection>
         <collection name="package">
-            <scope name="meta.package.actionscript3">
+            <scope name="meta.package.actionscript.3">
                 <starts-with>
                     <expression>(^|\s+)(package)\b</expression>
-                    <capture number="2" name="keyword.other.actionscript3" />
+                    <capture number="2" name="keyword.other.actionscript.3" />
                 </starts-with>
                 <ends-with>
                     <expression>\}</expression>
@@ -489,7 +622,7 @@
             </scope>
         </collection>
         <collection name="package_name">
-            <scope name="meta.package_name.actionscript3">
+            <scope name="meta.package_name.actionscript.3">
                 <starts-with>
                     <expression>(?&lt;=package)\s+([\w\._]*)\b</expression>
                 </starts-with>
@@ -499,54 +632,50 @@
                 <subscopes />
             </scope>
         </collection>
-        <collection name="parameters">
+        <collection name="primitive_types">
             <scope>
-                <starts-with>
-                    <expression>(\.\.\.)?\s*([A-Za-z\_\$][A-Za-z0-9_\$]*)(?:\s*(\:)\s*(?:(?:([A-Za-z\$][A-Za-z0-9_\$]+(?:\.[A-Za-z\$][A-Za-z0-9_\$]+)*)(?:\.&lt;([A_Za_z$][A_Za_z0_9_$]+(?:.[A_Za_z$][A_Za_z0_9_$]+)*)&gt;)?)|(\*)))?(?:\s*(=))?</expression>
-                    <capture number="1" name="keyword.operator.actionscript3" />
-                    <capture number="2" name="variable.parameter.actionscript3" />
-                    <capture number="3" name="keyword.operator.actionscript3" />
-                    <capture number="4" name="support.type.actionscript3" />
-                    <capture number="5" name="support.type.actionscript3" />
-                    <capture number="6" name="support.type.actionscript3" />
-                    <capture number="7" name="keyword.operator.actionscript3" />
-                </starts-with>
-                <ends-with>
-                    <expression>,|(?=\))</expression>
-                </ends-with>
-                <subscopes>
-                    <include syntax="self" collection="strings" />
-                    <include syntax="self" collection="numbers" />
-                    <include syntax="self" collection="language_constants" />
-                    <include syntax="self" collection="comments" />
-                    <include syntax="self" collection="primitive_types" />
-                    <include syntax="self" collection="primitive_error_types" />
-                    <include syntax="self" collection="dynamic_type" />
-                    <include syntax="self" collection="guess_type" />
-                    <include syntax="self" collection="guess_constant" />
-                </subscopes>
+                <strings>
+                    <string>Array</string>
+                    <string>Boolean</string>
+                    <string>Class</string>
+                    <string>Date</string>
+                    <string>Function</string>
+                    <string>int</string>
+                    <string>JSON</string>
+                    <string>Math</string>
+                    <string>Namespace</string>
+                    <string>Number</string>
+                    <string>Object</string>
+                    <string>QName</string>
+                    <string>RegExp</string>
+                    <string>String</string>
+                    <string>uint</string>
+                    <string>Vector</string>
+                    <string>XML</string>
+                    <string>XMLList</string>
+                    <string>\*(?&lt;=a)</string>
+                </strings>
+<!--
+                <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
+-->
+
+                <capture number="1" name="support.class.builtin.actionscript.3" />
             </scope>
         </collection>
         <collection name="primitive_error_types">
             <scope>
                 <expression>\b((Argument|Definition|Eval|Internal|Range|Reference|Security|Syntax|Type|URI|Verify)?Error)\b</expression>
-                <capture number="1" name="support.class.error.actionscript3" />
+                <capture number="1" name="support.class.error.actionscript.3" />
             </scope>
         </collection>
         <collection name="primitive_functions">
             <scope>
                 <expression>\b(decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|escape|isFinite|isNaN|isXMLName|parseFloat|parseInt|trace|unescape)(?=\s*\()</expression>
-                <capture number="1" name="support.function.actionscript3" />
-            </scope>
-        </collection>
-        <collection name="primitive_types">
-            <scope>
-                <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
-                <capture number="1" name="support.class.builtin.actionscript3" />
+                <capture number="1" name="support.function.actionscript.3" />
             </scope>
         </collection>
         <collection name="regexp">
-            <scope name="string.regex.actionscript3">
+            <scope name="string.regex.actionscript.3">
                 <starts-with>
                     <expression>(?&lt;=[=(:,\[]|^|return|&amp;&amp;|\|\||!)\s*(/)(?![/*+{}?])</expression>
                 </starts-with>
@@ -554,10 +683,10 @@
                     <expression>$|(/)[igm]*</expression>
                 </ends-with>
                 <subscopes>
-                    <scope name="constant.character.escape.actionscript3">
+                    <scope name="constant.character.escape.actionscript.3">
                         <expression>\\.</expression>
                     </scope>
-                    <scope name="constant.character.class.actionscript3">
+                    <scope name="constant.character.class.actionscript.3">
                         <expression>\[(\\\]|[^\]])*\]</expression>
                     </scope>
                 </subscopes>
@@ -566,14 +695,14 @@
         <collection name="return_type">
             <scope>
                 <expression>(\:)\s*(?:([A-Za-z\$][A-Za-z0-9_\$]+(?:\.[A-Za-z\$][A-Za-z0-9_\$]+)*)(?:\.&lt;([A_Za_z$][A_Za_z0_9_$]+(?:.[A_Za_z$][A_Za_z0_9_$]+)*)&gt;)?)|(\*)</expression>
-                <capture number="1" name="keyword.operator.actionscript3" />
-                <capture number="2" name="support.type.actionscript3" />
-                <capture number="3" name="support.type.actionscript3" />
-                <capture number="4" name="support.type.actionscript3" />
+                <capture number="1" name="keyword.operator.actionscript.3" />
+                <capture number="2" name="support.type.actionscript.3" />
+                <capture number="3" name="support.type.actionscript.3" />
+                <capture number="4" name="support.type.actionscript.3" />
             </scope>
         </collection>
         <collection name="strings">
-            <scope name="string.quoted.double.actionscript3">
+            <scope name="string.quoted.double.actionscript.3">
                 <starts-with>
                     <expression>&quot;</expression>
                 </starts-with>
@@ -584,7 +713,7 @@
                     <include syntax="self" collection="escapes" />
                 </subscopes>
             </scope>
-            <scope name="string.quoted.single.actionscript3">
+            <scope name="string.quoted.single.actionscript.3">
                 <starts-with>
                     <expression>&apos;</expression>
                 </starts-with>
@@ -593,31 +722,98 @@
                 </ends-with>
                 <subscopes>
                     <include syntax="self" collection="escapes" />
+                </subscopes>
+            </scope>
+        </collection>
+        <collection name="metadata">
+            <scope name="meta.metadata_info.actionscript.3">
+                <starts-with>
+                    <expression>\[\s*\b(\w+)\b</expression>
+                    <capture number="1" name="keyword.other.actionscript.3" />
+                </starts-with>
+                <ends-with>
+                    <expression>\]</expression>
+                </ends-with>
+                <subscopes>
+                    <include syntax="self" collection="metadata_info" />
                 </subscopes>
             </scope>
         </collection>
         <collection name="use_namespace">
             <scope>
                 <expression>(?x) (^|\s+|;) (use\s+)? (namespace) \s+ (\w+) \s* (;|$)</expression>
-                <capture number="2" name="keyword.other.actionscript3" />
-                <capture number="3" name="keyword.other.actionscript3" />
-                <capture number="4" name="storage.modifier.actionscript3" />
+                <capture number="2" name="keyword.other.actionscript.3" />
+                <capture number="3" name="keyword.other.actionscript.3" />
+                <capture number="4" name="storage.modifier.actionscript.3" />
             </scope>
         </collection>
         <collection name="variable_declaration">
-            <scope name="meta.variable_declaration.actionscript3">
+            <scope name="meta.variable_declaration.actionscript.3">
+
+                <symbol type="variable"/>
+
                 <expression>(?x) ((static)\s+)? ((\w+)\s+)? ((static)\s+)? (const|var) \s+ (?:[A-Za-z0-9_\$]+)(?:\s*(:))?</expression>
-                <capture number="2" name="storage.modifier.actionscript3" />
-                <capture number="4" name="storage.modifier.actionscript3" />
-                <capture number="6" name="storage.modifier.actionscript3" />
-                <capture number="7" name="storage.modifier.actionscript3" />
-                <capture number="8" name="keyword.operator.actionscript3" />
+                <capture number="2" name="storage.modifier.actionscript.3" />
+                <capture number="4" name="storage.modifier.actionscript.3" />
+                <capture number="6" name="storage.modifier.actionscript.3" />
+                <capture number="7" name="storage.modifier.actionscript.3" />
+                <capture number="8" name="keyword.operator.actionscript.3" />
             </scope>
         </collection>
         <collection name="vector_creation_operators">
-            <scope name="keyword.operator.actionscript3">
+            <scope name="keyword.operator.actionscript.3">
                 <expression>(&lt;|&gt;)</expression>
             </scope>
         </collection>
+
+
+        <collection name="storage">
+            <scope name="storage.modifier.actionscript.3">
+                <strings>
+                    <string>dynamic</string>
+                    <string>final</string>
+                    <string>internal</string>
+                    <string>native</string>
+                    <string>override</string>
+                    <string>private</string>
+                    <string>protected</string>
+                    <string>public</string>
+                    <string>static</string>
+                </strings>
+
+            </scope>
+        </collection>
+
+      <collection name="primitive_types">
+            <scope>
+                <strings>
+                    <string>Array</string>
+                    <string>Boolean</string>
+                    <string>Class</string>
+                    <string>Date</string>
+                    <string>Function</string>
+                    <string>int</string>
+                    <string>JSON</string>
+                    <string>Math</string>
+                    <string>Namespace</string>
+                    <string>Number</string>
+                    <string>Object</string>
+                    <string>QName</string>
+                    <string>RegExp</string>
+                    <string>String</string>
+                    <string>uint</string>
+                    <string>Vector</string>
+                    <string>XML</string>
+                    <string>XMLList</string>
+                    <string>\*(?&lt;=a)</string>
+                </strings>
+<!--
+                <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
+-->
+
+                <capture number="1" name="support.class.builtin.actionscript.3" />
+            </scope>
+        </collection>
+
     </collections>
 </syntax>
