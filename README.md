@@ -24,3 +24,8 @@ Cross your fingers and hope it runs!
 To configure global preferences, open **Extensions → Extension Library...** then select AS3MXML's **Preferences** tab, eventually.
 
 You can also configure preferences on a per-project basis in **Project → Project Settings...**, eventually.
+
+## Testing
+
+Used a [SampleClass/Event/Interface](https://gist.github.com/
+https://codeload.github.com/gist/3525530/zip/94b4abd8d01b8eb2d5e4d55db66db16545f757e1)

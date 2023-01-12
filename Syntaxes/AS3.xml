@@ -14,6 +14,17 @@
         <pair open="[" close="]" />
         <pair open="(" close=")" />
     </brackets>
+
+    <surrounding-pairs>
+        <pair open="&lt;" close="&gt;" />
+        <pair open="{" close="}" />
+        <pair open="[" close="]" />
+        <pair open="(" close=")" />
+        <pair open="&apos;" close="&apos;" />
+        <pair open="&quot;" close="&quot;" />
+        <pair open="`" close="`" />
+    </surrounding-pairs>
+
     <!-- Comment Rules -->
     <comments>
         <single>
@@ -73,7 +84,7 @@
             </scope>
         </collection>
         <collection name="class">
-            <scope name="meta.class.actionscript.3">
+            <scope name="meta.class.actionscript.3" lookup="index">
 
                 <symbol type="class">
                     <context behavior="subtree" fold-type="class"/>
@@ -125,7 +136,6 @@
         <collection name="class_declaration">
             <scope name="meta.class_declaration.actionscript.3">
 <!--
-                <symbol type="class"/>
 -->
                 <starts-with>
                     <expression>(?x) \b(class)\b \s+ ([\.\w]+|\*)</expression>
@@ -379,9 +389,6 @@
         </collection>
         <collection name="interface">
             <scope name="meta.interface.actionscript.3">
-
-                <symbol type="interface" />
-
                 <starts-with>
                     <expression>(?x) (^|\s+|;) (\b(internal|public)\b\s+)? (?=\binterface\b)</expression>
                     <capture number="3" name="storage.modifier.actionscript.3" />
@@ -399,6 +406,11 @@
         </collection>
         <collection name="interface_declaration">
             <scope name="meta.class_declaration.actionscript.3">
+
+                <symbol type="interface">
+                    <context behavior="subtree" fold-type="interface"/>
+                </symbol>
+
                 <starts-with>
                     <expression>(?x) \b(interface)\b \s+ ([\.\w]+)</expression>
                     <capture number="1" name="storage.type.interface.actionscript.3" />
@@ -431,9 +443,6 @@
         </collection>
         <collection name="language_variables">
             <scope name="variable.language.actionscript.3">
-
-                <symbol type="variable" scope="global" />
-
                 <strings>
                     <string>super</string>
                     <string>this</string>
@@ -634,6 +643,7 @@
         </collection>
         <collection name="primitive_types">
             <scope>
+<!--
                 <strings>
                     <string>Array</string>
                     <string>Boolean</string>
@@ -655,9 +665,8 @@
                     <string>XMLList</string>
                     <string>\*(?&lt;=a)</string>
                 </strings>
-<!--
-                <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
 -->
+                <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
 
                 <capture number="1" name="support.class.builtin.actionscript.3" />
             </scope>
@@ -748,16 +757,21 @@
             </scope>
         </collection>
         <collection name="variable_declaration">
-            <scope name="meta.variable_declaration.actionscript.3">
+            <scope name="meta.variable_declaration.actionscript.3" lookup="index" >
 
-                <symbol type="variable"/>
+                <symbol type="variable">
+                    <display-name>
+                        <component selector="variable.language.actionscript.3" />
+                    </display-name>
+                </symbol>
 
-                <expression>(?x) ((static)\s+)? ((\w+)\s+)? ((static)\s+)? (const|var) \s+ (?:[A-Za-z0-9_\$]+)(?:\s*(:))?</expression>
+                <expression>(?x) ((static)\s+)? ((\w+)\s+)? ((static)\s+)? (const|var) \s+ ([A-Za-z0-9_\$]+)(?:\s*(:))?</expression>
                 <capture number="2" name="storage.modifier.actionscript.3" />
                 <capture number="4" name="storage.modifier.actionscript.3" />
                 <capture number="6" name="storage.modifier.actionscript.3" />
                 <capture number="7" name="storage.modifier.actionscript.3" />
-                <capture number="8" name="keyword.operator.actionscript.3" />
+                <capture number="8" name="variable.language.actionscript.3" />
+                <capture number="9" name="keyword.operator.actionscript.3" />
             </scope>
         </collection>
         <collection name="vector_creation_operators">
@@ -786,6 +800,7 @@
 
       <collection name="primitive_types">
             <scope>
+<!--
                 <strings>
                     <string>Array</string>
                     <string>Boolean</string>
@@ -807,9 +822,10 @@
                     <string>XMLList</string>
                     <string>\*(?&lt;=a)</string>
                 </strings>
-<!--
-                <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
 -->
+<!--
+-->
+                <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
 
                 <capture number="1" name="support.class.builtin.actionscript.3" />
             </scope>
