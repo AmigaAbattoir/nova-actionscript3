@@ -84,6 +84,9 @@ class AS3MXMLLanguageServer {
 
         // Create the client
         var args = new Array;
+
+        args.push("/Applications/Apache Flex/SDKs/4.16.1-AIR32/frameworks");
+        args.push(path + "/language-server/bundled-compiler/*:" + path + "/language-server/bin/*");
         /**
          Commands to start server from: https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text
         */
