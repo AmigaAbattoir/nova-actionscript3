@@ -3,7 +3,7 @@
     "name": "AS3MXML",
     "organization": "",
     "description": "ActionScript 3 and MXML LSP for Nova.",
-    "version": "0.1",
+    "version": "0.3",
     "categories": [
         "languages",
         "clips",

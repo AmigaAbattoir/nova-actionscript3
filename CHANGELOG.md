@@ -1,3 +1,7 @@
+## Version 0.3
+
+* No longer using a bash script to start the LSP
+
 ## Version 0.2
 
 * Using hard coded bash script to start LSP
