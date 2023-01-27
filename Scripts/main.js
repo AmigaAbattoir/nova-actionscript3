@@ -85,31 +85,23 @@ class AS3MXMLLanguageServer {
         // Create the client
         var args = new Array;
 
-        args.push("/Applications/Apache Flex/SDKs/4.16.1-AIR32/frameworks");
-        args.push(path + "/language-server/bundled-compiler/*:" + path + "/language-server/bin/*");
         /**
          Commands to start server from: https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text
         */
-        /*
-        //args.push("java");
-        //args.push("-Xmx2048m");
-        args.push("-Droyalelib=\"" + flexSDKBase + "\"");
+        args.push("-Droyalelib=" + flexSDKBase);
         args.push("-Dfile.encoding=UTF8");
         args.push("-cp");
-        //args.push("\"" + base + "/bundled-compiler/*;" + base + "/bin/*\"");
-        //args.push("\".:/Users/abattoir/Documents/ActualWork/Programs/Nova/AS3MXML.novaextension/language-server/bundled-compiler/*:/Users/abattoir/Documents/ActualWork/Programs/Nova/AS3MXML.novaextension/language-server/bin/*\"");
-        args.push("\"/Users/abattoir/Documents/ActualWork/Programs/Nova/AS3MXML.novaextension/language-server/bundled-compiler/*:/Users/abattoir/Documents/ActualWork/Programs/Nova/AS3MXML.novaextension/language-server/bin/*.jar\"");
+        args.push("" + base + "/bundled-compiler/*:" + base + "/bin/*");
         args.push("com.as3mxml.vscode.Main");
-*/
+
         if(nova.inDevMode()) {
             var argsOut = "";
             args.forEach(a => argsOut += a + " ");
             console.log(" *** ARGS:: \\/\\/\\/\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
         }
 
-        // Hint from https://devforum.nova.app/t/empty-error-on-lsp-ondidstop/1655/4
         var serverOptions = {
-            path: path + "/lsp.sh",///usr/bin/java",//path,
+            path: "/usr/bin/java",
             args: args,
             type: "stdio"
         };
