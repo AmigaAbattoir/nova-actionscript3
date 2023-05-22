@@ -6,12 +6,9 @@
         <parent>xml</parent>
     </meta>
     <detectors>
-        <extension priority="1.0">
-            mxml
-        </extension>
+        <extension priority="1.0">mxml</extension>
     </detectors>
-    <brackets />
-    <surrounding-pairs />
+
     <scopes>
         <scope name="meta.script.mxml">
             <starts-with>

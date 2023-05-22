@@ -86,9 +86,7 @@
         <collection name="class">
             <scope name="meta.class.actionscript.3" lookup="index">
 
-                <symbol type="class">
-                    <context behavior="subtree" fold-type="class"/>
-                </symbol>
+
 
                 <starts-with>
                     <expression>(?x) (^|\s+|;) (\b(dynamic|final|abstract)\b\s+)? (\b(internal|public)\b\s+)? (\b(dynamic|final|abstract)\b\s+)? (?=\bclass\b)</expression>
@@ -135,8 +133,11 @@
         </collection>
         <collection name="class_declaration">
             <scope name="meta.class_declaration.actionscript.3">
-<!--
--->
+
+                <symbol type="class">
+                    <context behavior="subtree" fold-type="class"/>
+                </symbol>
+
                 <starts-with>
                     <expression>(?x) \b(class)\b \s+ ([\.\w]+|\*)</expression>
                     <capture number="1" name="storage.type.class.actionscript.3" />
@@ -154,7 +155,6 @@
         </collection>
         <collection name="code_block">
             <scope name="meta.code_block.actionscript.3">
-
                 <symbol type="block">
                     <context behavior="subtree"/>
                 </symbol>
@@ -311,6 +311,7 @@
         </collection>
         <collection name="parameters">
             <scope>
+                <symbol type="argument"/>
                 <starts-with>
                     <expression>(\.\.\.)?\s*([A-Za-z\_\$][A-Za-z0-9_\$]*)(?:\s*(\:)\s*(?:(?:([A-Za-z\$][A-Za-z0-9_\$]+(?:\.[A-Za-z\$][A-Za-z0-9_\$]+)*)(?:\.&lt;([A_Za_z$][A_Za_z0_9_$]+(?:.[A_Za_z$][A_Za_z0_9_$]+)*)&gt;)?)|(\*)))?(?:\s*(=))?</expression>
                     <capture number="1" name="keyword.operator.actionscript.3" />
@@ -341,7 +342,7 @@
             <scope name="meta.function.actionscript.3">
 
                 <symbol type="function">
-                    <context behavior="subtree" fold-type="function"/>
+                    <context behavior="subtree" foldable="true" fold-type="function"/>
                 </symbol>
 
                 <starts-with>
@@ -490,9 +491,9 @@
         </collection>
         <collection name="method">
             <scope name="meta.method.actionscript.3">
-<!--
-                <symbol type="function"/>
--->
+
+                <symbol type="mehtod"/>
+
                 <starts-with>
                     <expression>(?x) (^|\s+) ((\w+)\s+)? ((\w+)\s+)? ((\w+)\s+)? (\w+) (?=\s+\bfunction\b)</expression>
                     <capture number="3" name="storage.modifier.actionscript.3" />
@@ -757,12 +758,9 @@
             </scope>
         </collection>
         <collection name="variable_declaration">
-            <scope name="meta.variable_declaration.actionscript.3" lookup="index" >
+            <scope name="meta.variable_declaration.actionscript.3" lookup="index">
 
-                <symbol type="variable">
-                    <display-name>
-                        <component selector="variable.language.actionscript.3" />
-                    </display-name>
+                <symbol type="variable" name-selector="variable.language.actionscript.3">
                 </symbol>
 
                 <expression>(?x) ((static)\s+)? ((\w+)\s+)? ((static)\s+)? (const|var) \s+ ([A-Za-z0-9_\$]+)(?:\s*(:))?</expression>

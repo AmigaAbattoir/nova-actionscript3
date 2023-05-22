@@ -2,38 +2,244 @@
     "identifier": "com.abattoirsoftware.as3xmml",
     "name": "AS3MXML",
     "organization": "",
-    "description": "ActionScript 3 and MXML LSP for Nova.",
-    "version": "0.3",
+    "description": "ActionScript & MXML language extension for Panic Nova. Taken directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
+    "version": "0.4",
     "categories": [
-        "languages",
-        "clips",
-        "commands",
         "completions",
-        "formatters",
         "issues",
-        "key-bindings"
+        "languages"
     ],
 
     "main": "main.js",
 
     "entitlements": {
         "process": true,
-        "requests": true,
         "filesystem": "readwrite"
     },
 
+    "activationEvents": [
+        "onLanguage:as3",
+        "onLanguage:actionscript",
+        "onLanguage:actionscript3",
+        "onLanguage:mxml",
+        "onWorkspaceContains:**/asconfig.json",
+        "onWorkspaceContains:**/asconfig.*.json",
+        "onWorkspaceContains:.actionScriptProperties",
+        "onWorkspaceContains:*.as3proj",
+        "onView:actionScriptSourcePaths",
+        "onCommand:as3mxml.organizeImportsInUri",
+        "onCommand:as3mxml.organizeImportsInDirectory",
+        "onCommand:as3mxml.removeUnusedImportsInUri",
+        "onCommand:as3mxml.addMissingImportsInUri",
+        "onCommand:as3mxml.sortImportsInUri",
+        "onCommand:as3mxml.saveSessionPassword",
+        "onCommand:as3mxml.selectWorkspaceSDK",
+        "onCommand:as3mxml.restartServer",
+        "onCommand:as3mxml.importFlashBuilderProject",
+        "onCommand:as3mxml.importFlashDevelopProject",
+        "onCommand:as3mxml.quickCompile",
+        "onCommand:as3mxml.quickCompileAndDebug",
+        "onCommand:as3mxml.quickCompileAndRun",
+        "onCommand:as3mxml.getActiveProjectURIs"
+    ],
+
     "config": [
         {
-            "key": "as3mxml.language-server-path",
-            "title": "Language Server Path",
-            "type": "path",
-            "placeholder": "/usr/local/bin/example"
+            "title": "Language Server",
+            "type": "section",
+            "children": [
+                {
+                    "key": "as3mxml.language-server-path",
+                    "title": "Language Server Path",
+                    "type": "path",
+                    "placeholder": "Use built-in AS3MXML LSP",
+                    "description": "Path to the AS3MXML LSP, if blank, it will used the bundled LSP."
+                },
+                {
+                    "key": "as3mxml.languageServer.jvmargs",
+                    "title": "JVM Args",
+                    "type": "string",
+                    "placeholder": "-Xms512m -Xmx1024m",
+                    "description": "(Advanced) Specifies extra arguments that asconfigc will pass to the Java virtual machine when launching the language server (code intelligence).\n\nThe following example customizes the Java memory heap size for the code intelligence: \"-Xms512m -Xmx1024m\""
+                },
+                {
+                    "key": "as3mxml.languageServer.concurrentRequests",
+                    "title": "Concurrent Requests",
+                    "type": "bool",
+                    "default": true,
+                    "description": "(Advanced) Specifies if requests to the language server will be processed concurrently or in a queue. Disabling concurrency will result in slower code intelligence, but it may be more stable if code intelligence stops working."
+                },
+            ],
         },
+        {
+            "title": "Java",
+            "type": "section",
+            "children": [
+                {
+                    "key": "as3mxml.java.path",
+                    "title": "Java Path",
+                    "type": "path",
+                    "placeholder": "/usr/bin/java",
+                    "description": "(Advanced) If the extension cannot find Java automatically, this setting may be used to specify the exact path to the java executable that the extension should use (Note: it must be an executable, and not directory)."
+                },
+            ],
+        },
+        {
+            "title": "SDKs",
+            "type": "section",
+            "children": [
+                {
+                    "key": "as3mxml.sdk.default",
+                    "title": "Default AIR SDK path",
+                    "type": "path",
+                    "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32"
+                },
+                {
+                    "key": "as3mxml.sdk.searchPaths",
+                    "title": "SDK Search Paths",
+                    "type": "pathArray",
+                    "placeholder": "",
+                    "description": "Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
+
+                },
+                {
+                    "key": "as3mxml.sdk.animate",
+                    "title": "Adobe Animate executable",
+                    "type": "path",
+                    "placeholder": "",
+                    "description": "Specifies the absolute path of the Adobe Animate executable"
+                },
+                {
+                    "key": "as3mxml.sdk.editor",
+                    "title": "Editor SDK path",
+                    "type": "path",
+                    "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32",
+                    "description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
+                },
+            ],
+        },
+        {
+            "title": "ASConfig Options...",
+            "type": "section",
+            "children": [
+                {
+                    "key": "as3mxml.asconfigc.useBundled",
+                    "title": "Use Bundled",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "(Advanced) Indicates if the extension will use the bundled version of asconfigc or a different version that is installed on the system path. Defaults to true.\n\nIf you have the npm version of asconfigc installed globally, and you'd prefer to use that version of the program instead of the version that is bundled with the Nova Panic extension, change the value of this setting to false."
+                },
+                {
+                    "key": "as3mxml.asconfigc.verboseOutput",
+                    "title": "Verbose Output",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "(Advanced) Specifies whether asconfigc will display more detailed output during builds. Displays command line options passed to tools, like the compiler and the Adobe AIR packager, lists the files copied to the output folder, and more."
+                },
+                {
+                    "key": "as3mxml.asconfigc.jvmargs",
+                    "title": "JVMArgs",
+                    "type": "string",
+                    "placeholder": "-Xms512m -Xmx1024m",
+                    "description": "(Advanced) Specifies extra arguments that asconfigc will pass to the Java virtual machine when running Java programs.\n\nThe following example customizes the Java memory heap size for builds: \"-Xms512m -Xmx1024m\""
+                },
+            ],
+        },
+        {
+            "title": "Additional Options...",
+            "type": "section",
+            "children": [
+                {
+                    "key": "as3mxml.projectImport.prompt",
+                    "title": "Adobe Flash Builder project import prompt",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Specifies whether to automatically display a prompt to import a project folder from Adobe Flash Builder when asconfig.json is not present."
+                },
+                {
+                    "key": "as3mxml.quickCompile.enabled",
+                    "title": "Quick Compile enabled",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Specifies whether the experimental quick compile commands are enabled or not."
+                },
+            ],
+        },
+    ],
+
+    "configWorkspace": [
         {
             "key": "as3mxml.sdk.framework",
             "title": "AIR SDK path",
             "type": "path",
-            "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32"
+            "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32",
+            "description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale, the classic Apache Flex or Adobe Flex SDKs, and the Feathers SDK."
         }
-    ]
+    ],
+
+    "commands": {
+        "files": [
+            {
+                "title": "New ActionScript file",
+                "command": "as3mxml.newActionScriptFile"
+            }
+        ],
+        "editor": [
+            {
+                "title": "Add Import",
+                "command": "as3mxml.addImport",
+            },
+            {
+                "title": "Add MXML Namespace",
+                "command": "as3mxml.addMXMLNamespace",
+            },
+            {
+                "title": "Organize Imports In Uri",
+                "command": "as3mxml.organizeImportsInUri",
+            },
+            {
+                "title": "Organize Imports In Directory",
+                "command": "as3mxml.organizeImportsInDirectory",
+            },
+            {
+                "title": "Add Missing Imports In Uri",
+                "command": "as3mxml.addMissingImportsInUri",
+            },
+            {
+                "title": "Remove Unused Imports In Uri",
+                "command": "as3mxml.removeUnusedImportsInUri",
+            },
+            {
+                "title": "Sort Imports In Directory",
+                "command": "as3mxml.sortImportsInUri",
+            },
+            {
+                "title": "Quick Compile",
+                "command": "as3mxml.quickCompile",
+            },
+            {
+                "title": "Get Active Project URIs",
+                "command": "as3mxml.getActiveProjectURIs",
+            },
+            {
+                "title": "Get Library Definition Text",
+                "command": "as3mxml.getLibraryDefinitionText",
+            }
+        ],
+        "extensions": [
+            {
+                "title": "Restart AS3MXML LSP",
+                "command": "as3mxml.restart",
+            },
+            {
+                "title": "Get Active Project URIs",
+                "command": "as3mxml.getActiveProjectURIs",
+            },
+            {"separator": true},
+            {
+                "title": "Quick Compile",
+                "command": "as3mxml.quickCompile",
+            }
+        ]
+    }
 }

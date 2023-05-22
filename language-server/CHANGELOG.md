@@ -1,5 +1,58 @@
 # ActionScript & MXML for Visual Studio Code Changelog
 
+## 1.17.0
+
+### New Features
+
+- Workspace Symbol: Can now seach by fully-qualified name, including the package, such as `flash.display.Sprite` or `flash.net.navigateToURL`. Previously, only the symbol base name, such as `Sprite` or `navigateToURL`, was supported.
+
+### Fixed Issues
+
+- Definition: Jump to definition for properties will now default to the getter, except when the property is being set as part of an assignment statement.
+- Rename: Fixed overrides of methods being skipped when the original method was renamed.
+- References: Fixed overrides of methods not being considered the same reference as the original method.
+- Workspace Symbol: Fixed performance regression caused by inclusion of ASDoc comments into code generated for symbols from _.swc_ libraries.
+- Workspace Symbol: Added missing non-private methods and properties from _.swc_ libraries (they were already included from source files).
+
+## 1.16.0
+
+### New Features
+
+- Build: Automatically detects the Adobe AIR SDK namespace and updates the application descriptor when copying it to the output directory.
+- Build: May specify `"bundle"` for `air` field in _tasks.json_ to detect current operating system and choose `"windows"` or `"mac"` automatically.
+- Code Actions: New code actions to separately add missing imports, remove unused imports, and sort imports, instead of doing all three together with the Organize Imports code action.
+- Definition: When using Go To Definiton for a class in a _.swc_ file, the generated interface now includes ASDoc comments, if available.
+- Hover: Improved formatting of `String` constant values that contain whitespace like new lines.
+
+### Fixed Issues
+
+- Build: When copying assets from the source path, skips invalid source paths and lets the compiler report any errors. This allows special tokens like `{locale}` to be used.
+- Completion: Fixed completion suggestions between the variable type and the initialization value, which sometimes suggested only types, but should have included the full scope.
+- General: Fixed ranges of symbols in the Outline view so that Visual Studio Code's sticky scroll feature works properly.
+- General: Fixed null reference exceptions during certain operations, such as detecting identifiers in a source file.
+- Problems: Clears a deleted project's problems when removing a root folder from the workspace.
+- Signature Help: Fixed detection of active parameter when caret is in the whitespace between parameters.
+
+## 1.15.0
+
+### New Features
+
+- Definition: Ctrl+Click on `return` keyword will go to the function declaration that it is contained within.
+
+### Fixed Issues
+
+- Completion: Fixed omitted identifier names that start with `$`.
+- Completion: Fixed import for symbol being incorrectly added if package it is from was already imported with `.*`.
+- Definition: Fixed `this` and `super` resolution sometimes failing.
+- General: Fix "A target file must be specified" in a multi-root workspace when using `mainClass` in _asconfig.json_.
+- General: Fix an intermittent failure to detect the bounds of certain multi-line comments.
+- Language Server: Fix crash when stdout is written to by the compiler or other dependencies. Redirects stdout to stderr.
+- Quick Compile: If commands are disabled, don't override the keybindings for Ctrl+Enter and Ctrl+Shift+Enter.
+
+### Other Changes
+
+- Dependencies: eclipse/lsp4j language server updated to v0.19.0.
+
 ## 1.14.1
 
 ### Other Changes

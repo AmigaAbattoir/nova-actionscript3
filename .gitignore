@@ -1,3 +1,17 @@
-.DS_Store
 ignore/
 logs/
+
+# Mac files
+.DS_Store
+Icon
+
+*.icloud
+
+# NextCloud Sync
+.sync*
+*(case clash*
+*(conflicted copy*
+
+# Syncthing
+.stfolder/
+.stignore
