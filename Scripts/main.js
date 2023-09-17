@@ -150,8 +150,8 @@ class AS3MXMLLanguageServer {
         /**
          Commands to start server from: https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text
         */
-        args.push("-Droyalelib=" + flexSDKBase);
         args.push("-Dfile.encoding=UTF8");
+        args.push("-Droyalelib=" + flexSDKBase);
         args.push("-cp");
         args.push("" + base + "/bundled-compiler/*:" + base + "/bin/*");
         args.push("com.as3mxml.vscode.Main");
@@ -192,8 +192,26 @@ class AS3MXMLLanguageServer {
 */
         // Client options
         var clientOptions = {
-            syntaxes: ["AS3","MXML"],
+            syntaxes: ["actionscript","mxml","as3"],
             debug: true,
+
+            documentSelector: [
+              { scheme: "file", language: "actionscript" },
+              { scheme: "file", language: "mxml" },
+              { scheme: "file", language: "as3" },
+            ],
+            synchronize: {
+              configurationSection: "as3mxml",
+            },
+/*
+            uriConverters: {
+                code2Protocol: (value: vscode.Uri) => {
+                  return normalizeUri(value);
+                },
+                //this is just the default behavior, but we need to define both
+                protocol2Code: (value) => vscode.Uri.parse(value),
+            },
+*/
         };
 
         if (nova.inDevMode()) {
@@ -324,3 +342,223 @@ nova.commands.register("as3mxml.quickCompile", (editor) => {
         });
     }
 });
+
+function consoleLogObject(object) {
+	console.log(JSON.stringify(object,null,4));
+}
+
+function rangeToLspRange(document, range) {
+	const fullContents = document.getTextInRange(new Range(0, document.length));
+
+	let chars = 0;
+	let startLspRange;
+
+	const lines = fullContents.split(document.eol);
+
+	for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+		const lineLength = lines[lineIndex].length + document.eol.length;
+		if (!startLspRange && chars + lineLength >= range.start) {
+			const character = range.start - chars;
+			startLspRange = { line: lineIndex, character };
+		}
+		if (startLspRange && chars + lineLength >= range.end) {
+			const character = range.end - chars;
+			return {
+				start: startLspRange,
+				end: { line: lineIndex, character },
+			};
+		}
+		chars += lineLength;
+	}
+	return null;
+};
+
+nova.commands.register("as3mxml.hovertest", (editor) => {
+    if (nova.inDevMode()) { console.log("Called... as3mxml.hovertest"); }
+
+	if(langserver) {
+        var position = rangeToLspRange(nova.workspace.activeTextEditor.document, nova.workspace.activeTextEditor.selectedRange);
+        console.log("Selectd Range:");
+        console.log(nova.workspace.activeTextEditor.selectedRange);
+        consoleLogObject( nova.workspace.activeTextEditor.selectedRange);
+        console.log("POSITION:");
+        consoleLogObject(position);
+
+        langserver.languageClient.sendRequest("textDocument/hover", {
+			textDocument: { uri: nova.workspace.activeTextEditor.document.uri },
+            position: position.start
+        }).then((result) => {
+            if(result!==true) {
+                showNotification("Hover Test", result.contents.value);
+            }
+        }, (error) => {
+            showNotification("Hover Test ERROR!", error);
+			consoleLogObject(error);
+        });
+    }
+});
+
+nova.commands.register("as3mxml.documentsymbols", (editor) => {
+    if (nova.inDevMode()) { console.log("Called... as3mxml.documentsymbols"); }
+
+	if(langserver) {
+        langserver.languageClient.sendRequest("textDocument/documentSymbol", {
+			textDocument: { uri: nova.workspace.activeTextEditor.document.uri },
+        }).then((result) => {
+            if(result!==true) {
+                showNotification("Document Symbols", result.contents.value);
+            }
+        }, (error) => {
+            showNotification("Document Symbols ERROR!", error);
+			consoleLogObject(error);
+        });
+    }
+});
+
+nova.commands.register("as3mxml.codeaction", (editor) => {
+    if (nova.inDevMode()) { console.log("Called... as3mxml.codeaction"); }
+
+	if(langserver) {
+        var position = rangeToLspRange(nova.workspace.activeTextEditor.document, nova.workspace.activeTextEditor.selectedRange);
+        console.log("Selectd Range:");
+        console.log(nova.workspace.activeTextEditor.selectedRange);
+        consoleLogObject( nova.workspace.activeTextEditor.selectedRange);
+        console.log("POSITION:");
+        consoleLogObject(position);
+
+        langserver.languageClient.sendRequest("textDocument/codeAction", {
+			textDocument: { uri: nova.workspace.activeTextEditor.document.uri },
+            position: position.start
+        }).then((result) => {
+            if(result!==true) {
+                showNotification("Hover Test", result.contents.value);
+            }
+        }, (error) => {
+            showNotification("Hover Test ERROR!", error);
+			consoleLogObject(error);
+        });
+    }
+});
+
+/*
+nova.commands.register("as3mxml.addImport", (editor) => {
+    console.log("Called... as3mxml.addImport");
+    if(langserver) {
+        langserver.languageClient.sendRequest("workspace/executeCommand", {
+            command: "as3mxml.addImport",
+            arguments: ["",""]
+        }).then((result) => {
+            // handle it
+            console.log(result);
+        }, (error) => {
+            // handle it
+            console.error(error);
+        });
+    }
+});
+
+nova.commands.register("as3mxml.removeUnusedImportsInUri", (editor) => {
+    console.log("Called... as3mxml.removeUnusedImportsInUri");
+    //var filePath = editor.document.path;
+    var filePath = nova.workspace.path + "/asconfig.json"
+    if(langserver) {
+        langserver.languageClient.sendRequest("workspace/executeCommand", {
+            command: "as3mxml.removeUnusedImportsInUri",
+            arguments: [ "file://" + filePath.replace(" ","%20")]
+        }).then((result) => {
+            // handle it
+            console.log(result);
+        }, (error) => {
+            // handle it
+            console.error(error);
+        });
+    }
+});
+
+nova.commands.register("as3mxml.addMXMLNamespace", (editor) => {
+    console.log("Called... as3mxml.addMXMLNamespace");
+    if(langserver) {
+        langserver.languageClient.sendRequest("workspace/executeCommand", {
+            command: "as3mxml.addMXMLNamespace",
+            arguments: ["",""]
+        }).then((result) => {
+            // handle it
+            console.log(result);
+        }, (error) => {
+            // handle it
+            console.error(error);
+        });
+    }
+});
+
+nova.commands.register("as3mxml.organizeImportsInUri", (editor) => {
+    console.log("Called... as3mxml.organizeImportsInUri");
+    if(langserver) {
+        langserver.languageClient.sendRequest("workspace/executeCommand", {
+            command: "as3mxml.organizeImportsInUri",
+            arguments: ["",""]
+        }).then((result) => {
+            // handle it
+            console.log(result);
+        }, (error) => {
+            // handle it
+            console.error(error);
+        });
+    }
+});
+
+nova.commands.register("as3mxml.organizeImportsInDirectory", (editor) => {
+    console.log("Called... as3mxml.organizeImportsInDirectory");
+    if(langserver) {
+        langserver.languageClient.sendRequest("workspace/executeCommand", {
+            command: "as3mxml.organizeImportsInDirectory",
+            arguments: ["",""]
+        }).then((result) => {
+            // handle it
+            console.log(result);
+        }, (error) => {
+            // handle it
+            console.error(error);
+        });
+    }
+});
+
+nova.commands.register("as3mxml.getActiveProjectURIs", (editor) => {
+    var results = {};
+
+    console.log("Called... as3mxml.getActiveProjectURIs");
+    if(langserver) {
+        langserver.languageClient.sendRequest("workspace/executeCommand", {
+            command: "as3mxml.getActiveProjectURIs",
+            arguments: ["",""]
+        }).then((result) => {
+            // handle it
+            console.log( " GAPU Result: ",result);
+            return result;
+        }, (error) => {
+            // handle it
+            console.error(" GAPU Error: ",error);
+        });
+    }
+
+    return results;
+});
+
+function getActiveProjectURIs() {
+    if(langserver) {
+        langserver.languageClient.sendRequest("workspace/executeCommand", {
+            command: "as3mxml.getActiveProjectURIs",
+            arguments: ["",""]
+        }).then((result) => {
+            // handle it
+            console.log( " getActiveProjectURIs() Result: ",result);
+            return result;
+        }, (error) => {
+            // handle it
+           // console.error(" GAPU Error: ",error);
+        });
+    }
+
+    return {};
+}
+*/

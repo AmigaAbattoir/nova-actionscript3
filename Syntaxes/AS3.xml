@@ -1,4 +1,5 @@
-<syntax name="Actionscript 3">
+<?xml version="1.0" encoding="UTF-8"?>
+<syntax name="Actionscript 3" xmlns="https://www.nova.app/syntax">
     <meta>
         <name>Actionscript 3</name>
         <type>script</type>
@@ -6,7 +7,7 @@
     </meta>
     <!-- File Extension Detectors -->
     <detectors>
-        <extension priority="1.0">as,as3</extension>
+        <extension priority="1.0">as, as3</extension>
     </detectors>
     <!-- Brackets -->
     <brackets>
@@ -208,25 +209,7 @@
                 </ends-with>
                 <subscopes>
                     <scope name="keyword.other.documentation.actionscript3.asdoc" spell-check="true">
-                        <strings>
-                            <string>@copy</string>
-                            <string>@default</string>
-                            <string>@eventType</string>
-                            <string>@example</string>
-                            <string>@exampleText</string>
-                            <string>@includeExample</string>
-                            <string>@inheritDoc</string>
-                            <string>@internal</string>
-                            <string>@param</string>
-                            <string>@private</string>
-                            <string>@return</string>
-                            <string>@see</string>
-                            <string>@since</string>
-                            <string>@throws</string>
-                        </strings>
-<!--
                         <expression>@(copy|default|eventType|example|exampleText|includeExample|inheritDoc|internal|param|private|return|see|since|throws)\b</expression>
--->
                     </scope>
                 </subscopes>
             </scope>
@@ -250,31 +233,12 @@
         </collection>
         <collection name="control_keywords">
             <scope name="keyword.control.actionscript.3">
-                <strings>
-                    <string>if</string>
-                    <string>else</string>
-                    <string>do</string>
-                    <string>while</string>
-                    <string>for</string>
-                    <string>each</string>
-                    <string>continue</string>
-                    <string>return</string>
-                    <string>switch</string>
-                    <string>case</string>
-                    <string>default</string>
-                    <string>break</string>
-                    <string>try</string>
-                    <string>catch</string>
-                    <string>finally</string>
-                    <string>throw</string>
-                </strings>
-            <!--
                 <expression>\b(if|else|do|while|for|each|continue|return|switch|case|default|break|try|catch|finally|throw)\b</expression>
-            -->
             </scope>
         </collection>
         <collection name="dynamic_type">
             <scope>
+                <symbol type=""/>
                 <expression>(?&lt;=:)\s*(\*)</expression>
                 <capture number="1" name="support.type.actionscript.3" />
             </scope>
@@ -294,9 +258,7 @@
         </collection>
         <collection name="function_arguments">
             <scope name="meta.function_arguments.actionscript.3">
-
                 <symbol type="argument"/>
-
                 <starts-with>
                     <expression>\(</expression>
                 </starts-with>
@@ -341,7 +303,7 @@
         <collection name="functions">
             <scope name="meta.function.actionscript.3">
 
-                <symbol type="function">
+                <symbol type="function" name-selector="entity.name.function.actionscript.3">
                     <context behavior="subtree" foldable="true" fold-type="function"/>
                 </symbol>
 
@@ -428,46 +390,16 @@
         </collection>
         <collection name="language_constants">
             <scope name="constant.language.actionscript.3">
-                <strings>
-                    <string>true</string>
-                    <string>false</string>
-                    <string>null</string>
-                    <string>Infinity</string>
-                    <string>-Infinity</string>
-                    <string>NaN</string>
-                    <string>undefined</string>
-                </strings>
-<!--
                 <expression>\b(true|false|null|Infinity|-Infinity|NaN|undefined)\b</expression>
--->
             </scope>
         </collection>
         <collection name="language_variables">
             <scope name="variable.language.actionscript.3">
-                <strings>
-                    <string>super</string>
-                    <string>this</string>
-                    <string>argument</string>
-                </strings>
-<!--
                 <expression>\b(super|this|arguments)\b</expression>
--->
             </scope>
         </collection>
         <collection name="logical_operators">
             <scope name="keyword.operator.actionscript.3">
-<!--
-                <strings>
-                    <string>&amp;</string>
-                    <string>&lt;</string>
-                    <string>~</string>
-                    <string>|</string>
-                    <string>&gt;</string>
-                    <string>^</string>
-                    <string>!</string>
-                    <string>?</string>
-                </strings>
--->
                 <expression>(&amp;|&lt;|~|\||&gt;|\^|!|\?)</expression>
             </scope>
         </collection>
@@ -583,20 +515,7 @@
         </collection>
         <collection name="other_keywords">
             <scope name="keyword.other.actionscript.3">
-                <strings>
-                    <string>as</string>
-                    <string>delete</string>
-                    <string>in</string>
-                    <string>instanceof</string>
-                    <string>is</string>
-                    <string>native</string>
-                    <string>new</string>
-                    <string>to</string>
-                    <string>typeof</string>
-                </strings>
-<!--
                 <expression>\b(as|delete|in|instanceof|is|native|new|to|typeof)\b</expression>
--->
             </scope>
         </collection>
         <collection name="other_operators">
@@ -644,31 +563,7 @@
         </collection>
         <collection name="primitive_types">
             <scope>
-<!--
-                <strings>
-                    <string>Array</string>
-                    <string>Boolean</string>
-                    <string>Class</string>
-                    <string>Date</string>
-                    <string>Function</string>
-                    <string>int</string>
-                    <string>JSON</string>
-                    <string>Math</string>
-                    <string>Namespace</string>
-                    <string>Number</string>
-                    <string>Object</string>
-                    <string>QName</string>
-                    <string>RegExp</string>
-                    <string>String</string>
-                    <string>uint</string>
-                    <string>Vector</string>
-                    <string>XML</string>
-                    <string>XMLList</string>
-                    <string>\*(?&lt;=a)</string>
-                </strings>
--->
                 <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
-
                 <capture number="1" name="support.class.builtin.actionscript.3" />
             </scope>
         </collection>
@@ -761,6 +656,7 @@
             <scope name="meta.variable_declaration.actionscript.3" lookup="index">
 
                 <symbol type="variable" name-selector="variable.language.actionscript.3">
+
                 </symbol>
 
                 <expression>(?x) ((static)\s+)? ((\w+)\s+)? ((static)\s+)? (const|var) \s+ ([A-Za-z0-9_\$]+)(?:\s*(:))?</expression>
@@ -795,39 +691,11 @@
 
             </scope>
         </collection>
-
-      <collection name="primitive_types">
+        <collection name="primitive_types">
             <scope>
-<!--
-                <strings>
-                    <string>Array</string>
-                    <string>Boolean</string>
-                    <string>Class</string>
-                    <string>Date</string>
-                    <string>Function</string>
-                    <string>int</string>
-                    <string>JSON</string>
-                    <string>Math</string>
-                    <string>Namespace</string>
-                    <string>Number</string>
-                    <string>Object</string>
-                    <string>QName</string>
-                    <string>RegExp</string>
-                    <string>String</string>
-                    <string>uint</string>
-                    <string>Vector</string>
-                    <string>XML</string>
-                    <string>XMLList</string>
-                    <string>\*(?&lt;=a)</string>
-                </strings>
--->
-<!--
--->
                 <expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
-
                 <capture number="1" name="support.class.builtin.actionscript.3" />
             </scope>
         </collection>
-
     </collections>
 </syntax>

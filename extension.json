@@ -68,8 +68,8 @@
                     "type": "bool",
                     "default": true,
                     "description": "(Advanced) Specifies if requests to the language server will be processed concurrently or in a queue. Disabling concurrency will result in slower code intelligence, but it may be more stable if code intelligence stops working."
-                },
-            ],
+                }
+            ]
         },
         {
             "title": "Java",
@@ -81,8 +81,8 @@
                     "type": "path",
                     "placeholder": "/usr/bin/java",
                     "description": "(Advanced) If the extension cannot find Java automatically, this setting may be used to specify the exact path to the java executable that the extension should use (Note: it must be an executable, and not directory)."
-                },
-            ],
+                }
+            ]
         },
         {
             "title": "SDKs",
@@ -116,7 +116,7 @@
                     "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32",
                     "description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
                 },
-            ],
+            ]
         },
         {
             "title": "ASConfig Options...",
@@ -142,8 +142,8 @@
                     "type": "string",
                     "placeholder": "-Xms512m -Xmx1024m",
                     "description": "(Advanced) Specifies extra arguments that asconfigc will pass to the Java virtual machine when running Java programs.\n\nThe following example customizes the Java memory heap size for builds: \"-Xms512m -Xmx1024m\""
-                },
-            ],
+                }
+            ]
         },
         {
             "title": "Additional Options...",
@@ -162,9 +162,9 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Specifies whether the experimental quick compile commands are enabled or not."
-                },
-            ],
-        },
+                }
+            ]
+        }
     ],
 
     "configWorkspace": [
@@ -187,58 +187,72 @@
         "editor": [
             {
                 "title": "Add Import",
-                "command": "as3mxml.addImport",
+                "command": "as3mxml.addImport"
             },
             {
                 "title": "Add MXML Namespace",
-                "command": "as3mxml.addMXMLNamespace",
+                "command": "as3mxml.addMXMLNamespace"
             },
             {
                 "title": "Organize Imports In Uri",
-                "command": "as3mxml.organizeImportsInUri",
+                "command": "as3mxml.organizeImportsInUri"
             },
             {
                 "title": "Organize Imports In Directory",
-                "command": "as3mxml.organizeImportsInDirectory",
+                "command": "as3mxml.organizeImportsInDirectory"
             },
             {
                 "title": "Add Missing Imports In Uri",
-                "command": "as3mxml.addMissingImportsInUri",
+                "command": "as3mxml.addMissingImportsInUri"
             },
             {
                 "title": "Remove Unused Imports In Uri",
-                "command": "as3mxml.removeUnusedImportsInUri",
+                "command": "as3mxml.removeUnusedImportsInUri"
             },
             {
                 "title": "Sort Imports In Directory",
-                "command": "as3mxml.sortImportsInUri",
+                "command": "as3mxml.sortImportsInUri"
             },
             {
                 "title": "Quick Compile",
-                "command": "as3mxml.quickCompile",
+                "command": "as3mxml.quickCompile"
             },
             {
                 "title": "Get Active Project URIs",
-                "command": "as3mxml.getActiveProjectURIs",
+                "command": "as3mxml.getActiveProjectURIs"
             },
             {
                 "title": "Get Library Definition Text",
-                "command": "as3mxml.getLibraryDefinitionText",
+                "command": "as3mxml.getLibraryDefinitionText"
             }
         ],
         "extensions": [
             {
                 "title": "Restart AS3MXML LSP",
-                "command": "as3mxml.restart",
+                "command": "as3mxml.restart"
             },
             {
                 "title": "Get Active Project URIs",
-                "command": "as3mxml.getActiveProjectURIs",
+                "command": "as3mxml.getActiveProjectURIs"
             },
             {"separator": true},
             {
                 "title": "Quick Compile",
-                "command": "as3mxml.quickCompile",
+                "command": "as3mxml.quickCompile"
+            },
+            {"separator": true},
+            {"separator": true},
+            {
+                "title": "HOVER TEST!!",
+                "command": "as3mxml.hovertest"
+            },
+            {
+                "title": "CODE ACTION!!",
+                "command": "as3mxml.codeaction"
+            },
+            {
+                "title": "DOCUMENT SYMBOLS!!",
+                "command": "as3mxml.documentsymbols"
             }
         ]
     }

@@ -1,6 +1,9 @@
 ignore/
 logs/
 
+# For attempts at getting better knowledge about this editor...
+nova.d.ts
+
 # Mac files
 .DS_Store
 Icon
