@@ -1,6 +1,8 @@
 {
-  "com.tommasonegri.novatypes.isNovaExtension" : true,
   "workspace.art_style" : 0,
   "workspace.color" : 12,
-  "workspace.name" : "AS3MXML"
+  "workspace.name" : "AS3MXML Extension",
+  "xml.catalogs" : [
+    ""
+  ]
 }

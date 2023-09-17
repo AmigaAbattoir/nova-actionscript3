@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<completions>
+    <provider>
+        <selector>Actionscript 3</selector>
+        <expression>\b[a-zA-Z0-9-_]*</expression>
+        <set>as3mxml.entities</set>
+    </provider>
+
+    <!-- Entities -->
+    <!--https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/statements.html -->
+
+    <set name="statements.keywords.actionscript.3">
+        <completion string="break" />
+        <completion string="case" />
+        <completion string="continue" />
+        <completion string="default" />
+        <completion string="do" />
+        <completion string="while" />
+        <completion string="else" />
+        <completion string="for" />
+        <completion string="for each" />
+        <completion string="in" />
+        <completion string="if" />
+        <completion string="label" />
+        <completion string="return" />
+        <completion string="super" />
+        <completion string="switch" />
+        <completion string="throw" />
+        <completion string="try" />
+        <completion string="catch" />
+        <completion string="finally" />
+        <completion string="while" />
+        <completion string="with" />
+    </set>
+
+    <set name="attribute.keywords.actionscript.3">
+        <completion string="dynamic" />
+        <completion string="final" />
+        <completion string="internal" />
+        <completion string="native" />
+        <completion string="override" />
+        <completion string="private" />
+        <completion string="protected" />
+        <completion string="public" />
+        <completion string="static   " />
+    </set>
+
+    <set name="definition.keywords.actionscript.3">
+        <completion string="... " />
+        <completion string="class" />
+        <completion string="const" />
+        <completion string="extends" />
+        <completion string="function" />
+        <completion string="get" />
+        <completion string="implements" />
+        <completion string="interface" />
+        <completion string="namespace" />
+        <completion string="package" />
+        <completion string="set" />
+        <completion string="var" />
+    </set>
+
+    <set name="directive.keyword.actionscript.3">
+        <completion string="default xml namespace" />
+        <completion string="import" />
+        <completion string="include" />
+        <completion string="use namespace" />
+    </set>
+
+    <set name="namespace.keywords.actionscript.3">
+        <completion string="AS3" />
+        <completion string="flash_proxy" />
+        <completion string="object_proxy" />
+    </set>
+
+    <set name="expression.keywords.actionscript.3">
+        <completion string="false" />
+        <completion string="null" />
+        <completion string="this" />
+        <completion string="true" />
+    </set>
+
+    <!-- Top Level -->
+    <!-- https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/package-detail.html -->
+<!--
+        <set name="global.constants.actionscript.3" symbol="const">
+        <completion string="Infinity" />
+        <completion string="-Infinity" />
+        <completion string="NaN" />
+        <completion string="undefined" />
+    </set>
+
+    <set name="global.functions.actionscript.3" symbol="function">
+        <completion string="ArgumentError" />
+        <completion string="arguments" />
+        <completion string="Array" />
+        <completion string="Boolean" />
+        <completion string="Class" />
+        <completion string="Date" />
+        <completion string="DefinitionError" />
+        <completion string="Error" />
+        <completion string="EvalError" />
+        <completion string="Function" />
+        <completion string="int" />
+        <completion string="JSON" />
+        <completion string="Math" />
+        <completion string="Namespace" />
+        <completion string="Number" />
+        <completion string="Object" />
+        <completion string="QName" />
+        <completion string="RangeError" />
+        <completion string="ReferenceError" />
+        <completion string="RegExp" />
+        <completion string="SecurityError" />
+        <completion string="String" />
+        <completion string="SyntaxError" />
+        <completion string="TypeError" />
+        <completion string="uint" />
+        <completion string="URIError" />
+        <completion string="Vector" />
+        <completion string="VerifyError" />
+        <completion string="XML" />
+        <completion string="XMLList" />
+    </set>
+
+    <set name="builtin.class.actionscript.3" symbol="class">
+        <completion string="ArgumentError" />
+        <completion string="arguments" />
+        <completion string="Array" />
+        <completion string="Boolean" />
+        <completion string="Class" />
+        <completion string="Date" />
+        <completion string="DefinitionError" />
+        <completion string="Error" />
+        <completion string="EvalError" />
+        <completion string="Function" />
+        <completion string="int" />
+        <completion string="JSON" />
+        <completion string="Math" />
+        <completion string="Namespace" />
+        <completion string="Number" />
+        <completion string="Object" />
+        <completion string="QName" />
+        <completion string="RangeError" />
+        <completion string="ReferenceError" />
+        <completion string="RegExp" />
+        <completion string="SecurityError" />
+        <completion string="String" />
+        <completion string="SyntaxError" />
+        <completion string="TypeError" />
+        <completion string="uint" />
+        <completion string="URIError" />
+        <completion string="Vector" />
+        <completion string="VerifyError" />
+        <completion string="XML" />
+        <completion string="XMLList" />
+    </set>
+-->
+</completions>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
