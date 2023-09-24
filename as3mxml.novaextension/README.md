@@ -4,7 +4,7 @@ Is an **Experimental/ _(kinda not)_ Work _(ing)_ In Progress** extension that us
 
 It currently provides for ActionScript 3 files:
 
- * **Symbols**
+ * **Symbols** - *NOTE:* Not correctly showing it in the hierarchy properly.
 
  * **Language intelligence**
    * Issues

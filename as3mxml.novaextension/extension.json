@@ -3,7 +3,7 @@
     "name": "AS3MXML",
     "organization": "",
     "description": "ActionScript & MXML language extension for Panic Nova. Taken directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
-    "version": "0.4",
+    "version": "0.4.1",
     "categories": [
         "completions",
         "issues",

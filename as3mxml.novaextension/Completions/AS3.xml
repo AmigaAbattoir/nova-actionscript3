@@ -9,7 +9,7 @@
     <!-- Entities -->
     <!--https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/statements.html -->
 
-    <set name="statements.keywords.actionscript.3">
+    <set name="statements.keywords.actionscript.3" symbol="statement">
         <completion string="break" />
         <completion string="case" />
         <completion string="continue" />
@@ -67,13 +67,13 @@
         <completion string="use namespace" />
     </set>
 
-    <set name="namespace.keywords.actionscript.3">
+    <set name="namespace.keywords.actionscript.3" symbol="class">
         <completion string="AS3" />
         <completion string="flash_proxy" />
         <completion string="object_proxy" />
     </set>
 
-    <set name="expression.keywords.actionscript.3">
+    <set name="expression.keywords.actionscript.3" symbol="const">
         <completion string="false" />
         <completion string="null" />
         <completion string="this" />
@@ -82,15 +82,14 @@
 
     <!-- Top Level -->
     <!-- https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/package-detail.html -->
-<!--
-        <set name="global.constants.actionscript.3" symbol="const">
+    <set name="global.constants.actionscript.3" symbol="const">
         <completion string="Infinity" />
         <completion string="-Infinity" />
         <completion string="NaN" />
         <completion string="undefined" />
     </set>
 
-    <set name="global.functions.actionscript.3" symbol="function">
+    <set name="global.functions.actionscript.3" symbol="class">
         <completion string="ArgumentError" />
         <completion string="arguments" />
         <completion string="Array" />
@@ -122,7 +121,7 @@
         <completion string="XML" />
         <completion string="XMLList" />
     </set>
-
+<!--
     <set name="builtin.class.actionscript.3" symbol="class">
         <completion string="ArgumentError" />
         <completion string="arguments" />
