@@ -52,6 +52,8 @@
                     "key": "as3mxml.language-server-path",
                     "title": "Language Server Path",
                     "type": "path",
+                    "allowFolders": true,
+                    "allowFiles": false,
                     "placeholder": "Use built-in AS3MXML LSP",
                     "description": "Path to the AS3MXML LSP, if blank, it will used the bundled LSP."
                 },
@@ -91,12 +93,16 @@
                 {
                     "key": "as3mxml.sdk.default",
                     "title": "Default AIR SDK path",
+                    "allowFolders": true,
+                    "allowFiles": false,
                     "type": "path",
-                    "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32"
+                    "default": "/Applications/AIRSDK/",
                 },
                 {
                     "key": "as3mxml.sdk.searchPaths",
                     "title": "SDK Search Paths",
+                    "allowFolders": true,
+                    "allowFiles": false,
                     "type": "pathArray",
                     "placeholder": "",
                     "description": "Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
@@ -113,7 +119,9 @@
                     "key": "as3mxml.sdk.editor",
                     "title": "Editor SDK path",
                     "type": "path",
-                    "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32",
+                    "allowFolders": true,
+                    "allowFiles": false,
+                    "default": "/Applications/AIRSDK/",
                     "description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
                 },
             ]
@@ -172,7 +180,9 @@
             "key": "as3mxml.sdk.framework",
             "title": "AIR SDK path",
             "type": "path",
-            "placeholder": "/Applications/Apache Flex/SDKs/4.16.1-AIR32",
+            "allowFolders": true,
+            "allowFiles": false,
+            "placeholder": "/Applications/AIRSDK/",
             "description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale, the classic Apache Flex or Adobe Flex SDKs, and the Feathers SDK."
         }
     ],

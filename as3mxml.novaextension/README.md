@@ -29,6 +29,8 @@ AS3MXML requires the following to be installed on your Mac:
 
 * (Harman) Adobe Air or Flex SDK
 
+  * Default location looked for is at `/Applications/AIRSDK`, if you have others, your will need to
+
 ## Usage
 
 Cross your fingers and hope it runs!

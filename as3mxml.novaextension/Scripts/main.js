@@ -1,4 +1,12 @@
 var langserver = null;
+var taskprovider = null;
+
+// Tasks
+const Tasks = require("Tasks.js");
+nova.assistants.registerTaskAssistant(Tasks, {
+    identifier: "actionscript3",
+    name: "ActionScript 3"
+});
 
 // Show a notification with the given title and body when in dev mode.
 function showNotification(title, body) {
@@ -13,6 +21,8 @@ function showNotification(title, body) {
 
 exports.activate = function() {
     langserver = new AS3MXMLLanguageServer();
+   // taskprovider = new ActionScriptTasksAssistant();
+
     if (nova.inDevMode()) {
         console.log(">>>> AS3MXML Activated");
         console.log("  >> langserver.languageClient:  " + langserver.languageClient);
@@ -30,6 +40,7 @@ exports.deactivate = function() {
         langserver.deactivate();
         langserver = null;
     }
+    taskprovider = null;
 }
 
 /**
@@ -120,8 +131,12 @@ class AS3MXMLLanguageServer {
 
         var base =  nova.path.join(nova.extension.path, "language-server");
 
-        // Should be setup as an extension variable...
-        var flexSDKBase = "/Applications/Apache Flex/SDKs/4.16.1-AIR32/frameworks";
+        // Check if user setup the location of the SDK for this project
+        var flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.framework"); //"/Applications/Apache Flex/SDKs/4.16.1-AIR32/frameworks";
+        if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
+            // Since we can't use user's SDK location, try default
+            flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.default"); //"/Applications/Apache Flex/SDKs/4.16.1-AIR32/frameworks";
+        }
 
         if (nova.inDevMode()) {
             console.log("     PATH:: [[" + path + "]]");
@@ -129,147 +144,154 @@ class AS3MXMLLanguageServer {
             console.log("     FLEX:: [[" + flexSDKBase + "]]");
         }
 
-        // Create the client
-        var args = new Array;
+        // Check if the flexSDKBase is valid, if not, warn user and abort!
+        if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
+            console.log("flexSDKBase accessable? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
+            showNotification("Configure AIR SDK!", "In order to use this extension you will need to have installed a FlexSDK. Please set the location of \"Default AIR SDK\" in the extension preferences!")
+        } else {
+            // Create the client
+            var args = new Array;
 
-        // For Apple...
-        args.push("-Dapple.awt.UIElement=true");
+            // For Apple...
+            args.push("-Dapple.awt.UIElement=true");
 
-        // If different JVMArgs...
-        if(getWorkspaceOrGlobalConfig("as3mxml.languageServer.jvmargs")!=null) {
-			var jvmArgs = getWorkspaceOrGlobalConfig("as3mxml.languageServer.jvmargs").split(" ");
-			jvmArgs.forEach((jvmArg) => {
-				args.push(jvmArg);
-			});
-        }
-
-        // if JDK 11 or newer is ever required, it's probably a good idea to
-        // add the following option:
-        args.push("-Xlog:all=warning:stderr");
-
-        /**
-         Commands to start server from: https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text
-        */
-        args.push("-Dfile.encoding=UTF8");
-        args.push("-Droyalelib=" + flexSDKBase);
-        args.push("-cp");
-        args.push("" + base + "/bundled-compiler/*:" + base + "/bin/*");
-        args.push("com.as3mxml.vscode.Main");
-
-		// Print out all the args so I know what's getting passed!
-        if(nova.inDevMode()) {
-            var argsOut = "";
-            args.forEach(a => argsOut += a + "\n")
-            console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
-        }
-
-        // Launch the server
-        // First, use the default Mac Java path, or if there is a config setting for it:
-        var javaPath = "/usr/bin/java";
-        if(getWorkspaceOrGlobalConfig("as3mxml.java.path")!=null) {
-            javaPath = getWorkspaceOrGlobalConfig("as3mxml.java.path");
-        }
-
-        // Prepare server options (Executable in VSCode talk...)
-        var serverOptions = {
-            path: javaPath,
-            args: args,
-            type: "stdio",
-            cwd: nova.workspace.path
-        };
-
-/*
-        // From https://devforum.nova.app/t/lsp-doesnt-work-unless-re-activate-it/1798
-        if (nova.inDevMode()) {
-            serverOptions = {
-                path: '/bin/bash',
-                args: [
-                  '-c',
-                  `tee "${nova.extension.path}/logs/nova-client.log" | ${path} | tee "${nova.extension.path}/logs/lang-server.log"`,
-                ],
-            };
-        }
-*/
-        // Client options
-        var clientOptions = {
-            syntaxes: ["actionscript","mxml","as3"],
-            debug: true,
-
-            documentSelector: [
-              { scheme: "file", language: "actionscript" },
-              { scheme: "file", language: "mxml" },
-              { scheme: "file", language: "as3" },
-            ],
-            synchronize: {
-              configurationSection: "as3mxml",
-            },
-/*
-            uriConverters: {
-                code2Protocol: (value: vscode.Uri) => {
-                  return normalizeUri(value);
-                },
-                //this is just the default behavior, but we need to define both
-                protocol2Code: (value) => vscode.Uri.parse(value),
-            },
-*/
-        };
-
-        if (nova.inDevMode()) {
-            console.log("serverOptions: " + JSON.stringify(serverOptions));
-            console.log("clientOptions: " + JSON.stringify(clientOptions));
-        }
-
-        var client = new LanguageClient('actionscript', 'ActionScript & MXML Language Server', serverOptions, clientOptions);
-        try {
-            // Start the client
-            if (nova.inDevMode()) {
-                console.log(" *** Starting AS3MXML server at " + new Date().toLocaleString() + "--------------------");
+            // If different JVMArgs...
+            if(getWorkspaceOrGlobalConfig("as3mxml.languageServer.jvmargs")!=null) {
+			    var jvmArgs = getWorkspaceOrGlobalConfig("as3mxml.languageServer.jvmargs").split(" ");
+			    jvmArgs.forEach((jvmArg) => {
+				    args.push(jvmArg);
+			    });
             }
 
-            client.start();
+            // if JDK 11 or newer is ever required, it's probably a good idea to
+            // add the following option:
+            args.push("-Xlog:all=warning:stderr");
 
-            client.onDidStop((error) => { console.log("**** AS3MXML ERROR: " + error + ". It may be still running: ", client.running); });
-/*
-            nova.assistants.registerCompletionAssistant("as3", new CompletionProvider(), {
-                triggerChars: new Charset(".")
-            });
-*/
-            client.onRequest("as3mxml/logCompilerShellOutput", (params) => {
-              console.log(" *** AS3MXL *** ",params);
-            });
+            /**
+             Commands to start server from: https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text
+            */
+            args.push("-Dfile.encoding=UTF8");
+            args.push("-Droyalelib=" + flexSDKBase);
+            args.push("-cp");
+            args.push("" + base + "/bundled-compiler/*:" + base + "/bin/*");
+            args.push("com.as3mxml.vscode.Main");
 
-			nova.config.onDidChange("as3mxml.languageServer.jvmargs", (editor) => {
-                if (nova.inDevMode()) {
-				    console.log("Configuration changed... Restart LSP with new JVMArgs");
-                }
-				showNotification("Config Change", "JVM Args changed. Restarting Server!");
-				nova.commands.invoke("as3mxml.restart");
-			});
+		    // Print out all the args so I know what's getting passed!
+            if(nova.inDevMode()) {
+                var argsOut = "";
+                args.forEach(a => argsOut += a + "\n")
+                console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
+            }
 
-			nova.config.onDidChange("as3mxml.sdk.framework", (editor) => {
-                if (nova.inDevMode()) {
-				    console.log("Configuration changed... Different SDK for project");
-                }
-				showNotification("Config Change", "SDK Changed. Restarting Server!");
-				nova.commands.invoke("as3mxml.restart");
-			});
+            // Launch the server
+            // First, use the default Mac Java path, or if there is a config setting for it:
+            var javaPath = "/usr/bin/java";
+            if(getWorkspaceOrGlobalConfig("as3mxml.java.path")!=null) {
+                javaPath = getWorkspaceOrGlobalConfig("as3mxml.java.path");
+            }
 
-            nova.subscriptions.add(client);
-            this.languageClient = client;
+            // Prepare server options (Executable in VSCode talk...)
+            var serverOptions = {
+                path: javaPath,
+                args: args,
+                type: "stdio",
+                cwd: nova.workspace.path
+            };
 
-            client.onNotification("as3mxml/logCompilerShellOutput", (params) => {
-                /*
-                var issue = new Issue();
-                issue.message = params;
-                issue.severity = IssueSeverity.Error;
-                */
-                // @TODO Push issue to something...
-                console.log(params);
-            });
-        }
-        catch (err) {
+    /*
+            // From https://devforum.nova.app/t/lsp-doesnt-work-unless-re-activate-it/1798
             if (nova.inDevMode()) {
-                console.error(" *** CAUGHT AN ERROR!!!" + err + " .... " + JSON.stringify(err) + " ***");
+                serverOptions = {
+                    path: '/bin/bash',
+                    args: [
+                      '-c',
+                      `tee "${nova.extension.path}/logs/nova-client.log" | ${path} | tee "${nova.extension.path}/logs/lang-server.log"`,
+                    ],
+                };
+            }
+    */
+            // Client options
+            var clientOptions = {
+                syntaxes: ["actionscript","mxml","as3"],
+                debug: true,
+
+                documentSelector: [
+                  { scheme: "file", language: "actionscript" },
+                  { scheme: "file", language: "mxml" },
+                  { scheme: "file", language: "as3" },
+                  { scheme: "file", language: "as" },
+                ],
+                synchronize: {
+                  configurationSection: "as3mxml",
+                },
+    /*
+                uriConverters: {
+                    code2Protocol: (value: vscode.Uri) => {
+                      return normalizeUri(value);
+                    },
+                    //this is just the default behavior, but we need to define both
+                    protocol2Code: (value) => vscode.Uri.parse(value),
+                },
+    */
+            };
+
+            if (nova.inDevMode()) {
+                console.log("serverOptions: " + JSON.stringify(serverOptions));
+                console.log("clientOptions: " + JSON.stringify(clientOptions));
+            }
+
+            var client = new LanguageClient('actionscript', 'ActionScript & MXML Language Server', serverOptions, clientOptions);
+            try {
+                // Start the client
+                if (nova.inDevMode()) {
+                    console.log(" *** Starting AS3MXML server at " + new Date().toLocaleString() + "--------------------");
+                }
+
+                client.start();
+
+                client.onDidStop((error) => { console.log("**** AS3MXML ERROR: " + error + ". It may be still running: ", client.running); });
+    /*
+                nova.assistants.registerCompletionAssistant("as3", new CompletionProvider(), {
+                    triggerChars: new Charset(".")
+                });
+    */
+                client.onRequest("as3mxml/logCompilerShellOutput", (params) => {
+                  console.log(" *** AS3MXL *** ",params);
+                });
+
+			    nova.config.onDidChange("as3mxml.languageServer.jvmargs", (editor) => {
+                    if (nova.inDevMode()) {
+				        console.log("Configuration changed... Restart LSP with new JVMArgs");
+                    }
+				    showNotification("Config Change", "JVM Args changed. Restarting Server!");
+				    nova.commands.invoke("as3mxml.restart");
+			    });
+
+			    nova.config.onDidChange("as3mxml.sdk.framework", (editor) => {
+                    if (nova.inDevMode()) {
+				        console.log("Configuration changed... Different SDK for project");
+                    }
+				    showNotification("Config Change", "SDK Changed. Restarting Server!");
+				    nova.commands.invoke("as3mxml.restart");
+			    });
+
+                nova.subscriptions.add(client);
+                this.languageClient = client;
+
+                client.onNotification("as3mxml/logCompilerShellOutput", (params) => {
+                    /*
+                    var issue = new Issue();
+                    issue.message = params;
+                    issue.severity = IssueSeverity.Error;
+                    */
+                    // @TODO Push issue to something...
+                    console.log(params);
+                });
+            }
+            catch (err) {
+                if (nova.inDevMode()) {
+                    console.error(" *** CAUGHT AN ERROR!!!" + err + " .... " + JSON.stringify(err) + " ***");
+                }
             }
         }
     }
