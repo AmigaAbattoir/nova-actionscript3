@@ -1,9 +1,9 @@
 {
-    "identifier": "com.abattoirsoftware.as3xmml",
-    "name": "ActionScript3",
+    "identifier": "com.abattoirsoftware.actionscript3",
+    "name": "ActionScript 3",
     "organization": "",
     "description": "ActionScript & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "categories": [
         "completions",
         "issues",
@@ -267,13 +267,260 @@
 
     "configWorkspace": [
         {
-            "key": "as3mxml.sdk.framework",
-            "title": "AIR SDK path",
-            "type": "path",
-            "allowFolders": true,
-            "allowFiles": false,
-            "placeholder": "/Applications/AIRSDK/",
-            "description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale, the classic Apache Flex or Adobe Flex SDKs, and the Feathers SDK."
+            "title": "Application",
+            "type": "section",
+            "description": "Select the main ActionScript or MXML",
+            "children": [
+                {
+                    "key": "as3.application.runnable",
+                    "title": "Main application",
+                    "type": "path",
+                    "allowFolders": false,
+                    "allowFiles": true,
+					"filetype": [ "as","mxml" ]
+                }
+            ]
+        },
+        {
+            "title": "Build Path",
+            "type": "section",
+            "children": [
+                {
+                    "key": "as3.build.source.main",
+                    "title": "Main source folder",
+                    "type": "path",
+                    "allowFolders": true,
+                    "allowFiles": false,
+                    "default": "src"
+                },
+                {
+                    "key": "as3.build.outfile",
+                    "title": "Output folder",
+                    "type": "path",
+                    "allowFolders": true,
+                    "allowFiles": false,
+                    "default": "bin-debug"
+                },
+                {
+                    "title": "Source path",
+                    "type": "section",
+                    "description": "Additional source folders outside of the main source folder",
+                    "children": [
+                        {
+                            "key": "as3.build.source.additional",
+                            "title": "Additional source path",
+                            "type": "pathArray",
+                            "allowFolders": true,
+                            "allowFiles": false
+                        }
+                    ]
+                },
+                {
+                    "title": "Library Path",
+                    "type": "section",
+                    "description": "Additonal library folders (* May need some work...)",
+                    "children": [
+						{
+							"key": "as3.build.linkage",
+							"title": "Framework linkage",
+							"type":  "enum",
+							"values": [
+								["default", "Use default (merged into code)"],
+								["merge", "Merge into code"]
+							],
+							"default": "default",
+						},
+                        {
+                            "key": "as3.build.source.additional",
+                            "title": "Build path libraries",
+                            "type": "pathArray",
+                            "allowFolders": true,
+                            "allowFiles": true
+                        },
+                        {
+                            "key": "as3.build.addSWCFolder",
+                            "title": "Add SWC Folder...",
+                            "type": "command"
+                        },
+                        {
+                            "key": "as3.build.addSWC...",
+                            "title": "Add SWC",
+                            "type": "command"
+                        },
+						{
+							"type": "separator"
+						},
+						{
+							"key": "as3.build.verifyRSL",
+							"title": "Verify RSL digests (recommended for production)",
+							"type": "boolean",
+							"default": true,
+						},
+						{
+							"key": "as3.build.removeRSL",
+							"title": "Remove unused RSLs",
+							"type": "boolean",
+							"default": true,
+						},
+						{
+							"key": "as3.build.localDebugRuntime",
+							"title": "Use local debug runtime shared libraries when debugging",
+							"type": "boolean",
+							"default": true,
+						},
+						{
+							"key": "as3.build.autoOrder",
+							"title": "Automatically determine library ordering based on dependencies",
+							"type": "boolean",
+							"default": true,
+						}
+                    ]
+                },
+                {
+                    "title": "Native Extensions",
+                    "type": "section",
+                    "description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your applications and use them like stnadard libraries",
+                    "children": [
+                        {
+                            "key": "as3.build.anes",
+                            "title": "Native extensions",
+                            "type": "pathArray",
+                            "allowFolders": false,
+                            "allowFiles": true
+                        },
+                        {
+                            "key": "as3.packaging.certificateCreate",
+                            "title": "Add ANE",
+                            "type": "command"
+                        },
+                        {
+                            "key": "as3.packaging.certificateCreate",
+                            "title": "Add Folder",
+                            "type": "command"
+                        },
+                        {
+                            "key": "as3.packaging.certificateCreate",
+                            "title": "Refresh",
+                            "type": "command"
+                        },
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Compiler",
+            "type": "section",
+            "children": [
+                {
+                    "title": "Flex SDK version",
+                    "type": "section",
+                    "children": [
+                        {
+                            "key": "as3.compiler.useDefault",
+                            "title": "Use default SDK",
+                            "type": "enum",
+                            "values": [ "Use default SDK","Use a specific SDK"],
+                            "default": "Use default SDK",
+                            "description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale, the classic Apache Flex or Adobe Flex SDKs, and the Feathers SDK."
+                        },
+                        {
+                            "key": "as3.compiler.specificSdk",
+                            "title": "Use a specific SDK",
+                            "type": "path",
+                            "allowFolders": true,
+                            "allowFiles": false,
+                            "placeholder": "If empty, defaults the one specified in the extention's preferences"
+                        }
+                    ]
+                },
+                {
+                    "title": "Options",
+                    "type": "section",
+                    "children": [
+                        {
+                            "key": "as3.compiler.copy",
+                            "title": "Copy non-embedded files to output folder",
+                            "type": "bool",
+                            "default": true
+                        },
+                        {
+                            "key": "as3.compiler.generateAccessable",
+                            "title": "Generate accessible SWF file",
+                            "type": "bool",
+                            "default": false
+                        },
+                        {
+                            "key": "as3.compiler.strict",
+                            "title": "Enable strict type checking",
+                            "type": "bool",
+                            "default": true
+                        },
+                        {
+                            "key": "as3.compiler.enableWarnings",
+                            "title": "Enable warnings",
+                            "type": "bool",
+                            "default": true
+                        },
+                        {
+                            "key": "as3.compiler.additional",
+                            "title": "Additional compiler arguments",
+                            "type": "text",
+                        }
+                    ]
+				}
+			]
+        },
+        {
+            "title": "Packaging",
+            "type": "section",
+            "children": [
+                {
+                    "key": "as3.packaging.certificate",
+                    "title": "Certificate",
+                    "type": "path",
+                    "allowFolders": false,
+                    "allowFiles": true,
+                    "description": "Select the .p12 file to build your AIR app with",
+					"note": "@TODO Need to see how to implement a UI for this...",
+					"comment": [
+                		{
+                    		"key": "as3.packaging.certificateCreate",
+                    		"title": "Create",
+                    		"type": "command"
+                		},
+					]
+                },
+                {
+                    "key": "as3.packaging.includeFiles",
+                    "title": "Included files",
+                    "type": "pathArray",
+                    "allowFolders": true,
+                    "allowFiles": true
+                },
+                {
+                    "key": "as3.packaging.anes",
+                    "title": "Native extensions",
+                    "description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+                    "type": "pathArray",
+                    "allowFolders": false,
+                    "allowFiles": true,
+                    "comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package"
+                }
+            ]
+        },
+        {
+            "title": "Modules",
+            "type": "section",
+            "description": "Specify the modules to build for this project (Not sure how to handle this, but it was in FB 4.6...)",
+            "children": [
+                {
+                    "key": "as3.modules.list",
+                    "title": "Modules",
+                    "type": "pathArray",
+                    "allowFolders": false,
+                    "allowFiles": true,
+                }
+            ]
         }
     ],
 
@@ -333,9 +580,15 @@
             },
             {"separator": true},
             {
-                "title": "Get FlashBuilder settings",
+                "title": "Import FlashBuilder settings",
                 "command": "actionscipt.checkFBProject"
             },
+            {"separator": true},
+            {
+                "title": "ActionScript 3 Reference",
+                "command": "actionscipt.as3reference"
+            },
+            {"separator": true},
             {"separator": true},
             {
                 "title": "HOVER TEST!!",

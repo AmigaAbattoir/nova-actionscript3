@@ -35,6 +35,8 @@ exports.activate = function() {
 	nova.commands.register("actionscipt.checkFBProject",() => {
 		taskprovider.importFlashBuilderSettings();
 	});
+
+	nova.commands.register("actionscipt.as3reference",() => { nova.openURL("https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/index.html"); });
 /*
     if (nova.inDevMode()) {
         console.log(">>>> AS3MXML Activated");
@@ -196,12 +198,14 @@ class AS3MXMLTasksAssistant {
 
         // Check if there is a ".flexProperties"
 		// @NOTE Not sure what else we would need from this file
+        var isFlex = false;
 		var flexProperties = this.getStringOfWorkspaceFile(".flexProperties");
         if(flexProperties!=null) {
             var flexPropertiesXml = pjXML.parse(flexProperties);
 		    //console.log("compilerSourcePath> " + flexPropertiesXml.select("//flexProperties"));
 		    //consoleLogObject(flexPropertiesXml.select("//flexProperties"));
         	nova.workspace.config.set("editor.default_syntax","MXML");
+            isFlex = true;
         } else {
         	nova.workspace.config.set("editor.default_syntax","Actionscript 3");
         }
@@ -218,15 +222,16 @@ class AS3MXMLTasksAssistant {
 
         console.log("Main application file: [" + mainApplicationPath + "]");
 
-		console.log("Name of SWF: [" + "NEED TO FIGURE THIS..."  + "]");
-		//console.log("compilerSourcePathEntry> " + actionscriptPropertiesXml.select("//compilerSourcePathEntry"));
-		//consoleLogObject(actionscriptPropertiesXml.select("//compilerSourcePathEntry"));
+        var swfName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
+
+		console.log("Name of SWF: [" + swfName  + "]");
+
+        console.log("Destination Dir: [" + getTagAttribute(actionscriptPropertiesXml,"compiler","outputFolderPath") + "]");
+
         actionscriptPropertiesXml.select("//compilerSourcePathEntry").forEach((sourceDir) => {
             console.log(" Add a 'Source Dirs:' entry of [" + getAttribute(sourceDir,"path") + "]");
         });
 
-		//console.log("libraryPathEntry> " + actionscriptPropertiesXml.select("//libraryPathEntry"));
-		//consoleLogObject(actionscriptPropertiesXml.select("//libraryPathEntry"));
         actionscriptPropertiesXml.select("//libraryPathEntry").forEach((libDir) => {
             if(libDir["attributes"]["kind"]==1) {
                 console.log("Add a 'Libs Dirs:` entry of [" + getAttribute(libDir,"path") + "]");

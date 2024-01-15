@@ -1,3 +1,7 @@
+## Version 0.5.1
+
+* Converted configs for Tasks to be part of workspace configs
+
 ## Version 0.5
 
 * Started implementing Tasks to clean/build/run project

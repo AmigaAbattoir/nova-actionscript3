@@ -1,7 +1,7 @@
 {
   "workspace.art_style" : 0,
-  "workspace.color" : 12,
-  "workspace.name" : "AS3MXML Extension",
+  "workspace.color" : 0,
+  "workspace.name" : "ActionScript 3 Extension",
   "xml.catalogs" : [
     ""
   ]
