@@ -1,12 +1,12 @@
+// For help parsing FlashBuilder settings files
+var pjXML = require('pjxml');
+
 var langserver = null;
 var taskprovider = null;
 
-// Tasks
-const Tasks = require("Tasks.js");
-nova.assistants.registerTaskAssistant(Tasks, {
-    identifier: "actionscript3",
-    name: "ActionScript 3"
-});
+function getTagAttribute(xml, tag, attr) { return String(xml.select("//"+tag)["attributes"][attr]).trim(); }
+
+function getAttribute(xml, attr) { return String(xml["attributes"][attr]).trim(); }
 
 // Show a notification with the given title and body when in dev mode.
 function showNotification(title, body) {
@@ -21,20 +21,32 @@ function showNotification(title, body) {
 
 exports.activate = function() {
     langserver = new AS3MXMLLanguageServer();
-   // taskprovider = new ActionScriptTasksAssistant();
+    taskprovider = new AS3MXMLTasksAssistant();
+    nova.assistants.registerTaskAssistant(taskprovider, {
+        identifier: "actionscript",
+    });
 
+    //                                          [ Nova stuff...                     ][ Our params to pass]
+	nova.commands.register("actionscipt.clean",(workspace, workspacePath, sourcePath, outputPath) => {
+        //                 [ Nova stuff...          ][ Our params...]
+		taskprovider.clean(workspacePath, sourcePath, outputPath);
+	});
+
+	nova.commands.register("actionscipt.checkFBProject",() => {
+		taskprovider.importFlashBuilderSettings();
+	});
+/*
     if (nova.inDevMode()) {
         console.log(">>>> AS3MXML Activated");
         console.log("  >> langserver.languageClient:  " + langserver.languageClient);
         console.log("  >> JSON.stringify(langserver): " + JSON.stringify(langserver));
     }
+*/
 }
 
 exports.deactivate = function() {
     // Clean up state before the extension is deactivated
-    if (nova.inDevMode()) {
-        console.log("<<<< AS3MXML Deactivated");
-    }
+    if (nova.inDevMode()) { console.log("<<<< AS3MXML Deactivated"); }
 
     if (langserver) {
         langserver.deactivate();
@@ -88,6 +100,337 @@ function setIfConfigIsSet(configName) {
     return null;
 }
 
+function shouldIgnoreFileName(fileName, ignorePatterns) {
+  return ignorePatterns.some(pattern => fileName.endsWith(pattern));
+}
+
+class AS3MXMLTasksAssistant {
+	// These files should be ignored when copying assets. The "-app.xml" gets processed,
+	// so we won't want to copy that either.
+	ignoreCopy = [ ".git",".svn",".DS_Store",".as","-app.xml",".mxml" ];
+
+	/**
+	 * Clean the build directory. Basically, delete the dir then make it again.
+	 * @param {string} outputPath - Where the build folder is located.
+	 */
+	clean(outputPath) {
+		var result = true;
+		if(outputPath) {
+			try {
+				nova.fs.rmdir(outputPath);
+				nova.fs.mkdir(outputPath);
+			} catch(error) {
+				result = false;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Copies all files from the "src" directory to the "dest" directory, avoiding the `ignoreCopy` assets
+	 * @param {string} src - The source directory to copy
+	 * @param {string} dest - The location to copy the files to
+	 */
+	copyAssetsOf(src, dest) {
+		nova.fs.listdir(src).forEach(filename => {
+			let currPath = src + '/' + filename;
+			///if(this.ignoreCopy.includes(filename)==false) {
+			if(shouldIgnoreFileName(filename,this.ignoreCopy)==false) {
+				console.log("filename: " + filename + "    shouldIgnoreFileName(currentPath,ignoreCopy): " + shouldIgnoreFileName(filename,this.ignoreCopy));
+				if (nova.fs.stat(currPath).isFile()) {
+					try{
+						if(nova.fs.access(dest+"/"+filename,nova.fs.constants.F_OK)) {
+							nova.fs.remove(dest+"/"+filename);
+						}
+						nova.fs.copy(currPath,dest+"/"+filename);
+					} catch(error) {
+						console.log(" *** ERROR: ",error);
+					}
+				} else if (nova.fs.stat(currPath).isDirectory()) {
+					nova.fs.mkdir(dest + "/" + filename);
+					// Let's also copy this directory too...
+					this.copyAssetsOf(currPath, dest + "/" + filename);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Opens a file and dumps it into a string.
+	 * @param {string} filename - The name of the file to open, relative to the workspace
+	 */
+	getStringOfWorkspaceFile(filename) {
+		var line, contents;
+		try {
+			contents = "";
+			//console.log("Trying to open: " + nova.path.join(nova.workspace.path, filename));
+			var file = nova.fs.open(nova.path.join(nova.workspace.path, filename));
+			if(file) {
+				do {
+					line = file.readline();
+					if(line!=null) {
+						contents += line;
+					}
+				} while(line && line.length>0);
+			}
+		} catch(error) {
+			console.log("*** ERROR: Could not open file " + nova.path.join(nova.workspace.path, filename) + " for reading. ***");
+			return null;
+		}
+		return contents;
+	}
+
+    /**
+     * Checks if there is a FlashBuilder project and find some values.
+     * @TODO Actually, make it adjust the settings.
+     */
+	importFlashBuilderSettings() {
+        console.log("-====-====-====-====-=====-====-=====-====--")
+        console.log("importFlashBuilderSettings()");
+
+        // Check ".project" XML file for things
+		var projectXml = pjXML.parse(this.getStringOfWorkspaceFile(".project"));
+
+        // Change project name to the Flash Builder project name:
+        nova.workspace.config.set("workspace.name",String(projectXml.select("//name")[0]["content"]).trim());
+
+        // Check if there is a ".flexProperties"
+		// @NOTE Not sure what else we would need from this file
+		var flexProperties = this.getStringOfWorkspaceFile(".flexProperties");
+        if(flexProperties!=null) {
+            var flexPropertiesXml = pjXML.parse(flexProperties);
+		    //console.log("compilerSourcePath> " + flexPropertiesXml.select("//flexProperties"));
+		    //consoleLogObject(flexPropertiesXml.select("//flexProperties"));
+        	nova.workspace.config.set("editor.default_syntax","MXML");
+        } else {
+        	nova.workspace.config.set("editor.default_syntax","Actionscript 3");
+        }
+
+		// Check ".actionScriptProperties"
+		// @NOTE This needs to affect the TASK but not sure how to do that yet!
+        console.log("Please create a new Task of ActionScript - AIR, and copy these values for now, (I can't figure a way to automate it!!)");
+		var actionscriptPropertiesXml = pjXML.parse(this.getStringOfWorkspaceFile(".actionScriptProperties"));
+
+		//console.log("compilerSourcePath> " + actionscriptPropertiesXml.select("//compilerSourcePath"));
+		//consoleLogObject(actionscriptPropertiesXml.select("//compilerSourcePath"));
+
+		var mainApplicationPath = getTagAttribute(actionscriptPropertiesXml,"actionScriptProperties","mainApplicationPath");
+
+        console.log("Main application file: [" + mainApplicationPath + "]");
+
+		console.log("Name of SWF: [" + "NEED TO FIGURE THIS..."  + "]");
+		//console.log("compilerSourcePathEntry> " + actionscriptPropertiesXml.select("//compilerSourcePathEntry"));
+		//consoleLogObject(actionscriptPropertiesXml.select("//compilerSourcePathEntry"));
+        actionscriptPropertiesXml.select("//compilerSourcePathEntry").forEach((sourceDir) => {
+            console.log(" Add a 'Source Dirs:' entry of [" + getAttribute(sourceDir,"path") + "]");
+        });
+
+		//console.log("libraryPathEntry> " + actionscriptPropertiesXml.select("//libraryPathEntry"));
+		//consoleLogObject(actionscriptPropertiesXml.select("//libraryPathEntry"));
+        actionscriptPropertiesXml.select("//libraryPathEntry").forEach((libDir) => {
+            if(libDir["attributes"]["kind"]==1) {
+                console.log("Add a 'Libs Dirs:` entry of [" + getAttribute(libDir,"path") + "]");
+            }
+        });
+
+        console.log("Additional compiler args: [" + getTagAttribute(actionscriptPropertiesXml,"compiler","additionalCompilerArguments") + "]");
+
+        console.log("-====-====-====-====-=====-====-=====-====--")
+        console.log("-====-====-====-====-=====-====-=====-====--")
+	}
+
+    /**
+     * Handles the Clean/Build/Run stuff.
+     * @param {class} context - What's coming from the build options
+     */
+	resolveTaskAction(context) {
+		var data = context.data;
+		var config = context.config;
+		var action = context.action;
+
+		// Get the context.config so we can get the Task settings!
+		var whatKind = config.get("actionscript3.request");
+
+		var destDir = config.get("actionscript3.destdir");
+		if(destDir==null) {
+			destDir = nova.path.join(nova.workspace.path, "bin-debug");
+		} else {
+			destDir = nova.path.join(nova.workspace.path, destDir);
+		}
+
+		// Should get the app settings
+		var mainApplicationPath = config.get("actionscript3.mainApplicationPath");//"SnakeInTheGrassDesktop.as";
+		var exportName = config.get("actionscript3.exportname");//"SnakeInTheGrassDesktop.swf";
+		var appXMLName = config.get("actionscript3.appxml");//"src/SnakeInTheGrassDesktop-app.xml";
+
+		// Use this to get setting from the extension or the workspace!
+		var flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.framework");
+		if(flexSDKBase==null) {
+			flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.default");
+		}
+        if(flexSDKBase.charAt(0)=="~") {
+            flexSDKBase = nova.path.expanduser(flexSDKBase);
+        }
+
+		console.log("Setting as3mxml.sdk.framework: " + getWorkspaceOrGlobalConfig("as3mxml.sdk.framework"))
+		console.log("Setting as3mxml.sdk.default: " + getWorkspaceOrGlobalConfig("as3mxml.sdk.default"))
+		console.log("Using flexSDKBase: " + flexSDKBase);
+
+		var copyAssets = config.get("actionscript3.copyassets");
+
+        var sourceDirs = config.get("actionscript3.sourceDirs");
+        console.log("as3mxml.sourceDirs: ");
+        consoleLogObject(sourceDirs);
+
+        var libPath = config.get("actionscript3.libpath");
+
+		if(action==Task.Build && data.type=="actionscript") {
+			if(copyAssets) { // Copy each source dir to the output folder
+                if(sourceDirs!=null) {
+                    sourceDirs.forEach((sourceDir) => {
+                        if(sourceDir.charAt(0)=="~") { // If a user shortcut, resolve
+                            sourceDir = nova.path.expanduser(sourceDir);
+                        } else if(sourceDir.charAt(0)!="/") { // If it's not a slash, it's relative to the workspace path
+                            sourceDir = nova.path.join(nova.workspace.path, sourceDir);
+                       }
+				       this.copyAssetsOf(sourceDir, destDir);
+                    });
+                }
+			}
+
+			// FlashBuilder would modify the -app.xml with updated variables, so we will make a copy of the file, changing what FB would
+            // Otherwise, this will write a copy.
+		    var appXML;
+            console.log("AppXML location: " + appXMLName);
+            try{
+                appXML = nova.fs.open(nova.path.join(nova.workspace.path, appXMLName))
+            } catch(error) {
+                console.log("Error opening APP XML! ",error);
+                return null;
+            }
+
+			var newAppXML = nova.fs.open(destDir + "/" + exportName + "-app.xml","w");
+			if(appXML) {
+				var line;
+                var lineCount = 0;
+                try {
+					do {
+						line = appXML.readline();
+						//console.log(" READING LINE: " + line);
+                        lineCount++;
+						if(line.indexOf("[This value will be overwritten by Flash Builder in the output app.xml]")!=-1) {
+							line = line.replace("[This value will be overwritten by Flash Builder in the output app.xml]",exportName + ".swf");
+							//console.log(" REPLACING FB LINE: " + line);
+						}
+						newAppXML.write(line);
+					} while(line && line.length>0);
+					appXML.close();
+		        } catch(error) {
+                    if(lineCount==0) {
+			            console.log("*** ERROR: No APP XML file! error: ",error);
+                        consoleLogObject(error);
+                    }
+		        }
+			}
+
+            // Let's compile this thing!!
+			var command = flexSDKBase + "/bin/mxmlc";
+			var args = new Array();
+			if(whatKind=="debug") {
+				args.push("--debug=true");
+			}
+
+            // If air, we need to add the configname=air, I'm assuming flex would be different?!
+			args.push("+configname=air");
+
+            // Push where the final SWF will be outputted
+			args.push("--output=" + destDir + "/" + exportName + ".swf");
+
+			// Push args for the source-paths!
+            if(sourceDirs) {
+                sourceDirs.forEach((sourceDir) => {
+                    if(sourceDir.charAt(0)=="~") { // If a user shortcut, resolve
+                        sourceDir = nova.path.expanduser(sourceDir);
+                    }
+                    args.push("--source-path+=" + sourceDir);
+                });
+            }
+
+			// This too should be from settings
+            if(libPath) {
+    			args.push("--library-path+=" + libPath);
+            }
+
+            // Additional compiler arguments
+            if(config.get("actionscript3.additionalCompilerArguments")!=null) {
+				/** @NOTE Needs work on parsing the additional args.
+					Should really parse to make sure that there are no spaces or dash spaces
+					Or make sure there's a quote around it if there's paths, or maybe just a
+					space after an equal sign.
+				*/
+                var additional = config.get("actionscript3.additionalCompilerArguments");
+				// Need to break this down to individual args
+				var ops = additional.split(" -");
+                ops.forEach((addition,index) => {
+                    args.push((index>0 ? "'-" : "'") + addition + "'");
+                });
+            }
+
+			args.push("--");
+            // We need the active application file to trigger this
+			args.push("src/" + mainApplicationPath);
+
+            console.log(" *** COMMAND [[" + command + "]] ARG: \n");
+            consoleLogObject(args);
+            return new TaskProcessAction(command, { args: args, });
+		} else if(action==Task.Run && data.type=="actionscript") {
+            // Should check if the files are there, if not build first!
+
+            if(whatKind=="debug") {
+				/* // @NOTE Is this how the debugger is launched?!
+                var command =  "";
+                var args = [
+                	//uncomment to debug the SWF debugger JAR
+            		//"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
+
+                	"-cp",
+                	this.getClassPath(),
+                	"com.as3mxml.vscode.SWFDebug",
+                ];
+
+				if (session.workspaceFolder) {
+					args.unshift("-Dworkspace=" + session.workspaceFolder.uri.fsPath);
+				}
+				if (paths.sdkPath) {
+					//don't pass in an SDK unless we have one set
+					args.unshift("-Dflexlib=" + path.resolve(paths.sdkPath, "frameworks"));
+				}
+				return new vscode.DebugAdapterExecutable(paths.javaPath, args);
+				*/
+            } else {
+            }
+
+            // To launch ADL, we need to point it to the "-app.xml" file
+		    var command = flexSDKBase + "/bin/adl";
+		    var args = [
+			    destDir + "/" + exportName + "-app.xml",
+		    ]
+
+    	    if (nova.inDevMode()) {
+			    console.log(" *** Attempting to Run ADL with [" + command + " " + args[0] + "] ***");
+		    }
+
+            return new TaskProcessAction(command, {
+			    shell: true,
+			    args: args,
+			    env: {}
+		    }, args);
+		} else if(action==Task.Clean /* && data.type=="actionscript"*/) {
+            return new TaskCommandAction("actionscipt.clean", { args: [destDir] });
+		}
+	}
+}
+
 class AS3MXMLLanguageServer {
     languageClient = null;
 
@@ -132,10 +475,17 @@ class AS3MXMLLanguageServer {
         var base =  nova.path.join(nova.extension.path, "language-server");
 
         // Check if user setup the location of the SDK for this project
-        var flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.framework"); //"/Applications/Apache Flex/SDKs/4.16.1-AIR32/frameworks";
+        var flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.framework");
+        if(flexSDKBase!=null && flexSDKBase.charAt(0)=="~") {
+            flexSDKBase = nova.path.expanduser(flexSDKBase);
+        }
+
+        // Since we can't use user's SDK location, try default
         if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
-            // Since we can't use user's SDK location, try default
-            flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.default"); //"/Applications/Apache Flex/SDKs/4.16.1-AIR32/frameworks";
+            flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.default");
+            if(flexSDKBase.charAt(0)=="~") {
+                flexSDKBase = nova.path.expanduser(flexSDKBase);
+            }
         }
 
         if (nova.inDevMode()) {
@@ -333,38 +683,6 @@ function saveAllFiles() {
     });
 }
 
-// From vscode-as3mxml-master/vscode-extension/src/main/ts/commands/quickCompileAndLaunch.ts
-const QUICK_COMPILE_MESSAGE = "Building ActionScript & MXML project...";
-const CANNOT_LAUNCH_QUICK_COMPILE_FAILED_ERROR =
-  "Quick compile failed with errors. Launch cancelled.";
-const PREVIOUS_QUICK_COMPILE_NOT_COMPLETE_MESSAGE =
-  "Quick compile not started. A previous quick compile has not completed yet.";
-
-nova.commands.register("as3mxml.quickCompile", (editor) => {
-    if (nova.inDevMode()) {
-        console.log("Called... as3mxml.quickCompile");
-    }
-    saveAllFiles();
-    var filePath = nova.workspace.path + "/asconfig.json"
-    if(langserver) {
-        langserver.languageClient.sendRequest("workspace/executeCommand", {
-            command: "as3mxml.quickCompile",
-            arguments: [ "file://" + filePath.replace(" ","%20"),false]
-        }).then((result) => {
-            if(result!==true) {
-                showNotification("Quick Compile Failed", CANNOT_LAUNCH_QUICK_COMPILE_FAILED_ERROR);
-                /*
-                var issue = new Issue();
-                issue.message = CANNOT_LAUNCH_QUICK_COMPILE_FAILED_ERROR;
-                issue.severity = IssueSeverity.Error;
-                */
-            }
-        }, (error) => {
-            showNotification("Quick Compile ERROR!", error);
-        });
-    }
-});
-
 function consoleLogObject(object) {
 	console.log(JSON.stringify(object,null,4));
 }
@@ -400,11 +718,14 @@ nova.commands.register("as3mxml.hovertest", (editor) => {
 
 	if(langserver) {
         var position = rangeToLspRange(nova.workspace.activeTextEditor.document, nova.workspace.activeTextEditor.selectedRange);
-        console.log("Selectd Range:");
-        console.log(nova.workspace.activeTextEditor.selectedRange);
-        consoleLogObject( nova.workspace.activeTextEditor.selectedRange);
-        console.log("POSITION:");
-        consoleLogObject(position);
+
+        if (nova.inDevMode()) {
+            console.log("Selectd Range:");
+            console.log(nova.workspace.activeTextEditor.selectedRange);
+            consoleLogObject( nova.workspace.activeTextEditor.selectedRange);
+            console.log("POSITION:");
+            consoleLogObject(position);
+        }
 
         langserver.languageClient.sendRequest("textDocument/hover", {
 			textDocument: { uri: nova.workspace.activeTextEditor.document.uri },

@@ -1,3 +1,7 @@
+## Version 0.5
+
+* Started implementing Tasks to clean/build/run project
+
 ## Version 0.4.1
 
 * Minor changes to the AS3 syntax

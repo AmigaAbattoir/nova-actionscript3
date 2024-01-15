@@ -1,4 +1,4 @@
-# AS3MXML - ActionScrip 3 for Nova
+# ActionScript 3 for Nova
 
 Is an **Experimental/ _(kinda not)_ Work _(ing)_ In Progress** extension that uses the ActionScript & MXML language server.
 
@@ -9,9 +9,11 @@ It currently provides for ActionScript 3 files:
  * **Language intelligence**
    * Issues
 
+ * **Tasks** - Limited support for using Nova's Clean/Build/Run.
+
 ## Notes
 
-It is based upon [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml).
+The LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml).
 
 Started setting up LSP using the [How to use the ActionScript and MXML language server with Sublime Text](https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text) from the repo's Wiki.
 
@@ -21,15 +23,17 @@ Also, took some stuff from [BowlerHatLLC/eclipse-as3mxml](https://github.com/Bow
 
 I don't think the syntaxes work with Nova well. And probably will need some reworking to so that Nova will give the correct code completion and hover overs automagically!
 
+Cleaning/Building/Running are done by using `mxmlc` for compiling and runninf with `adt` from an (Harman) Adobe Air or Flex SDK.
+
 ## Requirements
 
-AS3MXML requires the following to be installed on your Mac:
+ActionScript 3 requires the following to be installed on your Mac:
 
 * Java
 
 * (Harman) Adobe Air or Flex SDK
 
-  * Default location looked for is at `/Applications/AIRSDK`, if you have others, your will need to
+  * Default location looked for is at `~/Applications/AIRSDK`, if you have others, your will need to change the extension settings.
 
 ## Usage
 
@@ -41,7 +45,7 @@ To configure global preferences, open **Extensions → Extension Library...** th
 
 You can also configure preferences on a per-project basis in **Project → Project Settings...**, also, some work some do not.
 
-## Testing
+## Syntax Testing
 
 For quick testing, I found [tszarzynski/ISampleInterface.as](https://gist.github.com/tszarzynski/3525530) which gives a fairly complete AS3 Class/Interface, which works nice for testing.
 I included the files in the Example Code from [SampleClass/Event/Interface](https://gist.github.com/

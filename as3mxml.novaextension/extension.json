@@ -1,13 +1,14 @@
 {
     "identifier": "com.abattoirsoftware.as3xmml",
-    "name": "AS3MXML",
+    "name": "ActionScript3",
     "organization": "",
-    "description": "ActionScript & MXML language extension for Panic Nova. Taken directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
-    "version": "0.4.1",
+    "description": "ActionScript & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
+    "version": "0.5.0",
     "categories": [
         "completions",
         "issues",
-        "languages"
+        "languages",
+        "tasks"
     ],
 
     "main": "main.js",
@@ -42,6 +43,95 @@
         "onCommand:as3mxml.quickCompileAndRun",
         "onCommand:as3mxml.getActiveProjectURIs"
     ],
+
+    "taskTemplates": {
+        "actionscript": {
+            "name": "ActionScript - AIR",
+            "image": "Adobe_AIR_logo.svg.png",
+            "description": "Build and run AS3 or MXML project.",
+            "persistent": true,
+            "tasks": {
+                "build": {
+                    "resolve": "actionscript",
+                    "data": {
+                        "type": "actionscript",
+                    }
+                },
+                "clean": {
+                    "resolve": "actionscript",
+                    "data": {
+                        "type": "actionscript",
+                    }
+                },
+                "run": {
+                    "resolve": "actionscript",
+                    "data": {
+                        "type": "actionscript",
+                    }
+                },
+            },
+            "config": [
+                {
+                    "key": "actionscript3.mainApplicationPath",
+                    "title": "Main application file",
+                    "type": "string",
+                },
+                {
+                    "key": "actionscript3.exportname",
+                    "title": "Name of SWF",
+                    "type": "string",
+                },
+                {
+                    "key": "actionscript3.appxml",
+                    "title": "Name of APP XML",
+                    "type": "string",
+                    "placeholder": "This would be FB's .project <projectDescription><name></projectDescription>",
+                    "default": ""
+                },
+                {
+                    "key": "actionscript3.request",
+                    "title": "Launch Type",
+                    "type": "enum",
+                    "default": "release",
+                    "values": [
+                        ["release", "Release"],
+                        ["debug", "Debug"]
+                    ],
+                    "description": "How to run the project..."
+                },
+                {
+                    "key": "actionscript3.copyassets",
+                    "title": "Copy Assets",
+                    "type": "bool",
+                    "default": "true"
+                },
+                {
+                    "key": "actionscript3.destdir",
+                    "title": "Destination Dir",
+                    "type": "path",
+                    "default": "bin-me/"
+                },
+                {
+                    "key": "actionscript3.sourceDirs",
+                    "title": "Source Dirs",
+                    "type": "pathArray",
+                    "default": "src/"
+                },
+                {
+                    "key": "actionscript3.libpath",
+                    "title": "Lib Dirs",
+                    "type": "pathArray",
+                    "default": "libs/"
+                },
+                {
+                    "key": "actionscript3.additionalCompilerArguments",
+                    "title": "Additional Compiler",
+                    "type": "string",
+                    "default": ""
+                }
+            ]
+        }
+    },
 
     "config": [
         {
@@ -96,7 +186,7 @@
                     "allowFolders": true,
                     "allowFiles": false,
                     "type": "path",
-                    "default": "/Applications/AIRSDK/",
+                    "default": "~/Applications/AIRSDK/",
                 },
                 {
                     "key": "as3mxml.sdk.searchPaths",
@@ -241,16 +331,11 @@
                 "title": "Restart AS3MXML LSP",
                 "command": "as3mxml.restart"
             },
-            {
-                "title": "Get Active Project URIs",
-                "command": "as3mxml.getActiveProjectURIs"
-            },
             {"separator": true},
             {
-                "title": "Quick Compile",
-                "command": "as3mxml.quickCompile"
+                "title": "Get FlashBuilder settings",
+                "command": "actionscipt.checkFBProject"
             },
-            {"separator": true},
             {"separator": true},
             {
                 "title": "HOVER TEST!!",
