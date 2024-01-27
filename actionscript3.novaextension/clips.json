@@ -1,0 +1,36 @@
+{
+	"note": "See https://docs.nova.app/extensions/snippets/",
+	"clips": [
+		{
+			"name": "ActionScript",
+			"children": [
+				{
+					"content": "var ${1:name}:Vector.<${2:type}> = new Vector.<${2:type}>();\n",
+					"name": "Creates a Vector instance with type",
+					"name": "vector",
+					"scope": "editor",
+					"syntax": "actionscript",
+				},
+				{
+					"content": "var ${1:name}:Vector.<${2:type}> = new Vector.<${2:type}>();\n",
+					"name": "Creates a Vector instance with type",
+					"name": "vector",
+					"scope": "editor",
+					"syntax": "actionscript",
+				},
+			]
+		},
+		{
+			"name": "MXML",
+			"children": [
+				{
+					"content": "<${1:mx:}Button id=\"${2:button}\" label=\"${3:myButton}\" click=\"${4:onClick}(${5:event})\">${6:cursor}",
+					"name": "Creates a MX Button",
+					"name": "button",
+					"scope": "editor",
+					"syntax": "mxml",
+				},
+			]
+		}
+	],
+}

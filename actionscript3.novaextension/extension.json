@@ -8,7 +8,8 @@
         "completions",
         "issues",
         "languages",
-        "tasks"
+        "tasks",
+		"clips"
     ],
 
     "main": "main.js",
@@ -72,62 +73,27 @@
             },
             "config": [
                 {
-                    "key": "actionscript3.mainApplicationPath",
-                    "title": "Main application file",
+                    "key": "as3.task.commandLine",
+                    "title": "Command line arguments",
                     "type": "string",
                 },
                 {
-                    "key": "actionscript3.exportname",
-                    "title": "Name of SWF",
+                    "key": "as3.task.mainApplicationPath",
+                    "title": "Publisher ID",
                     "type": "string",
                 },
                 {
-                    "key": "actionscript3.appxml",
-                    "title": "Name of APP XML",
-                    "type": "string",
-                    "placeholder": "This would be FB's .project <projectDescription><name></projectDescription>",
-                    "default": ""
-                },
-                {
-                    "key": "actionscript3.request",
-                    "title": "Launch Type",
+                    "key": "as3.task.profile",
+                    "title": "Profile",
                     "type": "enum",
-                    "default": "release",
+                    "default": "desktop",
                     "values": [
-                        ["release", "Release"],
-                        ["debug", "Debug"]
+						["default", "Default (first in app.xml)"],
+                        ["desktop", "Desktop"],
+                        ["extendedDesktop", "Extended Desktop"],
+                        ["mobile", "Mobile"],
+                        ["extendedMobileDevice", "Extended Mobile"]
                     ],
-                    "description": "How to run the project..."
-                },
-                {
-                    "key": "actionscript3.copyassets",
-                    "title": "Copy Assets",
-                    "type": "bool",
-                    "default": "true"
-                },
-                {
-                    "key": "actionscript3.destdir",
-                    "title": "Destination Dir",
-                    "type": "path",
-                    "default": "bin-me/"
-                },
-                {
-                    "key": "actionscript3.sourceDirs",
-                    "title": "Source Dirs",
-                    "type": "pathArray",
-                    "default": "src/"
-                },
-                {
-                    "key": "actionscript3.libpath",
-                    "title": "Lib Dirs",
-                    "type": "pathArray",
-                    "default": "libs/"
-                },
-                {
-                    "key": "actionscript3.additionalCompilerArguments",
-                    "title": "Additional Compiler",
-                    "type": "string",
-                    "default": ""
                 }
             ]
         }
@@ -217,50 +183,49 @@
             ]
         },
         {
-            "title": "ASConfig Options...",
-            "type": "section",
-            "children": [
-                {
-                    "key": "as3mxml.asconfigc.useBundled",
-                    "title": "Use Bundled",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "(Advanced) Indicates if the extension will use the bundled version of asconfigc or a different version that is installed on the system path. Defaults to true.\n\nIf you have the npm version of asconfigc installed globally, and you'd prefer to use that version of the program instead of the version that is bundled with the Nova Panic extension, change the value of this setting to false."
-                },
-                {
-                    "key": "as3mxml.asconfigc.verboseOutput",
-                    "title": "Verbose Output",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "(Advanced) Specifies whether asconfigc will display more detailed output during builds. Displays command line options passed to tools, like the compiler and the Adobe AIR packager, lists the files copied to the output folder, and more."
-                },
-                {
-                    "key": "as3mxml.asconfigc.jvmargs",
-                    "title": "JVMArgs",
-                    "type": "string",
-                    "placeholder": "-Xms512m -Xmx1024m",
-                    "description": "(Advanced) Specifies extra arguments that asconfigc will pass to the Java virtual machine when running Java programs.\n\nThe following example customizes the Java memory heap size for builds: \"-Xms512m -Xmx1024m\""
-                }
-            ]
-        },
-        {
             "title": "Additional Options...",
             "type": "section",
             "children": [
                 {
                     "key": "as3mxml.projectImport.prompt",
-                    "title": "Adobe Flash Builder project import prompt",
+                    "title": "Automatically import Flash Builder projects",
                     "type": "boolean",
                     "default": true,
-                    "description": "Specifies whether to automatically display a prompt to import a project folder from Adobe Flash Builder when asconfig.json is not present."
+                    "description": "Specifies whether to automatically import a project folder from Flash Builder when present. If disabled, you can still do this manually form the menu."
+                },
+            ]
+        },
+        {
+            "title": "Debug",
+            "type": "section",
+            "children": [
+                {
+                    "key": "as3.debug.standalone",
+                    "title": "Standalone Flash Player (Debug version)",
+                    "type": "path",
+                    "allowFolders": true,
+                    "allowFiles": false,
+                    "description": ""
+                },
+            ]
+        },
+        {
+            "title": "File Exclusions",
+            "type": "section",
+			"description": "Select the files that you do not want copied to the output folder after compilations",
+            "children": [
+                {
+                    "key": "as3.fileExclusion.extensions",
+                    "title": "File Extensions",
+                    "type": "stringArray",
+					"default": [ ".java",".class",".properties",".mxml",".as",".swc",".fxg"]
                 },
                 {
-                    "key": "as3mxml.quickCompile.enabled",
-                    "title": "Quick Compile enabled",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Specifies whether the experimental quick compile commands are enabled or not."
-                }
+                    "key": "as3.fileExclusion.names",
+                    "title": "File Names",
+                    "type": "stringArray",
+					"default": [ ".DS_Store",".git",".svn",".classpath", "flex-config.xml","air-config.xml","services-config.xml","remoting-config.xml","proxy-config.xml","messaging-config.xml","data-management-config.xml" ]
+                },
             ]
         }
     ],
@@ -272,7 +237,7 @@
             "description": "Select the main ActionScript or MXML",
             "children": [
                 {
-                    "key": "as3.application.runnable",
+                    "key": "as3.application.mainApp",
                     "title": "Main application",
                     "type": "path",
                     "allowFolders": false,
@@ -294,7 +259,7 @@
                     "default": "src"
                 },
                 {
-                    "key": "as3.build.outfile",
+                    "key": "as3.build.output",
                     "title": "Output folder",
                     "type": "path",
                     "allowFolders": true,
@@ -325,13 +290,13 @@
 							"title": "Framework linkage",
 							"type":  "enum",
 							"values": [
-								["default", "Use default (merged into code)"],
-								["merge", "Merge into code"]
+								["Use default (merged into code)"],
+								["Merge into code"]
 							],
-							"default": "default",
+							"default": "Use default (merged into code)",
 						},
                         {
-                            "key": "as3.build.source.additional",
+                            "key": "as3.build.library.additional",
                             "title": "Build path libraries",
                             "type": "pathArray",
                             "allowFolders": true,
@@ -559,10 +524,6 @@
             {
                 "title": "Sort Imports In Directory",
                 "command": "as3mxml.sortImportsInUri"
-            },
-            {
-                "title": "Quick Compile",
-                "command": "as3mxml.quickCompile"
             },
             {
                 "title": "Get Active Project URIs",

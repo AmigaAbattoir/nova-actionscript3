@@ -4,6 +4,8 @@ var pjXML = require('pjxml');
 var langserver = null;
 var taskprovider = null;
 
+function getTag(xml, tag) { return String(xml.select("//"+tag)).trim(); }
+
 function getTagAttribute(xml, tag, attr) { return String(xml.select("//"+tag)["attributes"][attr]).trim(); }
 
 function getAttribute(xml, attr) { return String(xml["attributes"][attr]).trim(); }
@@ -102,14 +104,29 @@ function setIfConfigIsSet(configName) {
     return null;
 }
 
+var fileExtensionsToExclude = [];
+var fileNamesToExclude = [];
+
 function shouldIgnoreFileName(fileName, ignorePatterns) {
-  return ignorePatterns.some(pattern => fileName.endsWith(pattern));
+	if(fileNamesToExclude.includes(fileName)) {
+		return true;
+	}
+	if(fileExtensionsToExclude.some(ext => fileName.endsWith(ext))) {
+		return true;
+	}
+	return false;
 }
 
+
 class AS3MXMLTasksAssistant {
+	/** @TODO Make this an extension preference, like in Flash Builder > File Exclusions */
 	// These files should be ignored when copying assets. The "-app.xml" gets processed,
 	// so we won't want to copy that either.
-	ignoreCopy = [ ".git",".svn",".DS_Store",".as","-app.xml",".mxml" ];
+	ignoreCopy = [ ".java", ".class", ".properties", ".mxml", ".as", ".fxg",
+		".classpath", "flex-config.xml", "air-config.xml", "services-config.xml", "remoting-config.xml", "proxy-config.xml", "massaging-config.xml", "data-management-config.xml",
+		// Also, ignore these things.
+		".git",".svn",".DS_Store", "-app.xml"
+	];
 
 	/**
 	 * Clean the build directory. Basically, delete the dir then make it again.
@@ -137,8 +154,8 @@ class AS3MXMLTasksAssistant {
 		nova.fs.listdir(src).forEach(filename => {
 			let currPath = src + '/' + filename;
 			///if(this.ignoreCopy.includes(filename)==false) {
-			if(shouldIgnoreFileName(filename,this.ignoreCopy)==false) {
-				console.log("filename: " + filename + "    shouldIgnoreFileName(currentPath,ignoreCopy): " + shouldIgnoreFileName(filename,this.ignoreCopy));
+			if(shouldIgnoreFileName(filename)==false) {
+				console.log(" <><><> filename: " + filename + "    shouldIgnoreFileName(currentPath,ignoreCopy): " + shouldIgnoreFileName(filename));
 				if (nova.fs.stat(currPath).isFile()) {
 					try{
 						if(nova.fs.access(dest+"/"+filename,nova.fs.constants.F_OK)) {
@@ -160,8 +177,9 @@ class AS3MXMLTasksAssistant {
 	/**
 	 * Opens a file and dumps it into a string.
 	 * @param {string} filename - The name of the file to open, relative to the workspace
+	 * @param {boolean} trimAll - Default: true. Trims each line, and removes extra spacing (useful for pjxml and our XML files!)
 	 */
-	getStringOfWorkspaceFile(filename) {
+	getStringOfWorkspaceFile(filename, trimAll = true) {
 		var line, contents;
 		try {
 			contents = "";
@@ -171,9 +189,16 @@ class AS3MXMLTasksAssistant {
 				do {
 					line = file.readline();
 					if(line!=null) {
+						if(trimAll) {
+							line = line.trim();
+						}
 						contents += line;
 					}
 				} while(line && line.length>0);
+			}
+
+			if(trimAll) {
+				contents = contents.replace((/  |\r\n|\n|\r/gm),"");  // contents.replace(/(\r\n|\n|\r)/gm,"")
 			}
 		} catch(error) {
 			console.log("*** ERROR: Could not open file " + nova.path.join(nova.workspace.path, filename) + " for reading. ***");
@@ -183,13 +208,9 @@ class AS3MXMLTasksAssistant {
 	}
 
     /**
-     * Checks if there is a FlashBuilder project and find some values.
-     * @TODO Actually, make it adjust the settings.
+     * Checks for Flash Builder files and adjust the workspace's settings
      */
 	importFlashBuilderSettings() {
-        console.log("-====-====-====-====-=====-====-=====-====--")
-        console.log("importFlashBuilderSettings()");
-
         // Check ".project" XML file for things
 		var projectXml = pjXML.parse(this.getStringOfWorkspaceFile(".project"));
 
@@ -205,43 +226,90 @@ class AS3MXMLTasksAssistant {
 		    //console.log("compilerSourcePath> " + flexPropertiesXml.select("//flexProperties"));
 		    //consoleLogObject(flexPropertiesXml.select("//flexProperties"));
         	nova.workspace.config.set("editor.default_syntax","MXML");
+        	nova.workspace.config.set("as3.application.isFlex",true);
             isFlex = true;
         } else {
-        	nova.workspace.config.set("editor.default_syntax","Actionscript 3");
+        	nova.workspace.config.set("editor.default_syntax","ActionScript 3");
+        	nova.workspace.config.set("as3.application.isFlex",false);
         }
 
 		// Check ".actionScriptProperties"
-		// @NOTE This needs to affect the TASK but not sure how to do that yet!
-        console.log("Please create a new Task of ActionScript - AIR, and copy these values for now, (I can't figure a way to automate it!!)");
-		var actionscriptPropertiesXml = pjXML.parse(this.getStringOfWorkspaceFile(".actionScriptProperties"));
-
-		//console.log("compilerSourcePath> " + actionscriptPropertiesXml.select("//compilerSourcePath"));
-		//consoleLogObject(actionscriptPropertiesXml.select("//compilerSourcePath"));
+		var actionscriptPropertiesXml = pjXML.parse(this.getStringOfWorkspaceFile(".actionScriptProperties").replace("\\n","").replace("\\r",""));
 
 		var mainApplicationPath = getTagAttribute(actionscriptPropertiesXml,"actionScriptProperties","mainApplicationPath");
+        nova.workspace.config.set("as3.application.mainApp",mainApplicationPath);
 
-        console.log("Main application file: [" + mainApplicationPath + "]");
-
+/*
         var swfName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
-
 		console.log("Name of SWF: [" + swfName  + "]");
+*/
+		nova.workspace.config.set("as3.build.source.main",getTagAttribute(actionscriptPropertiesXml,"compiler","sourceFolderPath"));
 
-        console.log("Destination Dir: [" + getTagAttribute(actionscriptPropertiesXml,"compiler","outputFolderPath") + "]");
-
+		var prefSourceDirs = [];
         actionscriptPropertiesXml.select("//compilerSourcePathEntry").forEach((sourceDir) => {
             console.log(" Add a 'Source Dirs:' entry of [" + getAttribute(sourceDir,"path") + "]");
+			prefSourceDirs.push(getAttribute(sourceDir,"path"));
         });
+		nova.workspace.config.set("as3.build.source.additional",prefSourceDirs);
 
-        actionscriptPropertiesXml.select("//libraryPathEntry").forEach((libDir) => {
-            if(libDir["attributes"]["kind"]==1) {
-                console.log("Add a 'Libs Dirs:` entry of [" + getAttribute(libDir,"path") + "]");
-            }
-        });
+		nova.workspace.config.set("as3.build.output",getTagAttribute(actionscriptPropertiesXml,"compiler","outputFolderPath"));
 
-        console.log("Additional compiler args: [" + getTagAttribute(actionscriptPropertiesXml,"compiler","additionalCompilerArguments") + "]");
+		// Since the XML may have libraryPathEntries in multiple places, we need to take a look at the top children of it.
+		//Since pjxml seems to add "" contents after the fact, let's check each one
+		var prefLibDirs = [];
+		actionscriptPropertiesXml.select("//libraryPath").content.forEach((libDir) => {
+			if(libDir!="") {
+        		if(libDir["attributes"]["kind"]==1) {
+            		console.log("Add a 'Libs Dirs:` entry of [" + getAttribute(libDir,"path") + "]");
+					prefLibDirs.push(getAttribute(libDir,"path"));
+				} else {
+					// @TODO Kind 4 may be excludes, need to look into how to add that to the call to build...
+				}
+			}
+		});
 
-        console.log("-====-====-====-====-=====-====-=====-====--")
-        console.log("-====-====-====-====-=====-====-=====-====--")
+		nova.workspace.config.set("as3.build.library.additional",prefLibDirs);
+
+		nova.workspace.config.set("as3.build.verifyRSL",(getTagAttribute(actionscriptPropertiesXml,"compiler","verifyDigests")=="true" ? true : false));
+
+		nova.workspace.config.set("as3.build.removeRSL",(getTagAttribute(actionscriptPropertiesXml,"compiler","removeUnusedRSL")=="true" ? true : false));
+
+		nova.workspace.config.set("as3.build.localDebugRuntime",(getTagAttribute(actionscriptPropertiesXml,"compiler","useDebugRSLSwfs")=="true" ? true : false));
+
+		nova.workspace.config.set("as3.build.autoOrder",(getTagAttribute(actionscriptPropertiesXml,"compiler","autoRSLOrdering")=="true" ? true : false));
+
+		nova.workspace.config.set("as3.compiler.copy",(getTagAttribute(actionscriptPropertiesXml,"compiler","copyDependentFiles")=="true" ? true : false));
+
+		nova.workspace.config.set("as3.compiler.generateAccessable",(getTagAttribute(actionscriptPropertiesXml,"compiler","generateAccessible")=="true" ? true : false));
+
+		nova.workspace.config.set("as3.compiler.strict",(getTagAttribute(actionscriptPropertiesXml,"compiler","strict")=="true" ? true : false));
+
+		nova.workspace.config.set("as3.compiler.enableWarnings",(getTagAttribute(actionscriptPropertiesXml,"compiler","warn")=="true" ? true : false));
+
+		nova.workspace.config.set("as3.compiler.additional",getTagAttribute(actionscriptPropertiesXml,"compiler","additionalCompilerArguments"));
+	}
+
+	/**
+	 */
+	parseMxmlcOptions(optionsString) {
+  // Split the optionsString into an array of individual options
+	  const optionsArray = optionsString.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+
+	  // Map the options to create an array of process arguments
+	  const processArguments = optionsArray.reduce((args, option) => {
+		// Check if the option starts with '-' or '--'
+		if (option.startsWith('-')) {
+		  // If yes, treat it as a separate argument
+		  args.push(option);
+		} else {
+		  // If not, append it to the last argument (as a value)
+		  const lastArg = args[args.length - 1];
+		  args[args.length - 1] = lastArg ? `${lastArg} ${option}` : option;
+		}
+		return args;
+	  }, []);
+
+	  return processArguments;
 	}
 
     /**
@@ -256,17 +324,19 @@ class AS3MXMLTasksAssistant {
 		// Get the context.config so we can get the Task settings!
 		var whatKind = config.get("actionscript3.request");
 
-		var destDir = config.get("actionscript3.destdir");
+		var destDir = nova.workspace.config.get("as3.build.output");
 		if(destDir==null) {
 			destDir = nova.path.join(nova.workspace.path, "bin-debug");
 		} else {
 			destDir = nova.path.join(nova.workspace.path, destDir);
 		}
 
-		// Should get the app settings
-		var mainApplicationPath = config.get("actionscript3.mainApplicationPath");//"SnakeInTheGrassDesktop.as";
-		var exportName = config.get("actionscript3.exportname");//"SnakeInTheGrassDesktop.swf";
-		var appXMLName = config.get("actionscript3.appxml");//"src/SnakeInTheGrassDesktop-app.xml";
+		var mainSrcDir = nova.path.join(nova.workspace.path, nova.workspace.config.get("as3.build.source.main"));
+		var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+		var isFlex = nova.workspace.config.get("as3.application.isFlex");
+		var exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
+		var appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
+		console.log("\n\nexportName:: " + exportName + "]]]] \n\n");
 
 		// Use this to get setting from the extension or the workspace!
 		var flexSDKBase = getWorkspaceOrGlobalConfig("as3mxml.sdk.framework");
@@ -281,24 +351,28 @@ class AS3MXMLTasksAssistant {
 		console.log("Setting as3mxml.sdk.default: " + getWorkspaceOrGlobalConfig("as3mxml.sdk.default"))
 		console.log("Using flexSDKBase: " + flexSDKBase);
 
-		var copyAssets = config.get("actionscript3.copyassets");
+		var copyAssets = nova.workspace.config.get("as3.compiler.copy");
+		console.log("copyAssets: " + copyAssets);
 
-        var sourceDirs = config.get("actionscript3.sourceDirs");
-        console.log("as3mxml.sourceDirs: ");
-        consoleLogObject(sourceDirs);
+        var sourceDirs = nova.workspace.config.get("as3.build.source.additional");
 
-        var libPath = config.get("actionscript3.libpath");
+        var libPaths = nova.workspace.config.get("as3.build.library.additional");
 
 		if(action==Task.Build && data.type=="actionscript") {
 			if(copyAssets) { // Copy each source dir to the output folder
-                if(sourceDirs!=null) {
-                    sourceDirs.forEach((sourceDir) => {
-                        if(sourceDir.charAt(0)=="~") { // If a user shortcut, resolve
-                            sourceDir = nova.path.expanduser(sourceDir);
-                        } else if(sourceDir.charAt(0)!="/") { // If it's not a slash, it's relative to the workspace path
-                            sourceDir = nova.path.join(nova.workspace.path, sourceDir);
+		console.log("copyAssets Begins!");
+				fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
+				fileNamesToExclude.push(appXMLName);
+				fileExtensionsToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.extensions");
+				var copyDirs = sourceDirs.concat(mainSrcDir);
+                if(copyDirs!=null) {
+                    copyDirs.forEach((copyDir) => {
+                        if(copyDir.charAt(0)=="~") { // If a user shortcut, resolve
+                            copyDir = nova.path.expanduser(copyDir);
+                        } else if(copyDir.charAt(0)!="/") { // If it's not a slash, it's relative to the workspace path
+                            copyDir = nova.path.join(nova.workspace.path, copyDir);
                        }
-				       this.copyAssetsOf(sourceDir, destDir);
+				       this.copyAssetsOf(copyDir, destDir);
                     });
                 }
 			}
@@ -308,13 +382,14 @@ class AS3MXMLTasksAssistant {
 		    var appXML;
             console.log("AppXML location: " + appXMLName);
             try{
-                appXML = nova.fs.open(nova.path.join(nova.workspace.path, appXMLName))
+                appXML = nova.fs.open(nova.path.join(mainSrcDir, appXMLName))
             } catch(error) {
                 console.log("Error opening APP XML! ",error);
                 return null;
             }
 
-			var newAppXML = nova.fs.open(destDir + "/" + exportName + "-app.xml","w");
+			var newAppXML = nova.fs.open(destDir + "/" + appXMLName, "w");
+            console.log("newAppXML location: " + destDir + "/" + appXMLName);
 			if(appXML) {
 				var line;
                 var lineCount = 0;
@@ -324,7 +399,7 @@ class AS3MXMLTasksAssistant {
 						//console.log(" READING LINE: " + line);
                         lineCount++;
 						if(line.indexOf("[This value will be overwritten by Flash Builder in the output app.xml]")!=-1) {
-							line = line.replace("[This value will be overwritten by Flash Builder in the output app.xml]",exportName + ".swf");
+							line = line.replace("[This value will be overwritten by Flash Builder in the output app.xml]",exportName);
 							//console.log(" REPLACING FB LINE: " + line);
 						}
 						newAppXML.write(line);
@@ -337,6 +412,7 @@ class AS3MXMLTasksAssistant {
                     }
 		        }
 			}
+			console.log("DOE!!");
 
             // Let's compile this thing!!
 			var command = flexSDKBase + "/bin/mxmlc";
@@ -349,7 +425,7 @@ class AS3MXMLTasksAssistant {
 			args.push("+configname=air");
 
             // Push where the final SWF will be outputted
-			args.push("--output=" + destDir + "/" + exportName + ".swf");
+			args.push("--output=" + destDir + "/" + exportName);
 
 			// Push args for the source-paths!
             if(sourceDirs) {
@@ -357,27 +433,66 @@ class AS3MXMLTasksAssistant {
                     if(sourceDir.charAt(0)=="~") { // If a user shortcut, resolve
                         sourceDir = nova.path.expanduser(sourceDir);
                     }
+					if(sourceDir.includes("${PROJECT_FRAMEWORKS}")) {
+						console.log("Change project frameworks!!!");
+						sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase);
+					}
                     args.push("--source-path+=" + sourceDir);
                 });
             }
 
 			// This too should be from settings
-            if(libPath) {
-    			args.push("--library-path+=" + libPath);
+            if(libPaths) {
+				libPaths.forEach((libPath) => {
+					/*
+					// @NOTE, not sure this is needed, but it may come in handy
+					if(libPath.includes("${PROJECT_FRAMEWORKS}")) {
+						libPath = libPath.replace("${PROJECT_FRAMEWORKS}",flexSDKBase);
+					}
+					//
+					// Actually, if it's wrong, it's wrong. That shouldn't be skipped
+					try {
+						var checkPath = libPath;
+						if(libPath.charAt(0)=="~") { // If a user shortcut, resolve
+							checkPath = nova.path.expanduser(libPath);
+						} else if(libPath.charAt(0)!="/") { // If it's not a slash, it's relative to the workspace path
+							checkPath = nova.path.join(nova.workspace.path, libPath);
+						}
+
+						if(nova.fs.stat(checkPath).isDirectory()) {
+    						args.push("--library-path+=" + libPath);
+						}
+					} catch(error) {
+						//console.log("Lib folder not found! ERROR: " + error)
+					}
+					*/
+					args.push("--library-path+=" + libPath);
+				});
             }
 
             // Additional compiler arguments
-            if(config.get("actionscript3.additionalCompilerArguments")!=null) {
+            if(nova.workspace.config.get("as3.compiler.additional")!=null) {
 				/** @NOTE Needs work on parsing the additional args.
 					Should really parse to make sure that there are no spaces or dash spaces
 					Or make sure there's a quote around it if there's paths, or maybe just a
 					space after an equal sign.
 				*/
-                var additional = config.get("actionscript3.additionalCompilerArguments");
-				// Need to break this down to individual args
+                var additional = nova.workspace.config.get("as3.compiler.additional");
 				var ops = additional.split(" -");
-                ops.forEach((addition,index) => {
-                    args.push((index>0 ? "'-" : "'") + addition + "'");
+				ops.forEach((addition,index) => {
+					additional = (index>0 ? "-" : "") + addition;
+
+					var eqLoc = addition.indexOf("=");
+					var spaceLoc = addition.indexOf(" ");
+
+					// Should handle something like "-locale en_US"
+					if(eqLoc==-1 && spaceLoc!=-1) {
+						var moreArgs = addition.split(" ");
+						args.push(moreArgs[0]); 
+						args.push(moreArgs[1]); 
+					} else {
+						args.push(additional); 
+					}
                 });
             }
 
@@ -385,8 +500,10 @@ class AS3MXMLTasksAssistant {
             // We need the active application file to trigger this
 			args.push("src/" + mainApplicationPath);
 
-            console.log(" *** COMMAND [[" + command + "]] ARG: \n");
-            consoleLogObject(args);
+    	    if (nova.inDevMode()) {
+            	console.log(" *** COMMAND [[" + command + "]] ARG: \n");
+            	consoleLogObject(args);
+			}
             return new TaskProcessAction(command, { args: args, });
 		} else if(action==Task.Run && data.type=="actionscript") {
             // Should check if the files are there, if not build first!
@@ -415,14 +532,28 @@ class AS3MXMLTasksAssistant {
             } else {
             }
 
+
+			// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
             // To launch ADL, we need to point it to the "-app.xml" file
 		    var command = flexSDKBase + "/bin/adl";
-		    var args = [
-			    destDir + "/" + exportName + "-app.xml",
-		    ]
+		    var args = [];
+
+			var profile = config.get("as3.task.profile");
+			console.log("CONFIG: " + profile);
+			if(profile!="default") {
+				args.push("-profile");
+				args.push(profile);
+			}
+
+			// The app.xml file
+			args.push(destDir + "/" + appXMLName);
+
+			// Root directory goes next
+			// "--" then args go now...
 
     	    if (nova.inDevMode()) {
-			    console.log(" *** Attempting to Run ADL with [" + command + " " + args[0] + "] ***");
+			    console.log(" *** Attempting to Run ADL with [[" + command + "]] ARG: \n");
+				consoleLogObject(args);
 		    }
 
             return new TaskProcessAction(command, {
