@@ -1,9 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
 <syntax name="MXML">
     <meta>
         <name>MXML</name>
         <type>structured</type>
         <preferred-file-extension>mxml</preferred-file-extension>
-        <parent>xml</parent>
+        <parent>ActionScript 3</parent>
     </meta>
     <detectors>
         <extension priority="1.0">mxml</extension>
@@ -11,6 +13,9 @@
 
     <scopes>
         <scope name="meta.script.mxml">
+					<symbol type="block">
+						<context behavior="subtree" />
+					</symbol>
             <starts-with>
                 <expression>(?=&lt;(?:fx|mx):Script(?:s+(?:w+:)?w+=([&quot;&apos;]).+1)*s*&gt;)</expression>
             </starts-with>
@@ -32,7 +37,7 @@
                         <expression>(?&lt;=]]&gt;)</expression>
                     </ends-with>
                     <subscopes>
-                        <include syntax="self" collection="source.actionscript.3" />
+                        <include syntax="self" collection="source.actionscript3" />
                     </subscopes>
                 </scope>
             </subscopes>
@@ -133,4 +138,255 @@
             </scope>
         </collection>
     </collections>
+</syntax>
+-->
+<syntax name="MXML">
+<!-- Taken from Panic Nova's XML extension -->
+	<meta>
+		<name>MXML</name>
+		<type>structured</type>
+		<preferred-file-extension>mxml</preferred-file-extension>
+		<parent>xml</parent>
+	</meta>
+
+	<detectors>
+		<extension priority="1.0">mxml</extension>
+		<match-content lines="2" priority="0.3">&lt;\?xml</match-content>
+	</detectors>
+
+	<indentation>
+		<increase>
+			<expression>^\s*&lt;(([^!/?]|%)(?!.+?([/%]&gt;|&lt;/.+?&gt;))|[%!]--\s*$)</expression>
+		</increase>
+		<decrease>
+			<expression>^\s*(&lt;/[^&gt;]+&gt;|--&gt;|--%&gt;)</expression>
+		</decrease>
+	</indentation>
+
+	<comments>
+		<multiline>
+			<starts-with>
+				<expression>&lt;!--</expression>
+			</starts-with>
+			<ends-with>
+				<expression>--&gt;</expression>
+			</ends-with>
+		</multiline>
+	</comments>
+
+	<surrounding-pairs>
+		<pair open="{" close="}" />
+		<pair open="[" close="]" />
+		<pair open="(" close=")" />
+		<pair open="&apos;" close="&apos;" />
+		<pair open="&quot;" close="&quot;" />
+		<pair open="`" close="`" />
+		<pair open="“" close="”" />
+		<pair open="‘" close="’" />
+	</surrounding-pairs>
+
+	<scopes>
+		<!-- Meta -->
+		<scope name="mxml.meta.processing">
+			<starts-with>
+				<expression>&lt;\?xml</expression>
+			</starts-with>
+			<ends-with>
+				<expression>\?&gt;</expression>
+			</ends-with>
+		</scope>
+		<scope name="mxml.meta.declaration">
+			<starts-with>
+				<expression>&lt;!(?i:DOCTYPE)</expression>
+			</starts-with>
+			<ends-with>
+				<expression>&gt;</expression>
+			</ends-with>
+		</scope>
+		<scope name="mxml.meta.cdata">
+			<starts-with>
+				<expression>&lt;!\[(?i:CDATA)\[</expression>
+			</starts-with>
+			<ends-with>
+				<expression>\]\]&gt;</expression>
+			</ends-with>
+			<subsyntax name="ActionScript 3" export-symbols="true"/>
+			<subscopes>
+				<symbol>
+					<context behavior="subtree" type="tag-script" />
+				</symbol>
+			</subscopes>
+		</scope>
+
+		<!-- Take from HTML Extension by Panic! -->
+		<scope name="mxml.style" spell-check="false" lookup="documentation">
+			<starts-with>
+				<expression>(?=&lt;(?i:style)\b)</expression>
+			</starts-with>
+			<ends-with>
+				<expression>(?=&lt;/(?i:style)\b)</expression>
+			</ends-with>
+			<subscopes anchored="true" skip-whitespace="false">
+				<scope name="mxml.tag.style.open">
+					<symbol type="tag-style">
+						<context behavior="start" group-by-name="true">
+						<!-- Need to change how it is named.. we need to get fx|mx in the mix! -->
+							<auto-close string="&lt;/" completion="${name}&gt;" />
+						</context>
+					</symbol>
+					<starts-with>
+						<expression>&lt;((?i:style))</expression>
+						<capture number="1" name="mxml.tag.name" />
+					</starts-with>
+					<ends-with>
+						<expression>/?&gt;</expression>
+					</ends-with>
+					<subscopes>
+						<include syntax="self" collection="attributes" />
+					</subscopes>
+				</scope>
+				<scope name="mxml.style.content" optional="true">
+					<starts-with>
+						<expression>(?&lt;=&gt;)</expression>
+					</starts-with>
+					<ends-with>
+						<expression>(?=&lt;/(?i:style)\b)</expression>
+					</ends-with>
+					<subsyntax name="css">
+						<cut-off>
+							<expression>(?=&lt;/(?i:style|head|body|div)\b)</expression>
+						</cut-off>
+					</subsyntax>
+				</scope>
+			</subscopes>
+		</scope>
+
+
+
+		<!-- Comments -->
+		<scope name="mxml.comment.block" spell-check="true">
+			<starts-with>
+				<expression>&lt;!--</expression>
+			</starts-with>
+			<ends-with>
+				<expression>--&gt;</expression>
+			</ends-with>
+		</scope>
+
+		<!-- Tags -->
+		<include syntax="self" collection="tags" />
+
+		<!-- Values -->
+		<scope name="mxml.value.entity.numeric">
+			<expression>&amp;\#[0-9]+;</expression>
+		</scope>
+		<scope name="mxml.value.entity.named">
+			<strings prefix="&amp;" suffix=";" word-boundary="false">
+				<string>amp</string>
+				<string>lt</string>
+				<string>gt</string>
+				<string>apos</string>
+				<string>quot</string>
+			</strings>
+		</scope>
+	</scopes>
+
+	<collections>
+		<!-- Tags -->
+		<collection name="tags">
+			<scope name="mxml.tag.close">
+				<symbol type="tag">
+					<context behavior="end" group-by-name="true" />
+				</symbol>
+				<expression>&lt;/([a-zA-Z_][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_:.-]*)&gt;</expression>
+				<capture number="1" name="mxml.tag.name" />
+			</scope>
+			<scope name="mxml.tag.open">
+				<symbol type="tag">
+					<!-- Do not match self-closing tags -->
+					<filter match-end="(?&lt;!/&gt;)" />
+					<context behavior="start" group-by-name="true">
+						<auto-close string="&lt;/" completion="${name}&gt;" />
+					</context>
+				</symbol>
+				<starts-with>
+					<expression>&lt;([a-zA-Z_][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_:.-]*)</expression>
+					<capture number="1" name="mxml.tag.name" />
+				</starts-with>
+				<ends-with>
+					<expression>/?&gt;</expression>
+				</ends-with>
+				<subscopes>
+					<include syntax="self" collection="mxml.tag.attributes" />
+				</subscopes>
+			</scope>
+		</collection>
+
+		<!-- Tag Attributes -->
+		<collection name="mxml.tag.attributes">
+			<scope name="mxml.tag.attribute.double-quoted">
+				<starts-with>
+					<expression>([a-zA-Z_][a-zA-Z0-9-_]*)\s*(=)\s*(&quot;)</expression>
+					<capture number="1" name="mxml.tag.attribute.name" />
+					<capture number="2" name="mxml.tag.attribute.operator" />
+					<capture number="3" name="mxml.tag.attribute.value.delimiter.left" />
+				</starts-with>
+				<ends-with>
+					<expression>(&quot;)</expression>
+					<capture number="1" name="mxml.tag.attribute.value.delimiter.right" />
+				</ends-with>
+				<subscopes>
+					<include syntax="self" collection="attribute-values-double-quoted" />
+				</subscopes>
+			</scope>
+			<scope name="mxml.tag.attribute.single-quoted">
+				<starts-with>
+					<expression>([a-zA-Z_][a-zA-Z0-9-_]*)\s*(=)\s*(&apos;)</expression>
+					<capture number="1" name="mxml.tag.attribute.name" />
+					<capture number="2" name="mxml.tag.attribute.operator" />
+					<capture number="3" name="mxml.tag.attribute.value.delimiter.left" />
+				</starts-with>
+				<ends-with>
+					<expression>(&apos;)</expression>
+					<capture number="1" name="mxml.tag.attribute.value.delimiter.right" />
+				</ends-with>
+				<subscopes>
+					<include syntax="self" collection="attribute-values-single-quoted" />
+				</subscopes>
+			</scope>
+		</collection>
+
+		<!-- Attribute values -->
+		<collection name="attribute-values-double-quoted">
+			<scope name="mxml.tag.attribute.value.double-quoted">
+				<starts-with>
+					<expression>(?&lt;=&quot;)</expression>
+				</starts-with>
+				<ends-with>
+					<expression>(?=&quot;)</expression>
+				</ends-with>
+				<subscopes>
+					<scope name="mxml.tag.attribute.value.escape">
+						<expression>\\\\|\\&quot;</expression>
+					</scope>
+				</subscopes>
+			</scope>
+		</collection>
+
+		<collection name="attribute-values-single-quoted">
+			<scope name="mxml.tag.attribute.value.double-quoted">
+				<starts-with>
+					<expression>(?&lt;=&apos;)</expression>
+				</starts-with>
+				<ends-with>
+					<expression>(?=&apos;)</expression>
+				</ends-with>
+				<subscopes>
+					<scope name="mxml.tag.attribute.value.escape">
+						<expression>\\\\|\\&apos;</expression>
+					</scope>
+				</subscopes>
+			</scope>
+		</collection>
+	</collections>
 </syntax>
