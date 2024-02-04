@@ -261,8 +261,6 @@
 			</subscopes>
 		</scope>
 
-
-
 		<!-- Comments -->
 		<scope name="mxml.comment.block" spell-check="true">
 			<starts-with>

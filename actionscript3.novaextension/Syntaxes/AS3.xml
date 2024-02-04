@@ -54,6 +54,7 @@
 
     <scopes>
         <include syntax="self" collection="comments" />
+        <include syntax="self" collection="packages" />
         <include syntax="self" collection="imports" />
         <include syntax="self" collection="definitions" />
         <include syntax="self" collection="variables" />
@@ -146,6 +147,33 @@
                 <subscopes>
                     <include syntax="self" />
                 </subscopes>
+            </scope>
+        </collection>
+
+		<!-- Packages -->
+        <collection name="packages">
+            <scope name="actionscript3.packages">
+                <starts-with>
+                    <expression>\b(package)\b</expression>
+                    <capture number="1" name="actionscript3.keyword.statement.package" />
+                </starts-with>
+                <ends-with />
+                <subscopes anchored="true">
+                    <include syntax="self" collection="comments" optional="true" repeat="true" />
+                    <include syntax="self" collection="package-references" optional="true"/>
+					<!--
+					-->
+                    <include syntax="self" collection="comments" optional="true" repeat="true" />
+                </subscopes>
+            </scope>
+        </collection>
+
+        <!-- !Package Indentifier -->
+        <collection name="package-references">
+            <include syntax="self" collection="comments" optional="true" repeat="true" />
+            <scope name="actionscript3.identifier.package" optional="true">
+                <symbol type="package"/>
+                <expression>(?:\b[a-zA-Z_]|\$)[A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_.]*</expression>
             </scope>
         </collection>
 
@@ -271,9 +299,9 @@
                     <context behavior="subtree" foldable="false" />
                 </symbol>
                 <starts-with>
-                    <expression>\b(class)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
-                    <capture number="1" name="actionscript3.keyword.construct.class" />
-                    <capture number="2" name="actionscript3.identifier.type.class.name" />
+                    <expression>\b((internal|public|private|protected|dynamic|final|abstract)\s+)*(class)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
+                    <capture number="3" name="actionscript3.keyword.construct.class" />
+                    <capture number="4" name="actionscript3.identifier.type.class.name" />
                 </starts-with>
                 <ends-with />
                 <subscopes anchored="true">
@@ -283,6 +311,19 @@
                         <capture number="1" name="actionscript3.keyword.modifier.extends" />
                         <capture number="2" name="actionscript3.identifier.type.class.superclass" />
                     </scope>
+                    <scope name="actionscript3.class.implements" optional="true">
+                        <expression>
+							\b(implements)
+							\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_\.]*)
+						</expression>
+                        <capture number="1" name="actionscript3.keyword.modifier.implements" />
+                        <capture number="2" name="actionscript3.identifier.type.class.subclass" />
+                    </scope>
+					<scope name="actionscript3.class.impements.additional" optional="true" repeats="true">
+                    	<expression>(,)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_\.]*)*</expression>
+                    	<capture number="1" name="actionscript3.comma" />
+                    	<capture number="2" name="actionscript3.identifier.type.class.subclass" />
+					</scope>
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
                     <scope name="actionscript3.block">
                         <symbol type="block">
@@ -1070,12 +1111,16 @@
                 <strings>
                     <string>class</string>
                     <string>const</string>
+					<!--
                     <string>constructor</string>
                     <string>enum</string>
+					-->
                     <string>function</string>
                     <string>interface</string>
+					<!--
                     <string>label</string>
                     <string>let</string>
+				-->
                     <string>new</string>
                     <string>package</string>
                     <string>var</string>
@@ -1085,14 +1130,20 @@
             <scope name="actionscript3.keyword.modifier">
                 <strings>
                     <string>as</string>
+					<!--
                     <string>async</string>
                     <string>export</string>
+					-->
                     <string>extends</string>
+					<!--
                     <string>from</string>
+					-->
                     <string>implements</string>
                     <string>in</string>
                     <string>instanceof</string>
+					<!--
                     <string>of</string>
+					-->
                     <string>private</string>
                     <string>protected</string>
                     <string>public</string>
