@@ -300,6 +300,9 @@
                 </symbol>
                 <starts-with>
                     <expression>\b((internal|public|private|protected|dynamic|final|abstract)\s+)*(class)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
+                    <capture number="1" name="actionscript3.keyword.construct.class" />
+                    <capture number="2" name="actionscript3.keyword.construct.class" />
+					<!-- Not sure the above two captures are needed -->
                     <capture number="3" name="actionscript3.keyword.construct.class" />
                     <capture number="4" name="actionscript3.identifier.type.class.name" />
                 </starts-with>
@@ -884,20 +887,24 @@
         <!-- !Properties -->
         <collection name="properties">
             <scope name="actionscript3.class-field-private">
-                <symbol type="property" scope="private" />
+                <symbol type="property" scope="private"/>
                 <starts-with>
-                    <expression>(?:\b(static)\s+)?((\#)[a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(?=\s*(?:\=|$))</expression>
+                    <expression>((static|private|protected)\s+)*var\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.identifier.name" />
-                    <capture number="3" name="actionscript3.operator" />
+                    <capture number="2" name="actionscript3.keyword.modifier" />
+                    <capture number="3" name="actionscript3.identifier.name" />
+                    <capture number="4" name="actionscript3.identifier.operator" />
+                    <capture number="5" name="actionscript3.identifier.type" />
                 </starts-with>
                 <ends-with>
                     <expression>(?=;|$)</expression>
                 </ends-with>
                 <subscopes>
+				<!--
                     <cut-off>
                         <expression>(?=\b(?:static|async|function|class|if|else|while|for)\b)</expression>
                     </cut-off>
+				-->
                     <include syntax="self" collection="comments" />
                     <include syntax="self" collection="keywords" />
                     <include syntax="self" collection="values" />
@@ -910,19 +917,84 @@
             </scope>
 
             <scope name="actionscript3.class-field">
-                <symbol type="property" />
+                <symbol type="property" scope="global"/>
                 <starts-with>
-                    <expression>(?:\b(static)\s+)?([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(?=\s*(?:\=|$))</expression>
+                    <expression>((static|public)\s+)*var\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.identifier.name" />
+                    <capture number="2" name="actionscript3.keyword.modifier" />
+                    <capture number="3" name="actionscript3.identifier.name" />
+                    <capture number="4" name="actionscript3.identifier.operator" />
+                    <capture number="5" name="actionscript3.identifier.type" />
                 </starts-with>
                 <ends-with>
                     <expression>(?=;|$)</expression>
                 </ends-with>
                 <subscopes>
+				<!--
                     <cut-off>
                         <expression>(?=\b(?:static|async|function|class|if|else|while|for)\b)</expression>
                     </cut-off>
+				-->
+                    <include syntax="self" collection="comments" />
+                    <include syntax="self" collection="keywords" />
+                    <include syntax="self" collection="values" />
+                    <include syntax="self" collection="identifiers" />
+                    <include syntax="self" collection="blocks" />
+                    <scope name="actionscript3.operator.equals">
+                        <expression>=</expression>
+                    </scope>
+                </subscopes>
+            </scope>
+
+            <scope name="actionscript3.class-field-constant">
+                <symbol type="constant" scope="global" />
+                <starts-with>
+                    <expression>((static|public)\s+)*const\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
+                    <capture number="1" name="actionscript3.keyword.modifier" />
+                    <capture number="2" name="actionscript3.keyword.modifier" />
+                    <capture number="3" name="actionscript3.identifier.name" />
+                    <capture number="4" name="actionscript3.identifier.operator" />
+                    <capture number="5" name="actionscript3.identifier.type" />
+                </starts-with>
+                <ends-with>
+                    <expression>(?=;|$)</expression>
+                </ends-with>
+                <subscopes>
+				<!--
+                    <cut-off>
+                        <expression>(?=\b(?:static|async|function|class|if|else|while|for)\b)</expression>
+                    </cut-off>
+				-->
+                    <include syntax="self" collection="comments" />
+                    <include syntax="self" collection="keywords" />
+                    <include syntax="self" collection="values" />
+                    <include syntax="self" collection="identifiers" />
+                    <include syntax="self" collection="blocks" />
+                    <scope name="actionscript3.operator.equals">
+                        <expression>=</expression>
+                    </scope>
+                </subscopes>
+            </scope>
+
+            <scope name="actionscript3.class-field-constant">
+                <symbol type="constant" scope="private" />
+                <starts-with>
+                    <expression>((static|private|protected)\s+)*const\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
+                    <capture number="1" name="actionscript3.keyword.modifier" />
+                    <capture number="2" name="actionscript3.keyword.modifier" />
+                    <capture number="3" name="actionscript3.identifier.name" />
+                    <capture number="4" name="actionscript3.identifier.operator" />
+                    <capture number="5" name="actionscript3.identifier.type" />
+                </starts-with>
+                <ends-with>
+                    <expression>(?=;|$)</expression>
+                </ends-with>
+                <subscopes>
+				<!--
+                    <cut-off>
+                        <expression>(?=\b(?:static|async|function|class|if|else|while|for)\b)</expression>
+                    </cut-off>
+				-->
                     <include syntax="self" collection="comments" />
                     <include syntax="self" collection="keywords" />
                     <include syntax="self" collection="values" />
