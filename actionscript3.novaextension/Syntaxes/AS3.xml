@@ -299,7 +299,7 @@
                     <context behavior="subtree" foldable="false" />
                 </symbol>
                 <starts-with>
-                    <expression>\b((internal|public|private|protected|dynamic|final|abstract)\s+)*(class)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
+                    <expression>\b((internal\s+|public\s+|private\s+|protected\s+|dynamic\s+|final\s+|abstract\s+)*)(class)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
                     <capture number="1" name="actionscript3.keyword.construct.class" />
                     <capture number="2" name="actionscript3.keyword.construct.class" />
 					<!-- Not sure the above two captures are needed -->
@@ -708,6 +708,7 @@
 
         <!-- !Methods -->
         <collection name="methods">
+		<!-- Not AS3!
             <scope name="actionscript3.method.constructor">
                 <symbol type="constructor">
                     <context behavior="subtree" foldable="false" />
@@ -724,6 +725,7 @@
                     <include syntax="self" collection="function-blocks" />
                 </subscopes>
             </scope>
+			-->
 
             <scope name="actionscript3.method.getter">
                 <symbol type="getter">
@@ -887,14 +889,19 @@
         <!-- !Properties -->
         <collection name="properties">
             <scope name="actionscript3.class-field-private">
-                <symbol type="property" scope="private"/>
+                <symbol type="property" scope="private">
+					<display-name>
+						<component variable="name" />
+						<component selector="actionscript3.identifier.type" prepend=":"/>
+					</display-name>
+				</symbol>
                 <starts-with>
-                    <expression>((static|private|protected)\s+)*var\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
+                    <expression>((static\s+|private\s+|protected\s+)*)(var)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.keyword.modifier" />
-                    <capture number="3" name="actionscript3.identifier.name" />
-                    <capture number="4" name="actionscript3.identifier.operator" />
-                    <capture number="5" name="actionscript3.identifier.type" />
+                    <capture number="3" name="actionscript3.keyword.keyword" />
+                    <capture number="4" name="actionscript3.identifier.name" />
+                    <capture number="5" name="actionscript3.identifier.operator" />
+                    <capture number="6" name="actionscript3.identifier.type" />
                 </starts-with>
                 <ends-with>
                     <expression>(?=;|$)</expression>
@@ -914,17 +921,24 @@
                         <expression>=</expression>
                     </scope>
                 </subscopes>
+                <include syntax="self" collection="keywords" />
             </scope>
 
             <scope name="actionscript3.class-field">
-                <symbol type="property" scope="global"/>
+                <symbol type="property" scope="global">
+					<display-name>
+						<component variable="name" />
+						<component selector="actionscript3.identifier.type" prepend=":"/>
+					</display-name>
+				</symbol>
                 <starts-with>
-                    <expression>((static|public)\s+)*var\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
+                    <expression>((static\s+|public\s+)*)(var)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.keyword.modifier" />
-                    <capture number="3" name="actionscript3.identifier.name" />
-                    <capture number="4" name="actionscript3.identifier.operator" />
-                    <capture number="5" name="actionscript3.identifier.type" />
+                    <capture number="2" name="actionscript3.keyword.modifiers" />
+                    <capture number="3" name="actionscript3.keyword.keyword" />
+                    <capture number="4" name="actionscript3.identifier.name" />
+                    <capture number="5" name="actionscript3.identifier.operator" />
+                    <capture number="6" name="actionscript3.identifier.type" />
                 </starts-with>
                 <ends-with>
                     <expression>(?=;|$)</expression>
@@ -947,14 +961,19 @@
             </scope>
 
             <scope name="actionscript3.class-field-constant">
-                <symbol type="constant" scope="global" />
+                <symbol type="constant" scope="global">
+					<display-name>
+						<component variable="name" />
+						<component selector="actionscript3.identifier.type" prepend=":"/>
+					</display-name>
+				</symbol>
                 <starts-with>
-                    <expression>((static|public)\s+)*const\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
+                    <expression>((static\s+|public\s+)*)(const)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.keyword.modifier" />
-                    <capture number="3" name="actionscript3.identifier.name" />
-                    <capture number="4" name="actionscript3.identifier.operator" />
-                    <capture number="5" name="actionscript3.identifier.type" />
+                    <capture number="3" name="actionscript3.keyword.keyword" />
+                    <capture number="4" name="actionscript3.identifier.name" />
+                    <capture number="5" name="actionscript3.identifier.operator" />
+                    <capture number="6" name="actionscript3.identifier.type" />
                 </starts-with>
                 <ends-with>
                     <expression>(?=;|$)</expression>
@@ -976,15 +995,20 @@
                 </subscopes>
             </scope>
 
-            <scope name="actionscript3.class-field-constant">
-                <symbol type="constant" scope="private" />
+            <scope name="actionscript3.class-field-constant-private">
+                <symbol type="constant" scope="private">
+					<display-name>
+						<component variable="name" />
+						<component selector="actionscript3.identifier.type" prepend=":"/>
+					</display-name>
+				</symbol>
                 <starts-with>
-                    <expression>((static|private|protected)\s+)*const\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
+                    <expression>((static\s+|private\s+|protected\s+)*)(const)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))?</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.keyword.modifier" />
-                    <capture number="3" name="actionscript3.identifier.name" />
-                    <capture number="4" name="actionscript3.identifier.operator" />
-                    <capture number="5" name="actionscript3.identifier.type" />
+                    <capture number="3" name="actionscript3.keyword.keyword" />
+                    <capture number="4" name="actionscript3.identifier.name" />
+                    <capture number="5" name="actionscript3.identifier.operator" />
+                    <capture number="6" name="actionscript3.identifier.type" />
                 </starts-with>
                 <ends-with>
                     <expression>(?=;|$)</expression>
