@@ -84,8 +84,10 @@
 					<include syntax="self" collection="import" />
 					<include syntax="self" collection="metadata" />
 					<include syntax="self" collection="class" />
+				<!--
 					<include syntax="self" collection="namespace_declaration" />
 					<include syntax="self" collection="use_namespace" />
+				-->
 					<include syntax="self" collection="class_declaration" />
 					<include syntax="self" collection="method" />
 					<include syntax="self" collection="comments" />
@@ -161,8 +163,6 @@
                 <subscopes anchored="true">
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
                     <include syntax="self" collection="package-references" optional="true"/>
-					<!--
-					-->
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
                 </subscopes>
             </scope>
@@ -213,7 +213,7 @@
                     <include syntax="self" collection="comments" />
                     <include syntax="self" collection="import-as-expression" />
                     <scope name="actionscript3.identifier">
-                        <symbol type="variable" scope="external" />
+                        <symbol type="variable" scope="external"/>
                         <expression>(?:\b[a-zA-Z_]|\$)[A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_.]*</expression>
                     </scope>
                     <scope name="actionscript3.comma">
@@ -300,8 +300,8 @@
                 </symbol>
                 <starts-with>
                     <expression>\b((internal\s+|public\s+|private\s+|protected\s+|dynamic\s+|final\s+|abstract\s+)*)(class)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
-                    <capture number="1" name="actionscript3.keyword.construct.class" />
-                    <capture number="2" name="actionscript3.keyword.construct.class" />
+                    <capture number="1" name="actionscript3.keyword.modifier" />
+                    <capture number="2" name="actionscript3.keyword.modifier" />
 					<!-- Not sure the above two captures are needed -->
                     <capture number="3" name="actionscript3.keyword.construct.class" />
                     <capture number="4" name="actionscript3.identifier.type.class.name" />
@@ -344,6 +344,23 @@
                             <include syntax="self" collection="comments" />
                             <include syntax="self" collection="properties" />
                             <include syntax="self" collection="methods" />
+                            <include syntax="self" collection="variable" />
+						<!--
+                            <include syntax="self" collection="functions" />
+						-->
+                            <include syntax="self" collection="keywords" />
+                            <include syntax="self" collection="expression" />
+                            <include syntax="self" collection="key-expressions" />
+						<!--
+                            <include syntax="self" collection="values" />
+						-->
+                            <include syntax="self" collection="strings" />
+						<!--
+                            <include syntax="self" collection="string-literal-inline-expressions" />
+                            <include syntax="self" collection="identifiers" />
+						-->
+                            <include syntax="self" collection="syntax" />
+							<!--
                             <scope name="actionscript3.keyword.modifier">
                                 <strings>
                                     <string>static</string>
@@ -352,6 +369,7 @@
                                     <string>set</string>
                                 </strings>
                             </scope>
+							-->
                         </subscopes>
                     </scope>
                 </subscopes>
@@ -361,6 +379,7 @@
         <!-- !Variables -->
         <collection name="variables">
             <!-- !Named Function Variables -->
+<!--
             <scope name="actionscript3.definition.function.variable">
                 <symbol type="function">
                     <context behavior="subtree" foldable="false" />
@@ -402,8 +421,9 @@
                     <include syntax="self" collection="function-blocks" />
                 </subscopes>
             </scope>
-
+-->
             <!-- !Arrow Function Variables -->
+<!--
             <scope name="actionscript3.definition.function.arrow.named.local">
                 <symbol type="function">
                     <context behavior="subtree" foldable="false" />
@@ -490,8 +510,9 @@
                 <capture number="3" name="actionscript3.identifier.property.name" />
                 <capture number="4" name="actionscript3.operator" />
             </scope>
-
+-->
             <!-- !Destructuring Assignment -->
+		<!--
             <scope name="actionscript3.destructure-assignment-array">
                 <starts-with>
                     <expression>\b(let|var|const)\s+(\[)(?=[a-zA-ZA-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_,\s\.]+\]\s*\=)</expression>
@@ -606,33 +627,42 @@
                     </scope>
                 </subscopes>
             </scope>
-
+		-->
             <scope name="actionscript3.definition.constant.local">
-                <symbol type="constant" scope="local" />
-                <expression>\b(const)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(\=)</expression>
+				<!--<symbol type="constant" scope="local" />-->
+                <symbol type="constant"/>
+                <expression>\b(const)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(\=)</expression>
                 <capture number="1" name="actionscript3.keyword.construct" />
-                <capture number="2" name="actionscript3.identifier.name" />
+                <capture number="2" name="actionscript3.constant.name" />
                 <capture number="3" name="actionscript3.operator" />
+                <capture number="4" name="actionscript3.identifier.type" />
+                <capture number="5" name="actionscript3.operator" />
             </scope>
 
             <scope name="actionscript3.definition.variable.local">
-                <symbol type="variable" scope="local" />
-                <expression>\b(let|var)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(\=)</expression>
+				<!--<symbol type="variable" scope="local" />-->
+                <symbol type="variable"/>
+                <expression>\b(var)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(\=)</expression>
                 <capture number="1" name="actionscript3.keyword.construct" />
-                <capture number="2" name="actionscript3.identifier.name" />
+                <capture number="2" name="actionscript3.variable.name" />
                 <capture number="3" name="actionscript3.operator" />
+                <capture number="4" name="actionscript3.identifier.type" />
+                <capture number="5" name="actionscript3.operator" />
             </scope>
 
+<!--
             <scope name="actionscript3.definition.variable.global">
                 <symbol type="variable" scope="global" />
                 <expression>(?&lt;!\.)((?:\b[a-zA-Z_]|\$)[A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(\=(?!\=|&gt;))</expression>
                 <capture number="1" name="actionscript3.identifier.name" />
                 <capture number="2" name="actionscript3.operator" />
             </scope>
+-->
         </collection>
 
         <!-- !Functions -->
         <collection name="functions">
+		<!--
             <scope name="actionscript3.definition.function.named">
                 <symbol type="function">
                     <context behavior="subtree" foldable="false" />
@@ -642,7 +672,7 @@
                     <capture number="1" name="actionscript3.keyword.modifier" />
                     <capture number="2" name="actionscript3.keyword.construct" />
                     <capture number="3" name="actionscript3.operator" />
-                    <capture number="4" name="actionscript3.identifier.function.name" />
+                    <capture number="4" name="actionscript3.identifier.function.nameBBBB" />
                 </starts-with>
                 <ends-with />
                 <subscopes anchored="true">
@@ -704,195 +734,211 @@
                     <include syntax="self" collection="arrow-function-body-expressions" />
                 </subscopes>
             </scope>
+		-->
         </collection>
 
         <!-- !Methods -->
         <collection name="methods">
-		<!-- Not AS3!
-            <scope name="actionscript3.method.constructor">
-                <symbol type="constructor">
-                    <context behavior="subtree" foldable="false" />
-                </symbol>
-                <starts-with>
-                    <expression>\b(constructor)\b</expression>
-                    <capture number="1" name="actionscript3.keyword.construct.name.constructor" />
-                </starts-with>
-                <ends-with />
-                <subscopes anchored="true">
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <include syntax="self" collection="arguments" />
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <include syntax="self" collection="function-blocks" />
-                </subscopes>
-            </scope>
-			-->
 
             <scope name="actionscript3.method.getter">
                 <symbol type="getter">
-                    <context behavior="subtree" foldable="false" />
+                    <context behavior="subtree" foldable="false"/>
+					<display-name>
+						<component variable="name" prepend="get "/>
+						<component selector="actionscript3.identifier.type" prepend="() : "/>
+					</display-name>
                 </symbol>
                 <starts-with>
-                    <expression>\b(get)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
+                    <expression>\b((public\s+|protected\s+|private\s+|override\s+|static\s+)+)(function)\s+(get)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.identifier.method.name" />
+                    <capture number="3" name="actionscript3.keyword" />
+                    <capture number="4" name="actionscript3.keyword" />
+                    <capture number="5" name="actionscript3.method.name" />
                 </starts-with>
                 <ends-with />
                 <subscopes anchored="true">
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
                     <include syntax="self" collection="arguments" />
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <include syntax="self" collection="function-blocks" />
+                    <scope name="actionscript3.return-type">
+						<starts-with>
+							<expression>(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
+							<capture number="1" name="acitonscript3.keyword.operator"/>
+							<capture number="2" name="actionscript3.identifier.type"/>
+						</starts-with>
+						<ends-with>
+							<expression>\s?</expression>
+						</ends-with>
+					</scope>
+                    <include syntax="self" collection="comments" optional="true" repeat="true" />
+					<scope name="actionscript3.block">
+						<symbol type="block">
+							<context behavior="subtree" fold-type="getter" />
+						</symbol>
+						<starts-with>
+							<expression>\{</expression>
+							<capture number="0" name="actionscript3.bracket" />
+						</starts-with>
+						<ends-with>
+							<expression>\}</expression>
+							<capture number="0" name="actionscript3.bracket" />
+						</ends-with>
+						<subscopes>
+							<include syntax="self" />
+						</subscopes>
+					</scope>
                 </subscopes>
             </scope>
 
             <scope name="actionscript3.method.setter">
                 <symbol type="setter">
-                    <context behavior="subtree" foldable="false" />
+                    <context behavior="subtree" foldable="false"/>
+					<display-name>
+						<component variable="name" prepend="set "/>
+						<component selector="actionscript3.identifier.type" prepend="() : "/>
+					</display-name>
                 </symbol>
                 <starts-with>
-                    <expression>\b(set)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
+                    <expression>\b((public\s+|protected\s+|private\s+|override\s+|static\s+)+)(function)\s+(set)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.identifier.method.name" />
+                    <capture number="3" name="actionscript3.keyword" />
+                    <capture number="4" name="actionscript3.keyword" />
+                    <capture number="5" name="actionscript3.method.name" />
                 </starts-with>
                 <ends-with />
                 <subscopes anchored="true">
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
                     <include syntax="self" collection="arguments" />
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <include syntax="self" collection="function-blocks" />
+					<scope name="actionscript3.return-type">
+						<starts-with>
+							<expression>(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
+							<capture number="1" name="acitonscript3.keyword.operator"/>
+							<capture number="2" name="actionscript3.keyword.type"/>
+						</starts-with>
+						<ends-with>
+							<expression>\s?</expression>
+						</ends-with>
+					</scope>
+                    <include syntax="self" collection="comments" optional="true" repeat="true" />
+					<scope name="actionscript3.block">
+						<symbol type="block">
+							<context behavior="subtree" fold-type="getter" />
+						</symbol>
+						<starts-with>
+							<expression>\{</expression>
+							<capture number="0" name="actionscript3.bracket" />
+						</starts-with>
+						<ends-with>
+							<expression>\}</expression>
+							<capture number="0" name="actionscript3.bracket" />
+						</ends-with>
+						<subscopes>
+							<include syntax="self" />
+						</subscopes>
+					</scope>
                 </subscopes>
             </scope>
 
+			<!-- Should look for static separately, before method for method look at PHP, does abstaract static, then abstract, then static, then method! -->
+			<!--
+            <scope name="actionscript3.method.constructor">
+                <symbol type="constructor">
+                    <context behavior="subtree" foldable="false"/>
+					<display-name>
+						<component variable="name" prepend="CON:: "/>
+						<component selector="actionscript3.keyword.return-type" prepend="() : "/>
+					</display-name>
+                </symbol>
+                <starts-with>
+                    <expression>\b(public\s+)(function)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
+                    <capture number="1" name="actionscript3.keyword.modifier" />
+                    <capture number="2" name="actionscript3.keyword" />
+                    <capture number="3" name="actionscript3.method.constructor.name" />
+                </starts-with>
+                <ends-with />
+                <subscopes anchored="true">
+                    <include syntax="self" collection="arguments" />
+					<scope name="actionscript3.block">
+						<symbol type="block">
+							<context behavior="subtree" fold-type="constructor" />
+						</symbol>
+						<starts-with>
+							<expression>\{</expression>
+							<capture number="0" name="actionscript3.bracket" />
+						</starts-with>
+						<ends-with>
+							<expression>\}</expression>
+							<capture number="0" name="actionscript3.bracket" />
+						</ends-with>
+						<subscopes>
+							<include syntax="self" />
+						</subscopes>
+					</scope>
+                </subscopes>
+            </scope>
+		-->
+
+			<!-- Not sure how to do Constructor, since failing the return type does not "cut-out" -->
             <scope name="actionscript3.method">
                 <symbol type="method">
-                    <context behavior="subtree" foldable="false" />
+                    <context behavior="subtree" foldable="false"/>
+					<display-name>
+						<component variable="name" append="()"/>
+						<component selector="actionscript3.keyword.return-type" prepend=" : "/>
+					</display-name>
                 </symbol>
                 <starts-with>
-                    <expression>(?:\b(static)\s+)?(?:\b(async)(\*)?\s+)?(\*)?([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b\s*(?=\()</expression>
+                    <expression>\b((public\s+|protected\s+|private\s+|override\s+|static\s+)+)(function)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b</expression>
                     <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.keyword.modifier" />
-                    <capture number="3" name="actionscript3.operator" />
-                    <capture number="4" name="actionscript3.operator" />
-                    <capture number="5" name="actionscript3.identifier.method.name" />
+                    <capture number="3" name="actionscript3.keyword" />
+                    <capture number="4" name="actionscript3.method.name" />
                 </starts-with>
                 <ends-with />
                 <subscopes anchored="true">
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
                     <include syntax="self" collection="arguments" />
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <include syntax="self" collection="function-blocks" />
+					<!-- Need this to be optional since constructors are not properly recognised -->
+					<scope name="actionscript3.return-type" optional="true">
+						<starts-with>
+							<expression>(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
+							<capture number="1" name="acitonscript3.keyword.operator"/>
+							<capture number="2" name="actionscript3.keyword.return-type"/>
+						</starts-with>
+						<ends-with>
+							<expression>\s?</expression>
+						</ends-with>
+					</scope>
+					<scope name="actionscript3.block.method">
+						<symbol type="block">
+							<context behavior="subtree" fold-type="method"/>
+						</symbol>
+						<starts-with>
+							<expression>\{</expression>
+							<capture number="0" name="actionscript3.bracket" />
+						</starts-with>
+						<ends-with>
+							<expression>\}</expression>
+							<capture number="0" name="actionscript3.bracket" />
+						</ends-with>
+						<subscopes>
+							<include syntax="self" />
+						</subscopes>
+					</scope>
                 </subscopes>
             </scope>
 
-            <scope name="actionscript3.method.getter.computed">
-                <symbol type="getter">
-                    <context behavior="subtree" foldable="false" />
-                </symbol>
-                <starts-with>
-                    <expression>\b(get)\s+(\[)</expression>
-                    <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.bracket" />
-                </starts-with>
-                <ends-with />
-                <subscopes anchored="true">
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <scope name="actionscript3.method.computed.expression.name">
-                        <starts-with>
-                            <expression>(?=[^\]])</expression>
-                        </starts-with>
-                        <ends-with>
-                            <expression>(?=\])</expression>
-                        </ends-with>
-                        <subscopes anchored="true">
-                            <include syntax="self" collection="expressions" repeat="true" />
-                        </subscopes>
-                    </scope>
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <scope name="actionscript3.bracket">
-                        <expression>\]</expression>
-                    </scope>
-                    <include syntax="self" collection="arguments" />
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <include syntax="self" collection="function-blocks" />
-                </subscopes>
-            </scope>
 
-            <scope name="actionscript3.method.setter.computed">
-                <symbol type="setter">
-                    <context behavior="subtree" foldable="false" />
-                </symbol>
-                <starts-with>
-                    <expression>\b(set)\s+(\[)</expression>
-                    <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.bracket" />
-                </starts-with>
-                <ends-with />
-                <subscopes anchored="true">
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <scope name="actionscript3.method.computed.expression.name">
-                        <starts-with>
-                            <expression>(?=[^\]])</expression>
-                        </starts-with>
-                        <ends-with>
-                            <expression>(?=\])</expression>
-                        </ends-with>
-                        <subscopes anchored="true">
-                            <include syntax="self" collection="expressions" repeat="true" />
-                        </subscopes>
-                    </scope>
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <scope name="actionscript3.bracket">
-                        <expression>\]</expression>
-                    </scope>
-                    <include syntax="self" collection="arguments" />
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <include syntax="self" collection="function-blocks" />
-                </subscopes>
-            </scope>
-
-            <scope name="actionscript3.method.computed">
-                <symbol type="method">
-                    <context behavior="subtree" foldable="false" />
-                </symbol>
-                <starts-with>
-                    <expression>(?:(?:\b(async)(\*)?\s+)|(\*)?)(\[)</expression>
-                    <capture number="1" name="actionscript3.keyword.modifier" />
-                    <capture number="2" name="actionscript3.operator" />
-                    <capture number="3" name="actionscript3.operator" />
-                    <capture number="4" name="actionscript3.bracket" />
-                </starts-with>
-                <ends-with />
-                <subscopes anchored="true">
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <scope name="actionscript3.method.computed.expression.name">
-                        <starts-with>
-                            <expression>(?=[^\]])</expression>
-                        </starts-with>
-                        <ends-with>
-                            <expression>(?=\])</expression>
-                        </ends-with>
-                        <subscopes anchored="true">
-                            <include syntax="self" collection="expressions" repeat="true" />
-                        </subscopes>
-                    </scope>
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <scope name="actionscript3.bracket">
-                        <expression>\]</expression>
-                    </scope>
-                    <include syntax="self" collection="arguments" />
-                    <include syntax="self" collection="comments" optional="true" repeat="true" />
-                    <include syntax="self" collection="function-blocks" />
-                </subscopes>
-            </scope>
         </collection>
-
         <!-- !Properties -->
         <collection name="properties">
             <scope name="actionscript3.class-field-private">
-                <symbol type="property" scope="private">
+				<!-- <symbol type="property" scope="private">-->
+                <symbol type="property">
 					<display-name>
 						<component variable="name" />
-						<component selector="actionscript3.identifier.type" prepend=":"/>
+						<component selector="actionscript3.identifier.type" prepend=" : "/>
 					</display-name>
 				</symbol>
                 <starts-with>
@@ -907,11 +953,9 @@
                     <expression>(?=;|$)</expression>
                 </ends-with>
                 <subscopes>
-				<!--
                     <cut-off>
                         <expression>(?=\b(?:static|async|function|class|if|else|while|for)\b)</expression>
                     </cut-off>
-				-->
                     <include syntax="self" collection="comments" />
                     <include syntax="self" collection="keywords" />
                     <include syntax="self" collection="values" />
@@ -925,10 +969,11 @@
             </scope>
 
             <scope name="actionscript3.class-field">
-                <symbol type="property" scope="global">
+                <!--><symbol type="property" scope="global"></-->
+                <symbol type="property">
 					<display-name>
 						<component variable="name" />
-						<component selector="actionscript3.identifier.type" prepend=":"/>
+						<component selector="actionscript3.identifier.type" prepend=" : "/>
 					</display-name>
 				</symbol>
                 <starts-with>
@@ -944,11 +989,9 @@
                     <expression>(?=;|$)</expression>
                 </ends-with>
                 <subscopes>
-				<!--
                     <cut-off>
                         <expression>(?=\b(?:static|async|function|class|if|else|while|for)\b)</expression>
                     </cut-off>
-				-->
                     <include syntax="self" collection="comments" />
                     <include syntax="self" collection="keywords" />
                     <include syntax="self" collection="values" />
@@ -961,10 +1004,11 @@
             </scope>
 
             <scope name="actionscript3.class-field-constant">
-                <symbol type="constant" scope="global">
+                <!--><symbol type="constant" scope="global"></-->
+                <symbol type="constant">
 					<display-name>
 						<component variable="name" />
-						<component selector="actionscript3.identifier.type" prepend=":"/>
+						<component selector="actionscript3.identifier.type" prepend=" : "/>
 					</display-name>
 				</symbol>
                 <starts-with>
@@ -979,11 +1023,9 @@
                     <expression>(?=;|$)</expression>
                 </ends-with>
                 <subscopes>
-				<!--
                     <cut-off>
                         <expression>(?=\b(?:static|async|function|class|if|else|while|for)\b)</expression>
                     </cut-off>
-				-->
                     <include syntax="self" collection="comments" />
                     <include syntax="self" collection="keywords" />
                     <include syntax="self" collection="values" />
@@ -996,10 +1038,11 @@
             </scope>
 
             <scope name="actionscript3.class-field-constant-private">
-                <symbol type="constant" scope="private">
+                <!--<symbol type="constant" scope="private">-->
+                <symbol type="constant">
 					<display-name>
 						<component variable="name" />
-						<component selector="actionscript3.identifier.type" prepend=":"/>
+						<component selector="actionscript3.identifier.type" prepend=" : "/>
 					</display-name>
 				</symbol>
                 <starts-with>
@@ -1014,11 +1057,9 @@
                     <expression>(?=;|$)</expression>
                 </ends-with>
                 <subscopes>
-				<!--
                     <cut-off>
                         <expression>(?=\b(?:static|async|function|class|if|else|while|for)\b)</expression>
                     </cut-off>
-				-->
                     <include syntax="self" collection="comments" />
                     <include syntax="self" collection="keywords" />
                     <include syntax="self" collection="values" />
@@ -1116,7 +1157,7 @@
             <scope name="actionscript3.argument.rest">
                 <symbol type="argument" />
                 <starts-with>
-                    <expression>(\.\.\.)\b([a-zA-Z_][A-Za-z0-9_]*)\b</expression>
+                    <expression>(\.\.\.)\b([a-zA-Z_][A-Za-z0-9_]*)(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))\b</expression>
                     <capture number="1" name="actionscript3.operator" />
                     <capture number="2" name="actionscript3.identifier.argument.rest.name" />
                 </starts-with>
@@ -1142,9 +1183,11 @@
             <scope name="actionscript3.argument">
                 <symbol type="argument" />
                 <starts-with>
-                    <expression>\b([a-zA-Z_][A-Za-z0-9_]*)\b(\?|!)?</expression>
+                    <expression>\b([a-zA-Z_][A-Za-z0-9_]*)(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))+\b(\?|!)?</expression>
                     <capture number="1" name="actionscript3.identifier.argument.name" />
-                    <capture number="2" name="actionscript3.operator" />
+                    <capture number="2" name="actionscript3.identifier.keyword" />
+                    <capture number="3" name="actionscript3.identifier.argument.type" />
+                    <capture number="4" name="actionscript3.operator" />
                 </starts-with>
                 <ends-with>
                     <expression>(?=\)|\,)</expression>
@@ -1156,7 +1199,7 @@
                             <capture number="0" name="actionscript3.operator" />
                         </starts-with>
                         <ends-with>
-                            <expression>(?=\)|\,)</expression>
+                            <expression>(?=\)|\,|;)</expression>
                         </ends-with>
                         <subscopes anchored="true">
                             <include syntax="self" collection="expressions" repeat="true" />
@@ -1167,6 +1210,7 @@
         </collection>
 
         <!-- !Arguments for Arrow Functions -->
+		<!--
         <collection name="arrow-function-arguments">
             <scope name="actionscript3.identifier.argument.name.single">
                 <symbol type="argument" />
@@ -1174,16 +1218,19 @@
             </scope>
             <include syntax="self" collection="arguments" />
         </collection>
+	-->
 
         <!-- !Expressions for Arrow Functions -->
+		<!--
         <collection name="arrow-function-body-expressions">
             <include syntax="self" collection="function-blocks" />
             <include syntax="self" collection="expressions" />
         </collection>
+	-->
 
         <!-- !Function Blocks -->
         <collection name="function-blocks">
-            <scope name="actionscript3.block">
+            <scope name="actionscript3.block.function">
                 <symbol type="block">
                     <context behavior="subtree" fold-type="function" />
                 </symbol>
@@ -1203,85 +1250,81 @@
 
         <!-- !Keywords -->
         <collection name="keywords">
-            <scope name="actionscript3.keyword.construct">
-                <strings>
-                    <string>class</string>
-                    <string>const</string>
-					<!--
-                    <string>constructor</string>
-                    <string>enum</string>
-					-->
-                    <string>function</string>
-                    <string>interface</string>
-					<!--
-                    <string>label</string>
-                    <string>let</string>
-				-->
-                    <string>new</string>
-                    <string>package</string>
-                    <string>var</string>
-                    <string>void</string>
-                </strings>
-            </scope>
-            <scope name="actionscript3.keyword.modifier">
-                <strings>
-                    <string>as</string>
-					<!--
-                    <string>async</string>
-                    <string>export</string>
-					-->
-                    <string>extends</string>
-					<!--
-                    <string>from</string>
-					-->
-                    <string>implements</string>
-                    <string>in</string>
-                    <string>instanceof</string>
-					<!--
-                    <string>of</string>
-					-->
-                    <string>private</string>
-                    <string>protected</string>
-                    <string>public</string>
-                    <string>static</string>
-                    <string>typeof</string>
-                </strings>
-            </scope>
-            <scope name="actionscript3.keyword.condition">
-                <strings>
-                    <string>case</string>
-                    <string>catch</string>
-                    <string>default</string>
-                    <string>do</string>
-                    <string>else</string>
-                    <string>finally</string>
-                    <string>for</string>
-                    <string>if</string>
-                    <string>switch</string>
-                    <string>try</string>
-                    <string>while</string>
-                    <string>with</string>
-                </strings>
-            </scope>
-            <scope name="actionscript3.keyword.statement">
-                <strings>
-                    <string>await</string>
-                    <string>break</string>
-                    <string>continue</string>
-                    <string>debugger</string>
-                    <string>delete</string>
-                    <string>import</string>
-                    <string>return</string>
-                    <string>throw</string>
-                    <string>yield</string>
-                </strings>
-            </scope>
-            <scope name="actionscript3.keyword.self">
-                <strings>
-                    <string>this</string>
-                    <string>super</string>
-                </strings>
-            </scope>
+			<scope name="actionscript3.keyword.statements">
+				<strings>
+					<string>break</string>
+					<string>case</string>
+					<string>continue</string>
+					<string>default</string>
+					<string>do</string>
+					<string>else</string>
+					<string>for</string>
+					<string>for each</string>
+					<string>in</string>
+					<string>if</string>
+					<string>label</string>
+					<string>return</string>
+					<string>super</string>
+					<string>switch</string>
+					<string>throw</string>
+					<string>try</string>
+					<string>catch</string>
+					<string>finally</string>
+					<string>while</string>
+					<string>with</string>
+				</strings>
+			</scope>
+			<scope name="actionscript3.keyword.attribute">
+				<strings>
+					<string>dynamic</string>
+					<string>final</string>
+					<string>internal</string>
+					<string>native</string>
+					<string>override</string>
+					<string>private</string>
+					<string>protected</string>
+					<string>public</string>
+					<string>static</string>
+				</strings>
+			</scope>
+			<scope name="actionscript3.keyword.definition">
+				<strings>
+					<string>...</string>
+					<string>class</string>
+					<string>const</string>
+					<string>extends</string>
+					<string>function</string>
+					<string>get</string>
+					<string>implements</string>
+					<string>interface</string>
+					<string>namespace</string>
+					<string>package</string>
+					<string>set</string>
+				</strings>
+			</scope>
+			<scope name="actionscript3.keyword.directives">
+				<strings>
+					<string>default xml namespace</string>
+					<string>import</string>
+					<string>include</string>
+					<string>use namespace</string>
+				</strings>
+			</scope>
+			<scope name="actionscript3.keyword.namespaces">
+				<strings>
+					<string>AS3</string>
+					<string>flash_proxy</string>
+					<string>object_proxy</string>
+				</strings>
+			</scope>
+			<scope name="actionscript3.keyword.primary_expression">
+				<strings>
+					<string>false</string>
+					<string>null</string>
+					<string>this</string>
+					<string>true</string>
+				</strings>
+			</scope>
         </collection>
 
         <!-- !Expressions -->
@@ -1348,6 +1391,7 @@
             </scope>
 
             <!-- !Unquoted Keys -->
+<!--
             <scope name="actionscript3.key-expression.function">
                 <symbol type="method" />
                 <starts-with>
@@ -1386,8 +1430,9 @@
                     <include syntax="self" collection="expressions" />
                 </subscopes>
             </scope>
-
+-->
             <!-- !Quoted Keys -->
+<!--
             <scope name="actionscript3.key-expression.function.quoted">
                 <symbol type="method" />
                 <starts-with>
@@ -1432,7 +1477,7 @@
                     <include syntax="self" collection="expressions" repeat="true" />
                 </subscopes>
             </scope>
-
+-->
             <include syntax="self" collection="methods" />
 
             <scope name="actionscript3.comma">
@@ -1633,71 +1678,19 @@
 
         <!-- !Identifiers -->
         <collection name="identifiers">
-            <scope name="actionscript3.identifier.core.global">
-                <strings prefix="(?&lt;!\.)">
-                    <string>arguments</string>
-                    <string>crypto</string>
-                    <string>document</string>
-                    <string>localStorage</string>
-                    <string>sessionStorage</string>
-                    <string>window</string>
-                    <string>Object</string>
-                    <string>Symbol</string>
-                    <string>Boolean</string>
-                    <string>Date</string>
-                    <string>Function</string>
-                    <string>Math</string>
-                    <string>Number</string>
-                    <string>String</string>
-                    <string>RegExp</string>
-                    <string>Array</string>
-                    <string>Int8Array</string>
-                    <string>Uint8Array</string>
-                    <string>Uint8ClampedArray</string>
-                    <string>Int16Array</string>
-                    <string>Uint16Array</string>
-                    <string>Int32Array</string>
-                    <string>Uint32Array</string>
-                    <string>Float32Array</string>
-                    <string>Float64Array</string>
-                    <string>Map</string>
-                    <string>Set</string>
-                    <string>WeakMap</string>
-                    <string>WeakSet</string>
-                    <string>ArrayBuffer</string>
-                    <string>DataView</string>
-                    <string>JSON</string>
-                    <string>Promise</string>
-                    <string>Generator</string>
-                    <string>GeneratorFunction</string>
-                    <string>Reflect</string>
-                    <string>Proxy</string>
-                    <string>Intl</string>
-                    <string>Error</string>
-                    <string>EvalError</string>
-                    <string>InternalError</string>
-                    <string>RangeError</string>
-                    <string>ReferenceError</string>
-                    <string>SyntaxError</string>
-                    <string>TypeError</string>
-                    <string>URIError</string>
-                </strings>
-            </scope>
+            <scope name="actionscript3.identifier.core.constants">
+				<expression>\b(Infinity|-Infinity|Nan|undefined)\b</expression>
+			</scope>
+            <scope name="actionscript3.identifier.core.classes">
+				<expression>\b(Array|Boolean|Class|Date|Function|int|JSON|Math|Namespace|Number|Object|QName|RegExp|String|uint|Vector|XML|XMLList|\*(?&lt;=a))\b</expression>
+			</scope>
+            <scope name="actionscript3.identifier.core.error_types">
+				<expression>\b((Argument|Definition|Eval|Internal|Range|Reference|Security|Syntax|Type|URI|Verify)?Error)\b</expression>
+			</scope>
             <scope name="actionscript3.identifier.core.function">
-                <strings prefix="(?&lt;!\.)" suffix="(?=\()">
-                    <string>decodeURLComponent</string>
-                    <string>decodeURI</string>
-                    <string>encodeURIComponent</string>
-                    <string>encodeURI</string>
-                    <string>escape</string>
-                    <string>eval</string>
-                    <string>isFinite</string>
-                    <string>isNaN</string>
-                    <string>parseFloat</string>
-                    <string>parseInt</string>
-                    <string>unescape</string>
-                </strings>
+				<expression>\b(decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|escape|isFinite|isNaN|isXMLName|parseFloat|parseInt|trace|unescape)(?=\s*\()</expression>
             </scope>
+			<!--
             <scope name="actionscript3.identifier.property">
                 <expression>(?&lt;=\.)((?:\#?)[a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\b(?!\()</expression>
             </scope>
@@ -1713,6 +1706,7 @@
             <scope name="actionscript3.identifier">
                 <expression>(?:\b[a-zA-Z_]|\$)[A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*</expression>
             </scope>
+			-->
         </collection>
 
         <!-- !Syntax -->

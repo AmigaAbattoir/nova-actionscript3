@@ -4,16 +4,18 @@ Is an **Experimental/ _(kinda not)_ Work _(ing)_ In Progress** extension that us
 
 It currently provides for ActionScript 3 files:
 
- * **Symbols** - *NOTE:* Not correctly showing it in the hierarchy properly.
+ * **Symbols** - *NOTE:* Not correctly showing it in the hierarchy properly
 
  * **Language intelligence**
-   * Issues
+   * Issues (*Note:* needs an `asconfig.json` file to work)
 
- * **Tasks** - Limited support for using Nova's Clean/Build/Run.
+ * **Tasks** -  *NOTE:* Limited support for using Nova's Clean/Build/Run for AIR Desktop apps. Looking into mobile, and web (maybe with Ruffle too at some point)
+
+ * **Exporting AIR Packages** - *NOTE:* Currently, limited to desktop/extendedDesktop AIR builds
 
 ## Notes
 
-The LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml).
+The LSP used to gather issues is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.20.1. V1.20.1.
 
 Started setting up LSP using the [How to use the ActionScript and MXML language server with Sublime Text](https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text) from the repo's Wiki.
 
@@ -21,9 +23,9 @@ Also, took some stuff from [BowlerHatLLC/eclipse-as3mxml](https://github.com/Bow
 
 `.tmLanguage` files converted using the converter [Nova Mate](https://github.com/gredman/novamate)
 
-I don't think the syntaxes work with Nova well. And probably will need some reworking to so that Nova will give the correct code completion and hover overs automagically!
+I don't think its syntaxes work with Nova well. I am in the process of reworking to so that Nova will give the correct symbols.
 
-Cleaning/Building/Running are done by using `mxmlc` for compiling and runninf with `adt` from an (Harman) Adobe Air or Flex SDK.
+Cleaning/Building/Running are done by using `mxmlc` for compiling, packaging and running with `adt` from an (Harman) Adobe Air or Flex SDK.
 
 ## Requirements
 
@@ -41,7 +43,7 @@ Cross your fingers and hope it runs!
 
 ### Configuration
 
-To configure global preferences, open **Extensions → Extension Library...** then select AS3MXML's **Preferences** tab. Some work, some do not.
+To configure global preferences, open **Extensions → Extension Library...** then select ActionScript 3's **Preferences** tab. Some work, some do not.
 
 You can also configure preferences on a per-project basis in **Project → Project Settings...**, also, some work some do not.
 

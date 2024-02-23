@@ -3,13 +3,14 @@
     "name": "ActionScript 3",
     "organization": "",
     "description": "ActionScript & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
-    "version": "0.5.1",
+    "version": "0.6.0",
+	"keywords": ["actionscript 3","flash","adobe air","mxml" ],
     "categories": [
-        "completions",
         "issues",
         "languages",
         "tasks",
-		"clips"
+		"clips",
+        "completions",
     ],
 
     "main": "main.js",
@@ -20,6 +21,7 @@
     },
 
     "activationEvents": [
+        "onLanguage:as",
         "onLanguage:as3",
         "onLanguage:actionscript",
         "onLanguage:actionscript3",
@@ -44,6 +46,22 @@
         "onCommand:as3mxml.quickCompileAndRun",
         "onCommand:as3mxml.getActiveProjectURIs"
     ],
+
+	"breakpoints": [
+		{
+			"syntax": "as"
+		},
+		{
+			"syntax": "mxml"
+		},
+	],
+
+	"debugAdapters": {
+		"actionscript": {
+			"name": "SWF",
+			"image": "ActionScript_icon.png"
+		}
+	},
 
     "taskTemplates": {
         "actionscript": {
@@ -177,7 +195,7 @@
                     "type": "path",
                     "allowFolders": true,
                     "allowFiles": false,
-                    "default": "/Applications/AIRSDK/",
+                    "default": "~/Applications/AIRSDK/",
                     "description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
                 },
             ]
@@ -453,11 +471,34 @@
                     		"title": "Create",
                     		"type": "command"
                 		},
+        				{
+            				"key": "actionscipt.clearExportPassword",
+            				"title": "Clear",
+            				"type": "command"
+        				}
 					]
                 },
+				{
+					"key": "as3.packaging.type",
+					"title": "Export as",
+					"type":  "enum",
+					"values": [
+						["Signed AIR package"],
+						["Singed native installer"],
+						["Singed application with captive runtime"],
+						["Intermediate AIRI package that must be manually signed later"]
+					],
+					"default": "Signed AIR package",
+				},
+				{
+                    "key": "as3.packaging.timestamp",
+                    "title": "Timestamp",
+                    "type": "bool",
+                    "default": true
+				},
                 {
-                    "key": "as3.packaging.includeFiles",
-                    "title": "Included files",
+                    "key": "as3.packaging.excludedFiles",
+                    "title": "Files to exclude when packaging",
                     "type": "pathArray",
                     "allowFolders": true,
                     "allowFiles": true
@@ -538,6 +579,19 @@
             {
                 "title": "Restart AS3MXML LSP",
                 "command": "as3mxml.restart"
+            },
+            {"separator": true},
+            {
+                "title": "Export Release Build...",
+                "command": "actionscipt.exportRelease"
+            },
+            {
+                "title": "Clear Certifcate Password",
+                "command": "actionscipt.clearExportPassword"
+            },
+            {
+                "title": "Test Input Box",
+                "command": "actionscript3.paneltest"
             },
             {"separator": true},
             {

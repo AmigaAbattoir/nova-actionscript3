@@ -1,12 +1,19 @@
 # ActionScript 3 Extension for Nova's Panic
 
-Extension for ActionScript 3 and MXML in [Nova's Panic](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as an LSP and tasks for building/running.
+Extension for ActionScript 3 and MXML in [Nova's Panic](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as an LSP (which only works if there's an `asconfig.json` in the director).
+And uses Panic Nova's tasks cleaning/building/running.
 
 More details about AS3MXML are in the [as3mxml.novaextension README.md](as3mxml.novaextension/README.md)
 
 Currently a work in progress. Issues work, and some features like Jump to Definition work occasionally.
 
-I think the Syntax is not to Nova's liking and doesn't fully recognize things, need to reworked.
+# Syntax check
+
+I the syntax provided with the AS3MXML is not to Nova's liking and doesn't fully recognize things, need to reworked.
+
+I stared working on using the Syntax XML from Panic's Javascript extensions, and have made a bit of progress.
+
+* May need to check variable names. Think JS doesn't allow $ in the name, but AS3 does
 
 ## Notes
 
@@ -18,11 +25,11 @@ About [AIR ADL command line](https://help.adobe.com/en_US/air/build/WSfffb011ac5
 
 The [Pure JavaScript XML (pjxml)](https://github.com/smeans/pjxml) is used to help migrate some of the FlashBuilder setting to Nova.
 
-Still working on having it automagically add tasks from the Flash Build project.
+A lot of the settings from Flash Builder will be imported to the workspace's settings.
 
 **@TODO**
- * Need to be able to add tasks
- * Need to change settings in the Task
+ * Import Flash Builder project when opening the first time.
+ * Try to automatically add a task to the project (based on AIR/Mobile/Web)
 
 For now, you need to manually add a Task, and then run the command from the menu command will log to console what the settings should be.
 
@@ -39,7 +46,6 @@ Used to grab some things used for a task like:
  * Lib dirs
  * Additional compiler args
 
-@TODO - Better parsing and automagically make a task
 
 ### .flexLibProperties
 

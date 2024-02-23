@@ -1,5 +1,73 @@
 # ActionScript & MXML for Visual Studio Code Changelog
 
+## 1.20.1
+
+### Fixed Issues
+
+- Build: Fixed resolution of `mainClass` to use relative paths for quick compile commands.
+- Build: Fixed resolution of `mainClass` when no `source-path` compiler option is specified (resolve relative to project root).
+- Build: Restores final fallback resolution of `mainClass` from the current working directory.
+- Royale: Detects when _asconfig.json_ is saved and updates the Royale target status bar item.
+- New Project: Populates `<renderMode>direct</renderMode>` for Feathers SDK projects.
+- New Project: Does not set `<visible>true</visible>` for AS3 projects if `<visible>` is uncommented.
+
+## 1.20.0
+
+### New Features
+
+- Royale: When developing a project that supports both JS and SWF targets, a new status bar item allows easy switching between `COMPILE::JS` and `COMPILE:SWF` conditional compilation values by allowing a preferred value from the `targets` compiler option to be selected.
+- Completion: Improved sorting for MXML tag completion to give higher priority to existing declared namespaces and to member variables or properties, similar to how AS3 imports and members get higher priority already.
+
+### Fixed Issues
+
+- Build: Fixed resolution of `mainClass` when _asconfig.json_ is not in the workspace root.
+- Completion: Fixed issue where imports might be incorrectly added inside a comment at the top of a file if the comment contains what appears to be the start of a `package` block or another `import` statement.
+- General: Fixed project initialization if the `mainClass` or a directory from the `source-path` compiler option doesn't exist yet.
+- General: ActionScript SDK status bar item remains visible if any _visible_ editor contains a file of type _.as_, _.mxml_ or _asconfig.json_ file. Previously, it was based on the currently active editor only, which could cause the status bar item to be hidden if the terminal or another view received active focus.
+- Project: When creating a new project on Windows, fixed invalid JSON contents of _settings.json_ for SDK path containing backslashes.
+- General: Fixed `FileSystemNotFoundException` when opening a file URI with an unrecognized protocol, such as _vsls:_.
+
+## 1.19.0
+
+### New Features
+
+- Commands: Added new _ActionScript: Create New Project_ command to create a project with some simple built-in templates for all supported SDK types, including Apache Flex, Apache Royale, Feathers SDK, and pure ActionScript 3.0 projects.
+- Explorer: When no workspace folders are open, a button is displayed in the Explorer to create a new ActionScript project.
+
+### Fixed Issues
+
+- Completion: Improved completion for definition names to avoid unnecessary duplicates.
+- Completion: Fixed occasional null exception when prioritizing member variables and methods.
+- Completion: No longer suggests variable members of interfaces (which are technically parsed, but not allowed to compile).
+- Completion: Fixed range exception when checking if current location is a function parameter of type `Function`.
+
+## 1.18.0
+
+### New Features
+
+- Build: Added new _ActionScript: watch_ build task for Apache Royale projects when the Royale compiler's new `--watch` option is available.
+- Build: Added missing `context-root`, `contributor`, `creator`, `date`, `description`, `language`, `publisher`, `services`, and `title` to `compilerOptions` field in _asconfig.json_ files.
+- Completion: Improved sorting for a number of operations, including after `super.` and `new`, and for symbols that are referenced with `import`. Completion also gives highest priority to local variables, then member fields/methods, and then everything else.
+- Debug: Faster AIR debug launcher builds with native extensions. If original _.ane_ file is unmodified since previous build, does not overwrite the unpackaged version. Run the clean task to force _.ane_ to be unpacked again.
+- Format: Added support for _asformat-config.xml_ file at root of project to configure formatting options.
+- General: Fixed incorrect duplicate function definition errors when using JDK 16+.
+- General: New ActionScript 3.0 language features from HARMAN AIR 50.0 and Apache Royale 0.9.10 are now supported.
+- Lint: Added new `as3mxml.lint.enabled` setting to optionally enable Apache Royale's new AS3 linter to check for issues. May be slow for larger projects. Supports automatic detection of _aslint-config.xml_ file at root of project.
+- Settings: All formatting options accept `null`, in addition to `true`/`false`, to allow compiler defaults to change in the future.
+
+### Fixed Issues
+
+- Code Actions: Fix possible null exception when node is not found for missing method.
+- Completion: Fix possible null exception for getters and setters.
+- General: Fix unsupported operation exception for `$/setTrace` language server protocol message sent by VSCode.
+- Hover: When generating signature for function in binary _.swc_ file, provides a fallback name for parameters that don't have names in the _.swc_ file.
+- Hover: When generating function signature, event details, or style details, specify `*` when type is not declared.
+- Signature Help: Fixed issue where popup disappeared after entering comma `,` separator between arguments.
+
+### Other Changes
+
+- Dependencies: Apache Royale compiler updated to v0.9.10. This fixes issue in symbol renaming, formatting AS3 code, and more.
+
 ## 1.17.0
 
 ### New Features
