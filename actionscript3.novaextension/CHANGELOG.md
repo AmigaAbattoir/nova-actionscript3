@@ -1,3 +1,7 @@
+## Version 0.6.1
+
+* Restructured code
+
 ## Version 0.6.0
 
 * Attempts to get packaging an AIR package
