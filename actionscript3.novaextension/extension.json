@@ -64,7 +64,7 @@
 	},
 
     "taskTemplates": {
-        "actionscript": {
+        "actionscript-air": {
             "name": "ActionScript - AIR",
             "image": "Adobe_AIR_logo.svg.png",
             "description": "Build and run AS3 or MXML project.",
@@ -109,12 +109,74 @@
 						["default", "Default (first in app.xml)"],
                         ["desktop", "Desktop"],
                         ["extendedDesktop", "Extended Desktop"],
-                        ["mobile", "Mobile"],
-                        ["extendedMobileDevice", "Extended Mobile"]
+                        ["mobileDevice", "Mobile Device"],
+                        ["extendedMobileDevice", "Extended Mobile Device"]
                     ],
                 }
             ]
-        }
+        },
+        "actionscript-airmobile": {
+            "name": "ActionScript - Mobile",
+            "image": "Adobe Device Central.png",
+            "description": "Build and run AS3 or MXML project for Mobile.",
+            "persistent": true,
+            "tasks": {
+                "build": {
+                    "resolve": "actionscript",
+                    "data": {
+                        "type": "mobile",
+                    }
+                },
+                "clean": {
+                    "resolve": "actionscript",
+                    "data": {
+                        "type": "mobile",
+                    }
+                },
+                "run": {
+                    "resolve": "actionscript",
+                    "data": {
+                        "type": "mobile",
+                    }
+                },
+            },
+            "config": [
+				{
+					"key": "as3.task.isFlex",
+					"title": "Is Flex Based",
+					"type": "boolean",
+					"default": false
+				},
+                {
+                    "key": "as3.task.commandLine",
+                    "title": "Command line arguments",
+                    "type": "string",
+                },
+                {
+                    "key": "as3.task.mainApplicationPath",
+                    "title": "Publisher ID",
+                    "type": "string",
+                },
+                {
+                    "key": "as3.task.profile",
+                    "title": "Profile",
+                    "type": "enum",
+                    "default": "mobile",
+                    "values": [
+						["default", "Default (first in app.xml)"],
+                        ["desktop", "Desktop"],
+                        ["extendedDesktop", "Extended Desktop"],
+                        ["mobileDevice", "Mobile Device"],
+                        ["extendedMobileDevice", "Extended Mobile Device"]
+                    ],
+                },
+				{
+                    "key": "as3.task.device",
+                    "title": "Device",
+                    "type": "string",
+				}
+            ]
+        },
     },
 
     "config": [
@@ -274,7 +336,8 @@
                     "type": "path",
                     "allowFolders": true,
                     "allowFiles": false,
-                    "default": "src"
+                    "default": "src",
+					"description": "The location of your main file. Use \"./\" if you want it at the root, otherwise it defaults to \"src\""
                 },
                 {
                     "key": "as3.build.output",
@@ -282,7 +345,8 @@
                     "type": "path",
                     "allowFolders": true,
                     "allowFiles": false,
-                    "default": "bin-debug"
+                    "default": "bin-debug",
+					"description": "The location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
                 },
                 {
                     "title": "Source path",
@@ -600,7 +664,7 @@
             },
             {"separator": true},
             {
-                "title": "ActionScript 3 Reference",
+                "title": "AIR / ActionScript 3 Reference",
                 "command": "actionscipt.as3reference"
             },
             {"separator": true},

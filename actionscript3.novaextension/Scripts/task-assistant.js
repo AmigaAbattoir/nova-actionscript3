@@ -53,12 +53,22 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var projectUUID = determineProjectUUID();
 		projectUUID.then((resolve) => { // Now that we have the UUID, let's try to make a build
 			var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+			//console.log("MAIN APP: [[" + mainApplicationPath + "]]");
+			if(mainApplicationPath==null) {
+				nova.workspace.showErrorMessage("Please configure the workspace's settings to select a main application file. You can either manually do so, or use the \"Import Flash Builder settings\" options if migrating from Flash Builder");
+			}
 			var appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
 
 			// Use this to get setting from the extension or the workspace!
 			var flexSDKBase = determineFlexSDKBase();
+			if(flexSDKBase==null) {
+				nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
+			}
 
 			var mainSrcDir = nova.path.join(nova.workspace.path, nova.workspace.config.get("as3.build.source.main"));
+			if(mainSrcDir==null) {
+				mainSrcDir = "src";
+			}
 
 			var isFlex = nova.workspace.config.get("as3.application.isFlex");
 			var exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
@@ -74,7 +84,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			var releasePath = "bin-release-temp";
 
-			this.build(true, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, "release", nova.path.join(nova.workspace.path, releasePath), exportName, true).then((resolve) => {
+			/** @TODO Figure out what type of build... */
+			this.build("air", true, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, "release", nova.path.join(nova.workspace.path, releasePath), exportName, true).then((resolve) => {
 				console.log("this.build() resolve:");
 				consoleLogObject(resolve);
 				// @TODO - If there is warnings, ask if you want to continue, or abort.
@@ -223,27 +234,28 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							title = result.title;
 							message = result.message;
 						}
-						showNotification(title, message, "Oh no!");
+						nova.workspace.showErrorMessage("*** ERROR - " + title + " ***\n\n" + message);
 					})
 				}, error => {
 					console.log("passwordGet.then((error): ");
-					showNotification("Password failed!", "Something happened when trying to use or save the pasword!", "That's odd");
+					nova.workspace.showErrorMessage("*** ERROR - Password failed! ***\n\nSomething happened when trying to use or save the pasword!");
 				},(reject) => {
 					console.log("passwordGet.then((reject): ");
-					showNotification("Password failed!", "rej" + reject, "Booo!!");
+					nova.workspace.showErrorMessage("*** Password failed! ***\n\n", "rej" + reject);
 				});
 			}, (reject) => {
 				// To make this a little neater, remove the workspace's path from the stderr messages
 				var message = reject.stderr.replaceAll(nova.workspace.path,"");
-				showNotification("Export Release Build failed!", "One or errors were found while trying to build the release version. Unable to export.\n" + message, "Uht oh!");
+				nova.workspace.showErrorMessage("*** ERROR - Export Release Build failed! ***\n\nOne or more errors were found while trying to build the release version. Unable to export.\n" + message);
 			});
 		}, (reject) => {
-			showNotification("Project UUID Missing", reject + "\nPlease use the Import Flash Builder option in the menu, or ensure that `uuidgen` is on your system's path!","Uht oh!");
+			nova.workspace.showErrorMessage("*** ERROR - Project UUID Missing ***\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu, or ensure that `uuidgen` is on your system's path!");
 		});
 	}
 
 	/**
 	 * Builds the SWF for the project
+	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
 	 * @param {bool} copyAssets - If we should copy assets to the destination
 	 * @param {string} mainSrcDir - The main source folder (where the main class or app.xml is)
 	 * @param {string} mainApplicationPath - The path to the
@@ -257,7 +269,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
 	 * as a Promise, otherwise a standard Nova Task that it can handle
 	 */
-	build(copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false) {
+	build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths) {
 		if(copyAssets) { // Copy each source dir to the output folder
 			console.log("copyAssets Begins!");
 			fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
@@ -311,22 +323,39 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 			}
 		}
-		console.log("DONE!!");
+		//console.log("DONE!!");
 
 		// Let's compile this thing!!
 		var command = flexSDKBase + "/bin/mxmlc";
 		var args = new Array();
+		/*
 		if(whatKind=="debug") {
 			args.push("--debug=true");
 		}
+		*/
+		args.push("--debug=true");
 
 		args.push("--warnings=true");
 
+		console.log("buildType: " + buildType);
+		if(buildType=="airmobile") {
+			args.push("+configname=airmobile");
+		} else {
+			args.push("+configname=air");
+		}
+/*
 		// If air, we need to add the configname=air, I'm assuming flex would be different?!
-		args.push("+configname=air");
+		var isFlex = nova.workspace.config.get("as3.application.isFlex");
+		if(isFlex) {
+			args.push("+configname=flex");
+		}
+*/
 
 		// Push where the final SWF will be outputted
 		args.push("--output=" + destDir + "/" + exportName);
+
+		// Add base, just in case there are Embeds that look for stuff here using relative locations
+		//args.push("--source-path=./");
 
 		// Push args for the source-paths!
 		if(sourceDirs) {
@@ -368,6 +397,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 				*/
 				args.push("--library-path+=" + libPath);
+			});
+		}
+
+		if(anePaths) {
+			anePaths.forEach((anePath) => {
+				args.push("--external-library-path+=" + anePath);
+				// Needed?
+				args.push("--library-path+=" + anePath);
 			});
 		}
 
@@ -416,12 +453,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	/**
 	 * @TODO
 	 * Run the project with debugger (Not implemented yet, so it's just running as usual!)
+	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
 	 * @param {string} flexSDKBase - The location of the Flex SDK
 	 * @param {string} profile -
 	 * @param {string} destDir - The location of where the saved build is
 	 * @param {string} appXMLName - The name of the app.xml file
 	 */
-	debugRun(flexSDKBase, profile, destDir, appXMLName) {
+	debugRun(buildType, flexSDKBase, profile, destDir, appXMLName) {
 		/*
 		var base = nova.path.join(nova.extension.path, "debugger");
 
@@ -451,26 +489,40 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// Haven't figured how to hook up debugger...
 		*/
 
-		return this.run(flexSDKBase, profile, destDir, appXMLName);
+		return this.run(buildType, flexSDKBase, profile, destDir, appXMLName);
 	}
 
 	/**
 	 * Runs the project using Nova's task system
+	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
 	 * @param {string} flexSDKBase - The location of the Flex SDK
 	 * @param {string} profile -
 	 * @param {string} destDir - The location of where the saved build is
 	 * @param {string} appXMLName - The name of the app.xml file
 	 */
-	run(flexSDKBase, profile, destDir, appXMLName) {
+	run(buildType, flexSDKBase, profile, destDir, appXMLName) {
 		// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
 		// To launch ADL, we need to point it to the "-app.xml" file
 		var command = flexSDKBase + "/bin/adl";
 		var args = [];
 
+		console.log("buildType = "+buildType)
+		/** @TODO Get preferences for what screen size */
+		if(buildType=="airmobile") {
+			args.push("-screensize");
+			args.push("480x762:480x800");
+		}
+
 		console.log("CONFIG: " + profile);
 		if(profile!="default") {
 			args.push("-profile");
 			args.push(profile);
+		}
+
+		var anes = nova.workspace.config.get("as3.packaging.anes");
+		if(anes) {
+			args.push("-extdir");
+			args.push("ane/");
 		}
 
 		// The app.xml file
@@ -558,6 +610,18 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 */
 	importFlashBuilderSettings() {
 		// Check ".project" XML file for things
+		//let check1 = parser.parse(this.getStringOfWorkspaceFile(".actionScriptProperties"));
+		var check1 =this.getStringOfWorkspaceFile(".actionScriptProperties");
+
+/*
+console.log("--------------------------------------------------------------\n\n\n");
+		const xmlToJson = require('./xml-to-json/xmlToJsonStream.js');
+	//consoleLogObject(xmlToJson);
+		const parse = new xmlToJson.XMLtoJSON(check1);
+	// Print the JSON object.
+		consoleLogObject(parse.json);
+console.log("--------------------------------------------------------------\n\n\n");
+*/
 		var projectXml = pjXML.parse(this.getStringOfWorkspaceFile(".project"));
 
 		// Change project name to the Flash Builder project name:
@@ -637,6 +701,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		nova.workspace.config.set("as3.compiler.additional",getTagAttribute(actionscriptPropertiesXml,"compiler","additionalCompilerArguments"));
 
 		// Packaging
+/*
+		console.log("actionscriptPropertiesXml: ");
+		consoleLogObject(actionscriptPropertiesXml);
+		console.log("--------------------------------------");
+		console.log(
+			String(actionscriptPropertiesXml.select("//airSettings")).trim()
+		);
+		consoleLogObject(actionscriptPropertiesXml.select("//airSettings")).trim();
+		console.log("--------------------------------------");
+*/
 		nova.workspace.config.set("as3.packaging.certificate",getTagAttribute(actionscriptPropertiesXml,"airSettings","airCertificatePath"));
 
 		nova.workspace.config.set("as3.packaging.timestamp",getTagAttribute(actionscriptPropertiesXml,"airSettings","airTimestamp"));
@@ -660,15 +734,23 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var config = context.config;
 		var action = context.action;
 
+		var buildType = "air";
+		if(data.type=="mobile") {
+			buildType = "airmobile";
+		}
+
 		// Get the context.config so we can get the Task settings!
 		var whatKind = config.get("actionscript3.request");
 
 		var destDir = nova.workspace.config.get("as3.build.output");
-		if(destDir==null) {
+		if(destDir=="") {
 			destDir = nova.path.join(nova.workspace.path, "bin-debug");
 		} else {
+			/** @TODO Check if it starts with ~, or a "/", then don't merge with workspace! */
 			destDir = nova.path.join(nova.workspace.path, destDir);
+			//console.log("Using configed DEST DIR " + destDir);
 		}
+		//console.log("DEST DIR " + destDir);
 
 		var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
 		var isFlex = nova.workspace.config.get("as3.application.isFlex");
@@ -677,8 +759,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// Use this to get setting from the extension or the workspace!
 		var flexSDKBase = determineFlexSDKBase();
 
-		if(action==Task.Build && data.type=="actionscript") {
+		if(action==Task.Build) {
 			var mainSrcDir = nova.path.join(nova.workspace.path, nova.workspace.config.get("as3.build.source.main"));
+			if(mainSrcDir=="") {
+				mainSrcDir = nova.path.join(nova.workspace.path, "src");
+			}
 
 			var exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
 
@@ -688,16 +773,22 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			var libPaths = nova.workspace.config.get("as3.build.library.additional");
 
-			return this.build(copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName);
-		} else if(action==Task.Run && data.type=="actionscript") {
+			var anePaths = nova.workspace.config.get("as3.build.anes");
+			/*
+			console.log("ANES: ");
+			consoleLogObject(anePaths);
+			*/
+
+			return this.build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, false, anePaths);
+		} else if(action==Task.Run) { //} && data.type=="actionscript") {
 			// @TODO Check if the output files are there, otherwise prompt to build
 			var profile = config.get("as3.task.profile");
 			if(whatKind=="debug") {
-				return this.debugRun(flexSDKBase, profile, destDir, appXMLName);
+				return this.debugRun(buildType, flexSDKBase, profile, destDir, appXMLName);
 			} else {
-				return this.run(flexSDKBase, profile, destDir, appXMLName );
+				return this.run(buildType, flexSDKBase, profile, destDir, appXMLName );
 			}
-		} else if(action==Task.Clean /* && data.type=="actionscript"*/) {
+		} else if(action==Task.Clean) {
 			return new TaskCommandAction("actionscript.clean", { args: [destDir] });
 		}
 	}

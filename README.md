@@ -1,6 +1,6 @@
-# ActionScript 3 Extension for Nova's Panic
+# ActionScript 3 Extension for Panic's Nova
 
-Extension for ActionScript 3 and MXML in [Nova's Panic](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as an LSP (which only works if there's an `asconfig.json` in the director).
+Extension for ActionScript 3 and MXML in [Panic's Nova](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as an LSP (which only works if there's an `asconfig.json` in the director).
 And uses Panic Nova's tasks cleaning/building/running.
 
 More details about AS3MXML are in the [as3mxml.novaextension README.md](as3mxml.novaextension/README.md)
@@ -25,6 +25,9 @@ About [AIR ADL command line](https://help.adobe.com/en_US/air/build/WSfffb011ac5
 
 The [Pure JavaScript XML (pjxml)](https://github.com/smeans/pjxml) is used to help migrate some of the FlashBuilder setting to Nova.
 
+May be switching to a modified version of [alabianca/xml-to-json](https://github.com/alabianca/xml-to-json) or [recalcitrantQ/xml-to-json](https://github.com/recalcitrantQ/xml-to-json/commits/master/) to handle the XML to JSON.
+The Pure JavaScript XML sometimes fails on mobile project that may have multiple build targets
+
 A lot of the settings from Flash Builder will be imported to the workspace's settings.
 
 **@TODO**
@@ -45,7 +48,6 @@ Used to grab some things used for a task like:
  * Source dirs
  * Lib dirs
  * Additional compiler args
-
 
 ### .flexLibProperties
 

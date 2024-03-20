@@ -24,6 +24,59 @@ exports.determineProjectUUID = function() {
 	return getUUID;
 }
 
+exports.resolveStatusCodeFromADL = function(status) {
+	var title = "AIR ADL Error";
+	var message = "";
+
+	switch(status) {
+		case 1: {
+			title =   "AIR ADL already running";
+			message = "Successful invocation of an already running AIR application. ADL exits immediately.";
+			break;
+		}
+		case 2: {
+			message = "Usage error. The arguments supplied to ADL are incorrect.";
+			break;
+		}
+		case 3: {
+			message = "The runtime cannot be found.";
+			break;
+		}
+		case 4: {
+			message = "The runtime cannot be started. Often, this occurs because the version specified in the application does not match the version of the runtime.";
+			break;
+		}
+		case 5: {
+			message = "An error of unknown cause occurred.";
+			break;
+		}
+		case 6: {
+			message = "The application descriptor file cannot be found.";
+			break;
+		}
+		case 7: {
+			message = "The contents of the application descriptor are not valid. This error usually indicates that the XML is not well formed.";
+			break;
+		}
+		case 8: {
+			message = "The main application content file (specified in the <content> element of the application descriptor file) cannot be found.";
+			break;
+		}
+		case 9: {
+			message = "The main application content file is not a valid SWF or HTML file.";
+			break;
+		}
+		case 10: {
+			message = "The application doesn’t support the profile specified with the -profile option.";
+			break;
+		}
+		case 11: {
+			message = "The -screensize argument is not supported in the current profile.";
+			break;
+		}
+	}
+}
+
 /**
  * Converts the status code from ADT to the text from Adobe AIR's help pages:
  * https://help.adobe.com/en_US/air/build/WSBE9908A0-8E3A-4329-8ABD-12F2A19AB5E9.html
