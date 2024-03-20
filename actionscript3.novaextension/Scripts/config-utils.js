@@ -46,8 +46,21 @@ exports.determineFlexSDKBase = function() {
 			flexSDKBase = nova.path.expanduser(flexSDKBase);
 		}
 	}
-	///console.log("Setting as3mxml.sdk.framework: " + getWorkspaceOrGlobalConfig("as3mxml.sdk.framework"))
-	///console.log("Setting as3mxml.sdk.default: " + getWorkspaceOrGlobalConfig("as3mxml.sdk.default"))
-	///console.log("Using flexSDKBase: " + flexSDKBase);
+
+	if(exports.getWorkspaceOrGlobalConfig("as3.compiler.useDefault")=="Use a specific SDK") {
+		var specificSdk = exports.getWorkspaceOrGlobalConfig("as3.compiler.specificSdk");
+		if(specificSdk!=null && specificSdk.charAt(0)=="~") {
+			specificSdk = nova.path.expanduser(specificSdk);
+		}
+		if(specificSdk!=null && (nova.fs.access(specificSdk, nova.fs.F_OK | nova.fs.X_OK)!=false)) {
+			flexSDKBase = specificSdk;
+		}
+	}
+
+	//console.log("Setting as3mxml.sdk.framework:    " + exports.getWorkspaceOrGlobalConfig("as3mxml.sdk.framework"));
+	//console.log("Setting as3mxml.sdk.default:      " + exports.getWorkspaceOrGlobalConfig("as3mxml.sdk.default"));
+	//console.log("Setting as3.compiler.useDefault:  " + exports.getWorkspaceOrGlobalConfig("as3.compiler.useDefault"));
+	//console.log("Setting as3.compiler.specificSdk: " + exports.getWorkspaceOrGlobalConfig("as3.compiler.specificSdk"));
+	//console.log("Using flexSDKBase: " + flexSDKBase);
 	return flexSDKBase;
 }
