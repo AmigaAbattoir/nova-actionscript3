@@ -33,7 +33,7 @@ exports.activate = function() {
 			nova.credentials.removePassword(projectUUID,"release-build");
 			showNotification("Remove Password", "Successfully removed password from your keychain!")
 		} catch(error) {
-			showNotification("Remove Password Failed", "Either the Project's UUID is wrong, or there was no password")
+			nova.workspace.showErrorMessage("Remove Password Failedn\n\nEither the Project's UUID is wrong, or there was no password");
 		}
 	});
 
@@ -44,11 +44,29 @@ exports.activate = function() {
 	nova.commands.register("actionscript3.paneltest", (editor) => {
 		if (nova.inDevMode()) { console.log("Called... actionscript3.paneltest"); }
 
+		/*
 		// Lookie at https://docs.nova.app/api-reference/workspace/#showinputpalettemessage-options-callback
+		nova.workspace.showErrorMessage("ERROR!!!\n\n You failed! There is a serious problem with the this and that!");
+		nova.workspace.showWarningMessage("WARNING!!! Do not take candy from strangers!");
+		nova.workspace.showInformativeMessage("INFO!!! Your a nice person! I thought you should know that.");
+		*/
+
+		/*
+		nova.workspace.showActionPanel("Messages here", { buttons: [ "Save","This Time","Cancel"] },
+			(something) => {
+				console.log(" SOMETHNG: " + something);
+			}
+		);
+
+		nova.workspace.showChoicePalette(["Messages","here","dafsdf"], { buttons: [ "Save","This Time","Cancel"] },
+			(something) => {
+				console.log(" SOMETHNG: " + something);
+			}
+		);
 
 		// Try replacing them, may be better for Release building!
-		nova.workspace.showInputPanel('Enter new filename:',
-			{ value: '', placeHolder: 'NewFileName' },
+		nova.workspace.showInputPanel('Enter new <b> asdlomsdom  </b> **SODSD** _SDJS_ \n This is the filename:',
+			{ label: "Password", prompt: "Do it now!", secure: true, choices: ["this","that"], checkbox: true },
 			async (newFileName) => {
 				if (newFileName) {
 					// Execute your task with the new filename
@@ -58,9 +76,10 @@ exports.activate = function() {
 				}
 			}
 		);
+		*/
 	});
 
-	nova.commands.register("actionscipt.as3reference",() => { nova.openURL("https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/index.html"); });
+	nova.commands.register("actionscipt.as3reference",() => { nova.openURL("https://airsdk.dev/reference"); });
 /*
     if (nova.inDevMode()) {
         console.log(">>>> AS3MXML Activated");
@@ -135,7 +154,7 @@ class AS3MXMLLanguageServer {
         // Check if the flexSDKBase is valid, if not, warn user and abort!
         if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
             console.log("flexSDKBase accessable? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
-            showNotification("Configure AIR SDK!", "In order to use this extension you will need to have installed a FlexSDK. Please set the location of \"Default AIR SDK\" in the extension preferences!")
+            nova.workspace.showErrorMessage("Configure AIR SDK!\n\nIn order to use this extension you will need to have installed a FlexSDK. Please set the location of \"Default AIR SDK\" in the extension preferences!")
         } else {
             // Create the client
             var args = new Array;
@@ -153,7 +172,6 @@ class AS3MXMLLanguageServer {
 
             // if JDK 11 or newer is ever required, it's probably a good idea to
             // add the following option:
-            args.push("-Xlog:all=warning:stdout");
             //args.push("-Xlog:all=warning:stderr");
 
             /**
