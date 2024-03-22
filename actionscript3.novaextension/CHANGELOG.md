@@ -1,5 +1,6 @@
 ## Version 0.6.1
 
+* Builds projects with ANEs
 * Restructured code
 
 ## Version 0.6.0

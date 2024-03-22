@@ -334,6 +334,7 @@
                     "key": "as3.build.source.main",
                     "title": "Main source folder",
                     "type": "path",
+					"relative": true,
                     "allowFolders": true,
                     "allowFiles": false,
                     "default": "src",
@@ -343,6 +344,7 @@
                     "key": "as3.build.output",
                     "title": "Output folder",
                     "type": "path",
+					"relative": true,
                     "allowFolders": true,
                     "allowFiles": false,
                     "default": "bin-debug",
@@ -357,6 +359,7 @@
                             "key": "as3.build.source.additional",
                             "title": "Additional source path",
                             "type": "pathArray",
+							"relative": true,
                             "allowFolders": true,
                             "allowFiles": false
                         }
@@ -381,6 +384,7 @@
                             "key": "as3.build.library.additional",
                             "title": "Build path libraries",
                             "type": "pathArray",
+							"relative": true,
                             "allowFolders": true,
                             "allowFiles": true
                         },
@@ -432,6 +436,7 @@
                             "key": "as3.build.anes",
                             "title": "Native extensions",
                             "type": "pathArray",
+							"relative": true,
                             "allowFolders": false,
                             "allowFiles": true
                         },
@@ -572,6 +577,7 @@
                     "title": "Native extensions",
                     "description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
                     "type": "pathArray",
+					"relative": true,
                     "allowFolders": false,
                     "allowFiles": true,
                     "comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package"
@@ -587,6 +593,7 @@
                     "key": "as3.modules.list",
                     "title": "Modules",
                     "type": "pathArray",
+					"relative": true,
                     "allowFolders": false,
                     "allowFiles": true,
                 }

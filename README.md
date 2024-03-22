@@ -1,6 +1,6 @@
 # ActionScript 3 Extension for Panic's Nova
 
-Extension for ActionScript 3 and MXML in [Panic's Nova](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as an LSP (which only works if there's an `asconfig.json` in the director).
+Extension for ActionScript 3 and MXML in [Panic's Nova](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as an LSP (which only works if there's an `asconfig.json` in the directory).
 And uses Panic Nova's tasks cleaning/building/running.
 
 More details about AS3MXML are in the [as3mxml.novaextension README.md](as3mxml.novaextension/README.md)

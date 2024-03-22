@@ -9,13 +9,13 @@ It currently provides for ActionScript 3 files:
  * **Language intelligence**
    * Issues (*Note:* needs an `asconfig.json` file to work)
 
- * **Tasks** -  *NOTE:* Limited support for using Nova's Clean/Build/Run for AIR Desktop apps. Looking into mobile, and web (maybe with Ruffle too at some point)
+ * **Tasks** -  *NOTE:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile apps. Also, handles ANEs. Still looking into mobile, and web (maybe with Ruffle too at some point)
 
- * **Exporting AIR Packages** - *NOTE:* Currently, limited to desktop/extendedDesktop AIR builds
+ * **Exporting AIR Packages** - *NOTE:* Currently, limited to desktop/extendedDesktop AIR builds.
 
 ## Notes
 
-The LSP used to gather issues is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.20.1. V1.20.1.
+The LSP used to gather issues is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.20.1.
 
 Started setting up LSP using the [How to use the ActionScript and MXML language server with Sublime Text](https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text) from the repo's Wiki.
 
@@ -32,6 +32,8 @@ Cleaning/Building/Running are done by using `mxmlc` for compiling, packaging and
 ActionScript 3 requires the following to be installed on your Mac:
 
 * Java
+
+  * You may need JDK 11+ to avoid problems with ANEs. Sometime mxmlc will return "Error: null" when using Java 1.8.
 
 * (Harman) Adobe Air or Flex SDK
 

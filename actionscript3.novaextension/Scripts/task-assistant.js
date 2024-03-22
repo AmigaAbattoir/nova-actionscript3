@@ -400,11 +400,43 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			});
 		}
 
+		// If we have ANEs, we will need to unzip them to a folder so that ADL can run and point to those
+		// ANEs so we can run on desktop. But, if it's building for packing, ADT will incorporate that into
+		// the package for us!
 		if(anePaths) {
+ 			var extdir = destDir + "/ane";
+			if(packageAfterBuild==false) {
+				// If the destination "extdir" exists, delete it then make it!
+				try {
+					if(nova.fs.stat(extdir).isDirectory()) {
+						nova.fs.rmdir(extdir);
+					}
+					nova.fs.mkdir(extdir);
+				} catch(error) {
+					console.log("*** ERROR: Failed to make ANE temp folder *** ");
+				}
+			}
 			anePaths.forEach((anePath) => {
 				args.push("--external-library-path+=" + anePath);
 				// Needed?
-				args.push("--library-path+=" + anePath);
+				//args.push("--library-path+=" + anePath);
+				if(packageAfterBuild==false) {
+					var aneDest = anePath.substring(anePath.lastIndexOf("/"),anePath.length);
+					//console.log("ANE DEST: [[" + aneDest + "]]");
+					//console.log("ANE PATH: [[" + anePath + "]]");
+					//console.log("/usr/bin/unzip" + " " + anePath + " " + "-d" + " " + extdir + aneDest);
+					try {
+						nova.fs.mkdir(extdir + aneDest);
+						var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
+						unzip.then((resolve) => {
+							console.log("Unzip successful?!");
+						},(reject) => {
+							console.log("Unzip failed?!?!");
+						});
+					} catch(error) {
+						console.log("*** ERROR: Couldn't unzip ANE for test runs ***");
+					}
+				}
 			});
 		}
 
@@ -519,10 +551,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			args.push(profile);
 		}
 
+		// ADL wants the directory with the ANEs
 		var anes = nova.workspace.config.get("as3.packaging.anes");
+		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
+		// ones that to the destination dir.
 		if(anes) {
 			args.push("-extdir");
-			args.push("ane/");
+			args.push(destDir + "/ane");
 		}
 
 		// The app.xml file
@@ -541,6 +576,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			args: args,
 			env: {}
 		});
+
+		// Possible errors:
+		//
+		// application descriptor not found
+		// Task Terminated with exit code 6
+		// --
+		// error while loading initial content
+		// Task Terminated with exit code 9
 	}
 
 	/**
