@@ -19,10 +19,6 @@ exports.activate = function() {
 		taskprovider.clean(workspacePath, sourcePath, outputPath);
 	});
 
-	nova.commands.register("actionscript.run",(workspace, workspacePath, sourcePath, flexSDKBase, profile, destDir, appXMLName) => {
-		taskprovider.run(workspace, workspacePath, sourcePath, flexSDKBase, profile, destDir, appXMLName);
-	});
-
 	nova.commands.register("actionscipt.importFBSettings",() => {
 		taskprovider.importFlashBuilderSettings();
 	});

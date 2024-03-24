@@ -161,7 +161,7 @@
                     "key": "as3.task.profile",
                     "title": "Profile",
                     "type": "enum",
-                    "default": "mobile",
+                    "default": "default",
                     "values": [
 						["default", "Default (first in app.xml)"],
                         ["desktop", "Desktop"],
@@ -173,7 +173,33 @@
 				{
                     "key": "as3.task.device",
                     "title": "Device",
-                    "type": "string",
+                    "type": "enum",
+					"default": "720x480:720x480",
+                    "values": [
+						["720x480:720x480",     "480 - 720 x 480:720 x 480"],
+						["1280x720:1280x720",   "720 - 1280 x 720:1280 x 720"],
+						["1920x1080:1920x1080", "1080 - 1920 x 1080:1920 x 1080"],
+						["480x816:480x854",     "Android: Droid - 480 x 816:480 x 854"],
+						["240x432:240x432",     "Android: FWQVGA - 240 x 432:240 x 432"],
+						["480x854:480x854",     "Android: FWΩVGA - 480 x 854:480 x 854"],
+						["320x480:320x480",     "Android: HVGA - 320 x 480:320 x 480"],
+						["480x762:480x800",     "Android: NexusOne - 480 x 762:480 x 800"],
+						["240x320:240x320",     "Android: QVGA - 240 x 320:240 x 320"],
+						["480x762:480x800",     "Android: SamsungGalaxyS - 480 x 762:480 x 800"],
+						["600x986:600x1024",    "Android: SamsungGalaxyTab - 600 x 986:600 x 1024"],
+						["240x400:240x400",     "Android: WQVGA - 240 x 400:240 x 400"],
+						["480x800:480x800",     "Android: WVGA - 480 x 800:480 x 800"],
+						["768x1004:768x1024",   "iOS: iPad - 768 x 1004:768 x 1024"],
+						["1536x2008:1536x2048", "iOS: iPadRetina - 1536 x 2008:1536 x 2048"],
+						["320x460:320x480",     "iOS: iPhone - 320 x 460:320 x 480"],
+						["640x920:640x960",     "iOS: iPhoneRetina - 640 x 920:640 x 960"],
+						["640x1096:640x1136",   "iOS: iPhone5Retina - 640 x 1096:640 x 1136"],
+						["750x1294:750x1334",   "iOS: iPhone6 - 750 x 1294:750 x 1334"],
+						["1242x2148:1242x2208", "iOS: iPhone6Plus - 1242 x 2148:1242 x 2208"],
+						["320x460:320x480",     "iOS: iPod - 320 x 460:320 x 480"],
+						["640x920:640x960",     "iOS: iPodRetina - 640 x 920:640 x 960"],
+						["640x1096:640x1136",   "iOS: iPod5Retina - 640 x1096:640 x 1136"],
+					]
 				}
             ]
         },

@@ -9,7 +9,7 @@ Currently a work in progress. Issues work, and some features like Jump to Defini
 
 # Syntax check
 
-I the syntax provided with the AS3MXML is not to Nova's liking and doesn't fully recognize things, need to reworked.
+The syntax provided with the AS3MXML is not to Nova's liking and doesn't fully recognize things, need to reworked.
 
 I stared working on using the Syntax XML from Panic's Javascript extensions, and have made a bit of progress.
 

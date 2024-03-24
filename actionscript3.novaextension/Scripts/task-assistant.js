@@ -269,7 +269,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
 	 * as a Promise, otherwise a standard Nova Task that it can handle
 	 */
-	build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths) {
+	build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths = "") {
 		if(copyAssets) { // Copy each source dir to the output folder
 			console.log("copyAssets Begins!");
 			fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
@@ -491,7 +491,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {string} destDir - The location of where the saved build is
 	 * @param {string} appXMLName - The name of the app.xml file
 	 */
-	debugRun(buildType, flexSDKBase, profile, destDir, appXMLName) {
+	debugRun(buildType, flexSDKBase, profile, destDir, appXMLName, config) {
 		/*
 		var base = nova.path.join(nova.extension.path, "debugger");
 
@@ -521,7 +521,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// Haven't figured how to hook up debugger...
 		*/
 
-		return this.run(buildType, flexSDKBase, profile, destDir, appXMLName);
+		return this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 	}
 
 	/**
@@ -532,7 +532,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {string} destDir - The location of where the saved build is
 	 * @param {string} appXMLName - The name of the app.xml file
 	 */
-	run(buildType, flexSDKBase, profile, destDir, appXMLName) {
+	run(buildType, flexSDKBase, profile, destDir, appXMLName, config) {
 		// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
 		// To launch ADL, we need to point it to the "-app.xml" file
 		var command = flexSDKBase + "/bin/adl";
@@ -542,7 +542,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		/** @TODO Get preferences for what screen size */
 		if(buildType=="airmobile") {
 			args.push("-screensize");
-			args.push("480x762:480x800");
+			args.push(config.get("as3.task.device"));
 		}
 
 		console.log("CONFIG: " + profile);
@@ -822,14 +822,14 @@ console.log("--------------------------------------------------------------\n\n\
 			consoleLogObject(anePaths);
 			*/
 
-			return this.build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, false, anePaths);
+			return this.build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, false, anePaths, config);
 		} else if(action==Task.Run) { //} && data.type=="actionscript") {
 			// @TODO Check if the output files are there, otherwise prompt to build
 			var profile = config.get("as3.task.profile");
 			if(whatKind=="debug") {
-				return this.debugRun(buildType, flexSDKBase, profile, destDir, appXMLName);
+				return this.debugRun(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 			} else {
-				return this.run(buildType, flexSDKBase, profile, destDir, appXMLName );
+				return this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 			}
 		} else if(action==Task.Clean) {
 			return new TaskCommandAction("actionscript.clean", { args: [destDir] });
