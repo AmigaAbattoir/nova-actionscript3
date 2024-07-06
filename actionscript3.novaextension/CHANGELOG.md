@@ -1,3 +1,7 @@
+## Version 0.7.0
+
+* Removed other XML parser stuff and updated code to use NS3X2J for parsing FlashBuilder's XML files.
+
 ## Version 0.6.1
 
 * Builds projects with ANEs

@@ -348,6 +348,25 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
+	 * Retrieves an attribute value from a node by their names.
+	 *
+	 * @param {String} nodeName - The name of the node to retrieve.
+	 * @param {String} attributeName - The name of the attribute to retrieve.
+	 * @returns {String|null} - The value of the attribute or null if not found.
+	 */
+	getAttributeFromNodeByName(nodeName, attributeName) {
+		const nodes = this.findNodesByName(nodeName);
+		if (nodes.length > 0) {
+			for (let node of nodes) {
+				if (node['@'] && node['@'][attributeName]) {
+					return node['@'][attributeName];
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Just return the line and column for a particular node by name
 	 *
 	 * @param {String} nodeName - The name of the node to find
@@ -378,11 +397,6 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 			return nodes.map(node => node.children.filter(child => child.name === childName));
 		}
 		return null;
-	}
-
-	getCurrentNodeChildrenByName(node, childName) {
-		const children = node.children.filter(child => child.name === childName);
-		return children.length === 1 ? children[0] : children;
 	}
 
 	/**

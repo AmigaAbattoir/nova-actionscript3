@@ -1,5 +1,9 @@
 const pjXML = require('pjxml');
 const { getTag, getTagAttribute, getAttribute } = require("./xml-utils.js");
+
+
+const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
+
 const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT } = require("./as3-utils.js");
@@ -652,30 +656,23 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * Imports setting from a Flash Builder project files and adjust the workspace's settings
 	 */
 	importFlashBuilderSettings() {
-		// Check ".project" XML file for things
-		//let check1 = parser.parse(this.getStringOfWorkspaceFile(".actionScriptProperties"));
-		var check1 =this.getStringOfWorkspaceFile(".actionScriptProperties");
-
-/*
-console.log("--------------------------------------------------------------\n\n\n");
-		const xmlToJson = require('./xml-to-json/xmlToJsonStream.js');
-	//consoleLogObject(xmlToJson);
-		const parse = new xmlToJson.XMLtoJSON(check1);
-	// Print the JSON object.
-		consoleLogObject(parse.json);
-console.log("--------------------------------------------------------------\n\n\n");
-*/
-		var projectXml = pjXML.parse(this.getStringOfWorkspaceFile(".project"));
+		var projectXml =  new xmlToJson.ns3x2j(this.getStringOfWorkspaceFile(".project"),false);
 
 		// Change project name to the Flash Builder project name:
-		nova.workspace.config.set("workspace.name",String(projectXml.select("//name")[0]["content"]).trim());
+		nova.workspace.config.set("workspace.name",projectXml.getNodeChildrenByName("projectDescription","name").textContent);
+
+		if(projectXml.getNodeChildrenByName("linkedResources","link")!=null) {
+			showNotification("Flash Build Project Import","Nova does not support links like FlashBuilder or Eclipse. You may need to fix this yourself.");
+		}
 
 		// Check if there is a ".flexProperties"
 		// @NOTE Not sure what else we would need from this file
 		var isFlex = false;
 		var flexProperties = this.getStringOfWorkspaceFile(".flexProperties");
 		if(flexProperties!=null) {
-			var flexPropertiesXml = pjXML.parse(flexProperties);
+//			var flexPropertiesXml = pjXML.parse(flexProperties);
+			/** @NOTE Not sure we need to check any values, but if it's there, it's MXML vs AS3 project! */
+			var flexPropertiesXml = new xmlToJson.ns3x2j(flexProperties,false);
 			//console.log("compilerSourcePath> " + flexPropertiesXml.select("//flexProperties"));
 			//consoleLogObject(flexPropertiesXml.select("//flexProperties"));
 			nova.workspace.config.set("editor.default_syntax","MXML");
@@ -687,61 +684,61 @@ console.log("--------------------------------------------------------------\n\n\
 		}
 
 		// Check ".actionScriptProperties"
-		var actionscriptPropertiesXml = pjXML.parse(this.getStringOfWorkspaceFile(".actionScriptProperties").replace("\\n","").replace("\\r",""));
+		var actionscriptPropertiesXml =new xmlToJson.ns3x2j(this.getStringOfWorkspaceFile(".actionScriptProperties"));
 
-		var mainApplicationPath = getTagAttribute(actionscriptPropertiesXml,"actionScriptProperties","mainApplicationPath");
+		var mainApplicationPath = actionscriptPropertiesXml.getAttributeFromNodeByName("actionScriptProperties","mainApplicationPath");
 		nova.workspace.config.set("as3.application.mainApp",mainApplicationPath);
 
-		var projectUUID = getTagAttribute(actionscriptPropertiesXml,"actionScriptProperties","projectUUID");
+		var projectUUID = actionscriptPropertiesXml.getAttributeFromNodeByName("actionScriptProperties","projectUUID");
 		nova.workspace.config.set("as3.application.projectUUID",projectUUID);
 /*
 		var swfName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
 		console.log("Name of SWF: [" + swfName  + "]");
 */
-		nova.workspace.config.set("as3.build.source.main",getTagAttribute(actionscriptPropertiesXml,"compiler","sourceFolderPath"));
+		nova.workspace.config.set("as3.build.source.main",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","sourceFolderPath"));
 
 		var prefSourceDirs = [];
-		actionscriptPropertiesXml.select("//compilerSourcePathEntry").forEach((sourceDir) => {
-			console.log(" Add a 'Source Dirs:' entry of [" + getAttribute(sourceDir,"path") + "]");
-			prefSourceDirs.push(getAttribute(sourceDir,"path"));
+		actionscriptPropertiesXml.findNodesByName("compilerSourcePathEntry").forEach((sourceDir) => {
+			console.log(" sourceDir: " + sourceDir["@"]["path"]);
+			prefSourceDirs.push(sourceDir["@"]["path"]);
 		});
 		nova.workspace.config.set("as3.build.source.additional",prefSourceDirs);
 
-		nova.workspace.config.set("as3.build.output",getTagAttribute(actionscriptPropertiesXml,"compiler","outputFolderPath"));
+		nova.workspace.config.set("as3.build.output",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","outputFolderPath"));
 
 		// Since the XML may have libraryPathEntries in multiple places, we need to take a look at the top children of it.
 		//Since pjxml seems to add "" contents after the fact, let's check each one
 		var prefLibDirs = [];
-		actionscriptPropertiesXml.select("//libraryPath").content.forEach((libDir) => {
-			if(libDir!="") {
-				if(libDir["attributes"]["kind"]==1) {
-					console.log("Add a 'Libs Dirs:` entry of [" + getAttribute(libDir,"path") + "]");
-					prefLibDirs.push(getAttribute(libDir,"path"));
-				} else {
-					// @TODO Kind 4 may be excludes, need to look into how to add that to the call to build...
-				}
+
+		actionscriptPropertiesXml.findNodesByName("libraryPathEntry").forEach((libDir) => {
+			consoleLogObject(libDir);
+			if(libDir["@"]["kind"]==1) {
+				console.log("Add a 'Libs Dirs:` entry of [" + libDir["@"]["path"] + "]");
+				prefLibDirs.push(libDir["@"]["path"]);
+			} else {
+				// @TODO Kind 4 may be excludes, need to look into how to add that to the call to build...
 			}
 		});
 
 		nova.workspace.config.set("as3.build.library.additional",prefLibDirs);
 
-		nova.workspace.config.set("as3.build.verifyRSL",(getTagAttribute(actionscriptPropertiesXml,"compiler","verifyDigests")=="true" ? true : false));
+		nova.workspace.config.set("as3.build.verifyRSL",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","verifyDigests")=="true" ? true : false));
 
-		nova.workspace.config.set("as3.build.removeRSL",(getTagAttribute(actionscriptPropertiesXml,"compiler","removeUnusedRSL")=="true" ? true : false));
+		nova.workspace.config.set("as3.build.removeRSL",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","removeUnusedRSL")=="true" ? true : false));
 
-		nova.workspace.config.set("as3.build.localDebugRuntime",(getTagAttribute(actionscriptPropertiesXml,"compiler","useDebugRSLSwfs")=="true" ? true : false));
+		nova.workspace.config.set("as3.build.localDebugRuntime",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","useDebugRSLSwfs")=="true" ? true : false));
 
-		nova.workspace.config.set("as3.build.autoOrder",(getTagAttribute(actionscriptPropertiesXml,"compiler","autoRSLOrdering")=="true" ? true : false));
+		nova.workspace.config.set("as3.build.autoOrder",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","autoRSLOrdering")=="true" ? true : false));
 
-		nova.workspace.config.set("as3.compiler.copy",(getTagAttribute(actionscriptPropertiesXml,"compiler","copyDependentFiles")=="true" ? true : false));
+		nova.workspace.config.set("as3.compiler.copy",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","copyDependentFiles")=="true" ? true : false));
 
-		nova.workspace.config.set("as3.compiler.generateAccessable",(getTagAttribute(actionscriptPropertiesXml,"compiler","generateAccessible")=="true" ? true : false));
+		nova.workspace.config.set("as3.compiler.generateAccessable",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","generateAccessible")=="true" ? true : false));
 
-		nova.workspace.config.set("as3.compiler.strict",(getTagAttribute(actionscriptPropertiesXml,"compiler","strict")=="true" ? true : false));
+		nova.workspace.config.set("as3.compiler.strict",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","strict")=="true" ? true : false));
 
-		nova.workspace.config.set("as3.compiler.enableWarnings",(getTagAttribute(actionscriptPropertiesXml,"compiler","warn")=="true" ? true : false));
+		nova.workspace.config.set("as3.compiler.enableWarnings",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","warn")=="true" ? true : false));
 
-		nova.workspace.config.set("as3.compiler.additional",getTagAttribute(actionscriptPropertiesXml,"compiler","additionalCompilerArguments"));
+		nova.workspace.config.set("as3.compiler.additional",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","additionalCompilerArguments"));
 
 		// Packaging
 /*
@@ -754,9 +751,11 @@ console.log("--------------------------------------------------------------\n\n\
 		consoleLogObject(actionscriptPropertiesXml.select("//airSettings")).trim();
 		console.log("--------------------------------------");
 */
-		nova.workspace.config.set("as3.packaging.certificate",getTagAttribute(actionscriptPropertiesXml,"airSettings","airCertificatePath"));
 
-		nova.workspace.config.set("as3.packaging.timestamp",getTagAttribute(actionscriptPropertiesXml,"airSettings","airTimestamp"));
+/** @NOTE Need to loop through "buildTargets" for each <buildTarget>!! And these should be added as tasks
+		nova.workspace.config.set("as3.packaging.certificate",actionscriptPropertiesXml.getAttributeFromNodeByName("airSettings","airCertificatePath"));
+
+		nova.workspace.config.set("as3.packaging.timestamp",actionscriptPropertiesXml.getAttributeFromNodeByName("airSettings","airTimestamp"));
 
 		var excludedInPackage = []
 		actionscriptPropertiesXml.select("//airExcludes").content.forEach((excludes) => {
@@ -766,6 +765,7 @@ console.log("--------------------------------------------------------------\n\n\
 			}
 		});
 		nova.workspace.config.set("as3.packaging.excludedFiles",excludedInPackage);
+*/
 	}
 
 	/**
