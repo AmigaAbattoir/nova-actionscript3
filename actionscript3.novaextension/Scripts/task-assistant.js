@@ -1,9 +1,4 @@
-const pjXML = require('pjxml');
-const { getTag, getTagAttribute, getAttribute } = require("./xml-utils.js");
-
-
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-
 const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT } = require("./as3-utils.js");
