@@ -1,51 +1,51 @@
 {
-    "identifier": "com.abattoirsoftware.actionscript3",
-    "name": "ActionScript 3",
-    "organization": "",
-    "description": "ActionScript & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
-    "version": "0.7.0",
+	"identifier": "com.abattoirsoftware.actionscript3",
+	"name": "ActionScript 3",
+	"organization": "",
+	"description": "ActionScript & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
+	"version": "0.7.0",
 	"keywords": ["actionscript 3","flash","adobe air","mxml" ],
-    "categories": [
-        "issues",
-        "languages",
-        "tasks",
+	"categories": [
+		"issues",
+		"languages",
+		"tasks",
 		"clips",
-        "completions",
-    ],
+		"completions",
+	],
 
-    "main": "main.js",
+	"main": "main.js",
 
-    "entitlements": {
-        "process": true,
-        "filesystem": "readwrite"
-    },
+	"entitlements": {
+		"process": true,
+		"filesystem": "readwrite"
+	},
 
-    "activationEvents": [
-        "onLanguage:as",
-        "onLanguage:as3",
-        "onLanguage:actionscript",
-        "onLanguage:actionscript3",
-        "onLanguage:mxml",
-        "onWorkspaceContains:**/asconfig.json",
-        "onWorkspaceContains:**/asconfig.*.json",
-        "onWorkspaceContains:.actionScriptProperties",
-        "onWorkspaceContains:*.as3proj",
-        "onView:actionScriptSourcePaths",
-        "onCommand:as3mxml.organizeImportsInUri",
-        "onCommand:as3mxml.organizeImportsInDirectory",
-        "onCommand:as3mxml.removeUnusedImportsInUri",
-        "onCommand:as3mxml.addMissingImportsInUri",
-        "onCommand:as3mxml.sortImportsInUri",
-        "onCommand:as3mxml.saveSessionPassword",
-        "onCommand:as3mxml.selectWorkspaceSDK",
-        "onCommand:as3mxml.restartServer",
-        "onCommand:as3mxml.importFlashBuilderProject",
-        "onCommand:as3mxml.importFlashDevelopProject",
-        "onCommand:as3mxml.quickCompile",
-        "onCommand:as3mxml.quickCompileAndDebug",
-        "onCommand:as3mxml.quickCompileAndRun",
-        "onCommand:as3mxml.getActiveProjectURIs"
-    ],
+	"activationEvents": [
+		"onLanguage:as",
+		"onLanguage:as3",
+		"onLanguage:actionscript",
+		"onLanguage:actionscript3",
+		"onLanguage:mxml",
+		"onWorkspaceContains:**/asconfig.json",
+		"onWorkspaceContains:**/asconfig.*.json",
+		"onWorkspaceContains:.actionScriptProperties",
+		"onWorkspaceContains:*.as3proj",
+		"onView:actionScriptSourcePaths",
+		"onCommand:as3mxml.organizeImportsInUri",
+		"onCommand:as3mxml.organizeImportsInDirectory",
+		"onCommand:as3mxml.removeUnusedImportsInUri",
+		"onCommand:as3mxml.addMissingImportsInUri",
+		"onCommand:as3mxml.sortImportsInUri",
+		"onCommand:as3mxml.saveSessionPassword",
+		"onCommand:as3mxml.selectWorkspaceSDK",
+		"onCommand:as3mxml.restartServer",
+		"onCommand:as3mxml.importFlashBuilderProject",
+		"onCommand:as3mxml.importFlashDevelopProject",
+		"onCommand:as3mxml.quickCompile",
+		"onCommand:as3mxml.quickCompileAndDebug",
+		"onCommand:as3mxml.quickCompileAndRun",
+		"onCommand:as3mxml.getActiveProjectURIs"
+	],
 
 	"breakpoints": [
 		{
@@ -63,339 +63,339 @@
 		}
 	},
 
-    "taskTemplates": {
-        "actionscript-air": {
-            "name": "ActionScript - AIR",
-            "image": "Adobe_AIR_logo.svg.png",
-            "description": "Build and run AS3 or MXML project.",
-            "persistent": true,
-            "tasks": {
-                "build": {
-                    "resolve": "actionscript",
-                    "data": {
-                        "type": "actionscript",
-                    }
-                },
-                "clean": {
-                    "resolve": "actionscript",
-                    "data": {
-                        "type": "actionscript",
-                    }
-                },
-                "run": {
-                    "resolve": "actionscript",
-                    "data": {
-                        "type": "actionscript",
-                    }
-                },
-            },
-            "config": [
-                {
-                    "key": "as3.task.commandLine",
-                    "title": "Command line arguments",
-                    "type": "string",
-                },
-                {
-                    "key": "as3.task.mainApplicationPath",
-                    "title": "Publisher ID",
-                    "type": "string",
-                },
-                {
-                    "key": "as3.task.profile",
-                    "title": "Profile",
-                    "type": "enum",
-                    "default": "desktop",
-                    "values": [
+	"taskTemplates": {
+		"actionscript-air": {
+			"name": "ActionScript - AIR",
+			"image": "Adobe_AIR_logo.svg.png",
+			"description": "Build and run AS3 or MXML project.",
+			"persistent": true,
+			"tasks": {
+				"build": {
+					"resolve": "actionscript",
+					"data": {
+						"type": "actionscript",
+					}
+				},
+				"clean": {
+					"resolve": "actionscript",
+					"data": {
+						"type": "actionscript",
+					}
+				},
+				"run": {
+					"resolve": "actionscript",
+					"data": {
+						"type": "actionscript",
+					}
+				},
+			},
+			"config": [
+				{
+					"key": "as3.task.commandLine",
+					"title": "Command line arguments",
+					"type": "string",
+				},
+				{
+					"key": "as3.task.mainApplicationPath",
+					"title": "Publisher ID",
+					"type": "string",
+				},
+				{
+					"key": "as3.task.profile",
+					"title": "Profile",
+					"type": "enum",
+					"default": "desktop",
+					"values": [
 						["default", "Default (first in app.xml)"],
-                        ["desktop", "Desktop"],
-                        ["extendedDesktop", "Extended Desktop"],
-                        ["mobileDevice", "Mobile Device"],
-                        ["extendedMobileDevice", "Extended Mobile Device"]
-                    ],
-                }
-            ]
-        },
-        "actionscript-airmobile": {
-            "name": "ActionScript - Mobile",
-            "image": "Adobe Device Central.png",
-            "description": "Build and run AS3 or MXML project for Mobile.",
-            "persistent": true,
-            "tasks": {
-                "build": {
-                    "resolve": "actionscript",
-                    "data": {
-                        "type": "mobile",
-                    }
-                },
-                "clean": {
-                    "resolve": "actionscript",
-                    "data": {
-                        "type": "mobile",
-                    }
-                },
-                "run": {
-                    "resolve": "actionscript",
-                    "data": {
-                        "type": "mobile",
-                    }
-                },
-            },
-            "config": [
+						["desktop", "Desktop"],
+						["extendedDesktop", "Extended Desktop"],
+						["mobileDevice", "Mobile Device"],
+						["extendedMobileDevice", "Extended Mobile Device"]
+					],
+				}
+			]
+		},
+		"actionscript-airmobile": {
+			"name": "ActionScript - Mobile",
+			"image": "Adobe Device Central.png",
+			"description": "Build and run AS3 or MXML project for Mobile.",
+			"persistent": true,
+			"tasks": {
+				"build": {
+					"resolve": "actionscript",
+					"data": {
+						"type": "mobile",
+					}
+				},
+				"clean": {
+					"resolve": "actionscript",
+					"data": {
+						"type": "mobile",
+					}
+				},
+				"run": {
+					"resolve": "actionscript",
+					"data": {
+						"type": "mobile",
+					}
+				},
+			},
+			"config": [
 				{
 					"key": "as3.task.isFlex",
 					"title": "Is Flex Based",
 					"type": "boolean",
 					"default": false
 				},
-                {
-                    "key": "as3.task.commandLine",
-                    "title": "Command line arguments",
-                    "type": "string",
-                },
-                {
-                    "key": "as3.task.mainApplicationPath",
-                    "title": "Publisher ID",
-                    "type": "string",
-                },
-                {
-                    "key": "as3.task.profile",
-                    "title": "Profile",
-                    "type": "enum",
-                    "default": "default",
-                    "values": [
-						["default", "Default (first in app.xml)"],
-                        ["desktop", "Desktop"],
-                        ["extendedDesktop", "Extended Desktop"],
-                        ["mobileDevice", "Mobile Device"],
-                        ["extendedMobileDevice", "Extended Mobile Device"]
-                    ],
-                },
 				{
-                    "key": "as3.task.device",
-                    "title": "Device",
-                    "type": "enum",
+					"key": "as3.task.commandLine",
+					"title": "Command line arguments",
+					"type": "string",
+				},
+				{
+					"key": "as3.task.mainApplicationPath",
+					"title": "Publisher ID",
+					"type": "string",
+				},
+				{
+					"key": "as3.task.profile",
+					"title": "Profile",
+					"type": "enum",
+					"default": "default",
+					"values": [
+						["default", "Default (first in app.xml)"],
+						["desktop", "Desktop"],
+						["extendedDesktop", "Extended Desktop"],
+						["mobileDevice", "Mobile Device"],
+						["extendedMobileDevice", "Extended Mobile Device"]
+					],
+				},
+				{
+					"key": "as3.task.device",
+					"title": "Device",
+					"type": "enum",
 					"default": "720x480:720x480",
-                    "values": [
-						["720x480:720x480",     "480 - 720 x 480:720 x 480"],
+					"values": [
+						["720x480:720x480", 	"480 - 720 x 480:720 x 480"],
 						["1280x720:1280x720",   "720 - 1280 x 720:1280 x 720"],
 						["1920x1080:1920x1080", "1080 - 1920 x 1080:1920 x 1080"],
-						["480x816:480x854",     "Android: Droid - 480 x 816:480 x 854"],
-						["240x432:240x432",     "Android: FWQVGA - 240 x 432:240 x 432"],
-						["480x854:480x854",     "Android: FWΩVGA - 480 x 854:480 x 854"],
-						["320x480:320x480",     "Android: HVGA - 320 x 480:320 x 480"],
-						["480x762:480x800",     "Android: NexusOne - 480 x 762:480 x 800"],
-						["240x320:240x320",     "Android: QVGA - 240 x 320:240 x 320"],
-						["480x762:480x800",     "Android: SamsungGalaxyS - 480 x 762:480 x 800"],
-						["600x986:600x1024",    "Android: SamsungGalaxyTab - 600 x 986:600 x 1024"],
-						["240x400:240x400",     "Android: WQVGA - 240 x 400:240 x 400"],
-						["480x800:480x800",     "Android: WVGA - 480 x 800:480 x 800"],
+						["480x816:480x854", 	"Android: Droid - 480 x 816:480 x 854"],
+						["240x432:240x432", 	"Android: FWQVGA - 240 x 432:240 x 432"],
+						["480x854:480x854", 	"Android: FWΩVGA - 480 x 854:480 x 854"],
+						["320x480:320x480", 	"Android: HVGA - 320 x 480:320 x 480"],
+						["480x762:480x800", 	"Android: NexusOne - 480 x 762:480 x 800"],
+						["240x320:240x320", 	"Android: QVGA - 240 x 320:240 x 320"],
+						["480x762:480x800", 	"Android: SamsungGalaxyS - 480 x 762:480 x 800"],
+						["600x986:600x1024",	"Android: SamsungGalaxyTab - 600 x 986:600 x 1024"],
+						["240x400:240x400", 	"Android: WQVGA - 240 x 400:240 x 400"],
+						["480x800:480x800", 	"Android: WVGA - 480 x 800:480 x 800"],
 						["768x1004:768x1024",   "iOS: iPad - 768 x 1004:768 x 1024"],
 						["1536x2008:1536x2048", "iOS: iPadRetina - 1536 x 2008:1536 x 2048"],
-						["320x460:320x480",     "iOS: iPhone - 320 x 460:320 x 480"],
-						["640x920:640x960",     "iOS: iPhoneRetina - 640 x 920:640 x 960"],
+						["320x460:320x480", 	"iOS: iPhone - 320 x 460:320 x 480"],
+						["640x920:640x960", 	"iOS: iPhoneRetina - 640 x 920:640 x 960"],
 						["640x1096:640x1136",   "iOS: iPhone5Retina - 640 x 1096:640 x 1136"],
 						["750x1294:750x1334",   "iOS: iPhone6 - 750 x 1294:750 x 1334"],
 						["1242x2148:1242x2208", "iOS: iPhone6Plus - 1242 x 2148:1242 x 2208"],
-						["320x460:320x480",     "iOS: iPod - 320 x 460:320 x 480"],
-						["640x920:640x960",     "iOS: iPodRetina - 640 x 920:640 x 960"],
+						["320x460:320x480", 	"iOS: iPod - 320 x 460:320 x 480"],
+						["640x920:640x960", 	"iOS: iPodRetina - 640 x 920:640 x 960"],
 						["640x1096:640x1136",   "iOS: iPod5Retina - 640 x1096:640 x 1136"],
 					]
 				}
-            ]
-        },
-    },
+			]
+		},
+	},
 
-    "config": [
-        {
-            "title": "Language Server",
-            "type": "section",
-            "children": [
-                {
-                    "key": "as3mxml.language-server-path",
-                    "title": "Language Server Path",
-                    "type": "path",
-                    "allowFolders": true,
-                    "allowFiles": false,
-                    "placeholder": "Use built-in AS3MXML LSP",
-                    "description": "Path to the AS3MXML LSP, if blank, it will used the bundled LSP."
-                },
-                {
-                    "key": "as3mxml.languageServer.jvmargs",
-                    "title": "JVM Args",
-                    "type": "string",
-                    "placeholder": "-Xms512m -Xmx1024m",
-                    "description": "(Advanced) Specifies extra arguments that asconfigc will pass to the Java virtual machine when launching the language server (code intelligence).\n\nThe following example customizes the Java memory heap size for the code intelligence: \"-Xms512m -Xmx1024m\""
-                },
-                {
-                    "key": "as3mxml.languageServer.concurrentRequests",
-                    "title": "Concurrent Requests",
-                    "type": "bool",
-                    "default": true,
-                    "description": "(Advanced) Specifies if requests to the language server will be processed concurrently or in a queue. Disabling concurrency will result in slower code intelligence, but it may be more stable if code intelligence stops working."
-                }
-            ]
-        },
-        {
-            "title": "Java",
-            "type": "section",
-            "children": [
-                {
-                    "key": "as3mxml.java.path",
-                    "title": "Java Path",
-                    "type": "path",
-                    "placeholder": "/usr/bin/java",
-                    "description": "(Advanced) If the extension cannot find Java automatically, this setting may be used to specify the exact path to the java executable that the extension should use (Note: it must be an executable, and not directory)."
-                }
-            ]
-        },
-        {
-            "title": "SDKs",
-            "type": "section",
-            "children": [
-                {
-                    "key": "as3mxml.sdk.default",
-                    "title": "Default AIR SDK path",
-                    "allowFolders": true,
-                    "allowFiles": false,
-                    "type": "path",
-                    "default": "~/Applications/AIRSDK/",
-                },
-                {
-                    "key": "as3mxml.sdk.searchPaths",
-                    "title": "SDK Search Paths",
-                    "allowFolders": true,
-                    "allowFiles": false,
-                    "type": "pathArray",
-                    "placeholder": "",
-                    "description": "Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
+	"config": [
+		{
+			"title": "Language Server",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3mxml.language-server-path",
+					"title": "Language Server Path",
+					"type": "path",
+					"allowFolders": true,
+					"allowFiles": false,
+					"placeholder": "Use built-in AS3MXML LSP",
+					"description": "Path to the AS3MXML LSP, if blank, it will used the bundled LSP."
+				},
+				{
+					"key": "as3mxml.languageServer.jvmargs",
+					"title": "JVM Args",
+					"type": "string",
+					"placeholder": "-Xms512m -Xmx1024m",
+					"description": "(Advanced) Specifies extra arguments that asconfigc will pass to the Java virtual machine when launching the language server (code intelligence).\n\nThe following example customizes the Java memory heap size for the code intelligence: \"-Xms512m -Xmx1024m\""
+				},
+				{
+					"key": "as3mxml.languageServer.concurrentRequests",
+					"title": "Concurrent Requests",
+					"type": "bool",
+					"default": true,
+					"description": "(Advanced) Specifies if requests to the language server will be processed concurrently or in a queue. Disabling concurrency will result in slower code intelligence, but it may be more stable if code intelligence stops working."
+				}
+			]
+		},
+		{
+			"title": "Java",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3mxml.java.path",
+					"title": "Java Path",
+					"type": "path",
+					"placeholder": "/usr/bin/java",
+					"description": "(Advanced) If the extension cannot find Java automatically, this setting may be used to specify the exact path to the java executable that the extension should use (Note: it must be an executable, and not directory)."
+				}
+			]
+		},
+		{
+			"title": "SDKs",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3mxml.sdk.default",
+					"title": "Default AIR SDK path",
+					"allowFolders": true,
+					"allowFiles": false,
+					"type": "path",
+					"default": "~/Applications/AIRSDK/",
+				},
+				{
+					"key": "as3mxml.sdk.searchPaths",
+					"title": "SDK Search Paths",
+					"allowFolders": true,
+					"allowFiles": false,
+					"type": "pathArray",
+					"placeholder": "",
+					"description": "Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
 
-                },
-                {
-                    "key": "as3mxml.sdk.animate",
-                    "title": "Adobe Animate executable",
-                    "type": "path",
-                    "placeholder": "",
-                    "description": "Specifies the absolute path of the Adobe Animate executable"
-                },
-                {
-                    "key": "as3mxml.sdk.editor",
-                    "title": "Editor SDK path",
-                    "type": "path",
-                    "allowFolders": true,
-                    "allowFiles": false,
-                    "default": "~/Applications/AIRSDK/",
-                    "description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
-                },
-            ]
-        },
-        {
-            "title": "Additional Options...",
-            "type": "section",
-            "children": [
-                {
-                    "key": "as3mxml.projectImport.prompt",
-                    "title": "Automatically import Flash Builder projects",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Specifies whether to automatically import a project folder from Flash Builder when present. If disabled, you can still do this manually form the menu."
-                },
-            ]
-        },
-        {
-            "title": "Debug",
-            "type": "section",
-            "children": [
-                {
-                    "key": "as3.debug.standalone",
-                    "title": "Standalone Flash Player (Debug version)",
-                    "type": "path",
-                    "allowFolders": true,
-                    "allowFiles": false,
-                    "description": ""
-                },
-            ]
-        },
-        {
-            "title": "File Exclusions",
-            "type": "section",
+				},
+				{
+					"key": "as3mxml.sdk.animate",
+					"title": "Adobe Animate executable",
+					"type": "path",
+					"placeholder": "",
+					"description": "Specifies the absolute path of the Adobe Animate executable"
+				},
+				{
+					"key": "as3mxml.sdk.editor",
+					"title": "Editor SDK path",
+					"type": "path",
+					"allowFolders": true,
+					"allowFiles": false,
+					"default": "~/Applications/AIRSDK/",
+					"description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
+				},
+			]
+		},
+		{
+			"title": "Additional Options...",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3mxml.projectImport.prompt",
+					"title": "Automatically import Flash Builder projects",
+					"type": "boolean",
+					"default": true,
+					"description": "Specifies whether to automatically import a project folder from Flash Builder when present. If disabled, you can still do this manually form the menu."
+				},
+			]
+		},
+		{
+			"title": "Debug",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3.debug.standalone",
+					"title": "Standalone Flash Player (Debug version)",
+					"type": "path",
+					"allowFolders": true,
+					"allowFiles": false,
+					"description": ""
+				},
+			]
+		},
+		{
+			"title": "File Exclusions",
+			"type": "section",
 			"description": "Select the files that you do not want copied to the output folder after compilations",
-            "children": [
-                {
-                    "key": "as3.fileExclusion.extensions",
-                    "title": "File Extensions",
-                    "type": "stringArray",
+			"children": [
+				{
+					"key": "as3.fileExclusion.extensions",
+					"title": "File Extensions",
+					"type": "stringArray",
 					"default": [ ".java",".class",".properties",".mxml",".as",".swc",".fxg"]
-                },
-                {
-                    "key": "as3.fileExclusion.names",
-                    "title": "File Names",
-                    "type": "stringArray",
+				},
+				{
+					"key": "as3.fileExclusion.names",
+					"title": "File Names",
+					"type": "stringArray",
 					"default": [ ".DS_Store",".git",".svn",".classpath", "flex-config.xml","air-config.xml","services-config.xml","remoting-config.xml","proxy-config.xml","messaging-config.xml","data-management-config.xml" ]
-                },
-            ]
-        }
-    ],
+				},
+			]
+		}
+	],
 
-    "configWorkspace": [
-        {
-            "title": "Application",
-            "type": "section",
-            "description": "Select the main ActionScript or MXML",
-            "children": [
-                {
-                    "key": "as3.application.mainApp",
-                    "title": "Main application",
-                    "type": "path",
-                    "allowFolders": false,
-                    "allowFiles": true,
+	"configWorkspace": [
+		{
+			"title": "Application",
+			"type": "section",
+			"description": "Select the main ActionScript or MXML",
+			"children": [
+				{
+					"key": "as3.application.mainApp",
+					"title": "Main application",
+					"type": "path",
+					"allowFolders": false,
+					"allowFiles": true,
 					"filetype": [ "as","mxml" ]
-                }
-            ]
-        },
-        {
-            "title": "Build Path",
-            "type": "section",
-            "children": [
-                {
-                    "key": "as3.build.source.main",
-                    "title": "Main source folder",
-                    "type": "path",
+				}
+			]
+		},
+		{
+			"title": "Build Path",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3.build.source.main",
+					"title": "Main source folder",
+					"type": "path",
 					"relative": true,
-                    "allowFolders": true,
-                    "allowFiles": false,
-                    "default": "src",
+					"allowFolders": true,
+					"allowFiles": false,
+					"default": "src",
 					"description": "The location of your main file. Use \"./\" if you want it at the root, otherwise it defaults to \"src\""
-                },
-                {
-                    "key": "as3.build.output",
-                    "title": "Output folder",
-                    "type": "path",
+				},
+				{
+					"key": "as3.build.output",
+					"title": "Output folder",
+					"type": "path",
 					"relative": true,
-                    "allowFolders": true,
-                    "allowFiles": false,
-                    "default": "bin-debug",
+					"allowFolders": true,
+					"allowFiles": false,
+					"default": "bin-debug",
 					"description": "The location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
-                },
-                {
-                    "title": "Source path",
-                    "type": "section",
-                    "description": "Additional source folders outside of the main source folder",
-                    "children": [
-                        {
-                            "key": "as3.build.source.additional",
-                            "title": "Additional source path",
-                            "type": "pathArray",
+				},
+				{
+					"title": "Source path",
+					"type": "section",
+					"description": "Additional source folders outside of the main source folder",
+					"children": [
+						{
+							"key": "as3.build.source.additional",
+							"title": "Additional source path",
+							"type": "pathArray",
 							"relative": true,
-                            "allowFolders": true,
-                            "allowFiles": false
-                        }
-                    ]
-                },
-                {
-                    "title": "Library Path",
-                    "type": "section",
-                    "description": "Additonal library folders (* May need some work...)",
-                    "children": [
+							"allowFolders": true,
+							"allowFiles": false
+						}
+					]
+				},
+				{
+					"title": "Library Path",
+					"type": "section",
+					"description": "Additonal library folders (* May need some work...)",
+					"children": [
 						{
 							"key": "as3.build.linkage",
 							"title": "Framework linkage",
@@ -406,24 +406,24 @@
 							],
 							"default": "Use default (merged into code)",
 						},
-                        {
-                            "key": "as3.build.library.additional",
-                            "title": "Build path libraries",
-                            "type": "pathArray",
+						{
+							"key": "as3.build.library.additional",
+							"title": "Build path libraries",
+							"type": "pathArray",
 							"relative": true,
-                            "allowFolders": true,
-                            "allowFiles": true
-                        },
-                        {
-                            "key": "as3.build.addSWCFolder",
-                            "title": "Add SWC Folder...",
-                            "type": "command"
-                        },
-                        {
-                            "key": "as3.build.addSWC...",
-                            "title": "Add SWC",
-                            "type": "command"
-                        },
+							"allowFolders": true,
+							"allowFiles": true
+						},
+						{
+							"key": "as3.build.addSWCFolder",
+							"title": "Add SWC Folder...",
+							"type": "command"
+						},
+						{
+							"key": "as3.build.addSWC...",
+							"title": "Add SWC",
+							"type": "command"
+						},
 						{
 							"type": "separator"
 						},
@@ -451,128 +451,128 @@
 							"type": "boolean",
 							"default": true,
 						}
-                    ]
-                },
-                {
-                    "title": "Native Extensions",
-                    "type": "section",
-                    "description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your applications and use them like stnadard libraries",
-                    "children": [
-                        {
-                            "key": "as3.build.anes",
-                            "title": "Native extensions",
-                            "type": "pathArray",
+					]
+				},
+				{
+					"title": "Native Extensions",
+					"type": "section",
+					"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your applications and use them like stnadard libraries",
+					"children": [
+						{
+							"key": "as3.build.anes",
+							"title": "Native extensions",
+							"type": "pathArray",
 							"relative": true,
-                            "allowFolders": false,
-                            "allowFiles": true
-                        },
-                        {
-                            "key": "as3.packaging.certificateCreate",
-                            "title": "Add ANE",
-                            "type": "command"
-                        },
-                        {
-                            "key": "as3.packaging.certificateCreate",
-                            "title": "Add Folder",
-                            "type": "command"
-                        },
-                        {
-                            "key": "as3.packaging.certificateCreate",
-                            "title": "Refresh",
-                            "type": "command"
-                        },
-                    ]
-                }
-            ]
-        },
-        {
-            "title": "Compiler",
-            "type": "section",
-            "children": [
-                {
-                    "title": "Flex SDK version",
-                    "type": "section",
-                    "children": [
-                        {
-                            "key": "as3.compiler.useDefault",
-                            "title": "Use default SDK",
-                            "type": "enum",
-                            "values": [ "Use default SDK","Use a specific SDK"],
-                            "default": "Use default SDK",
-                            "description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale, the classic Apache Flex or Adobe Flex SDKs, and the Feathers SDK."
-                        },
-                        {
-                            "key": "as3.compiler.specificSdk",
-                            "title": "Use a specific SDK",
-                            "type": "path",
-                            "allowFolders": true,
-                            "allowFiles": false,
-                            "placeholder": "If empty, defaults the one specified in the extention's preferences"
-                        }
-                    ]
-                },
-                {
-                    "title": "Options",
-                    "type": "section",
-                    "children": [
-                        {
-                            "key": "as3.compiler.copy",
-                            "title": "Copy non-embedded files to output folder",
-                            "type": "bool",
-                            "default": true
-                        },
-                        {
-                            "key": "as3.compiler.generateAccessable",
-                            "title": "Generate accessible SWF file",
-                            "type": "bool",
-                            "default": false
-                        },
-                        {
-                            "key": "as3.compiler.strict",
-                            "title": "Enable strict type checking",
-                            "type": "bool",
-                            "default": true
-                        },
-                        {
-                            "key": "as3.compiler.enableWarnings",
-                            "title": "Enable warnings",
-                            "type": "bool",
-                            "default": true
-                        },
-                        {
-                            "key": "as3.compiler.additional",
-                            "title": "Additional compiler arguments",
-                            "type": "text",
-                        }
-                    ]
+							"allowFolders": false,
+							"allowFiles": true
+						},
+						{
+							"key": "as3.packaging.certificateCreate",
+							"title": "Add ANE",
+							"type": "command"
+						},
+						{
+							"key": "as3.packaging.certificateCreate",
+							"title": "Add Folder",
+							"type": "command"
+						},
+						{
+							"key": "as3.packaging.certificateCreate",
+							"title": "Refresh",
+							"type": "command"
+						},
+					]
 				}
 			]
-        },
-        {
-            "title": "Packaging",
-            "type": "section",
-            "children": [
-                {
-                    "key": "as3.packaging.certificate",
-                    "title": "Certificate",
-                    "type": "path",
-                    "allowFolders": false,
-                    "allowFiles": true,
-                    "description": "Select the .p12 file to build your AIR app with",
+		},
+		{
+			"title": "Compiler",
+			"type": "section",
+			"children": [
+				{
+					"title": "Flex SDK version",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.compiler.useDefault",
+							"title": "Use default SDK",
+							"type": "enum",
+							"values": [ "Use default SDK","Use a specific SDK"],
+							"default": "Use default SDK",
+							"description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale, the classic Apache Flex or Adobe Flex SDKs, and the Feathers SDK."
+						},
+						{
+							"key": "as3.compiler.specificSdk",
+							"title": "Use a specific SDK",
+							"type": "path",
+							"allowFolders": true,
+							"allowFiles": false,
+							"placeholder": "If empty, defaults the one specified in the extention's preferences"
+						}
+					]
+				},
+				{
+					"title": "Options",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.compiler.copy",
+							"title": "Copy non-embedded files to output folder",
+							"type": "bool",
+							"default": true
+						},
+						{
+							"key": "as3.compiler.generateAccessable",
+							"title": "Generate accessible SWF file",
+							"type": "bool",
+							"default": false
+						},
+						{
+							"key": "as3.compiler.strict",
+							"title": "Enable strict type checking",
+							"type": "bool",
+							"default": true
+						},
+						{
+							"key": "as3.compiler.enableWarnings",
+							"title": "Enable warnings",
+							"type": "bool",
+							"default": true
+						},
+						{
+							"key": "as3.compiler.additional",
+							"title": "Additional compiler arguments",
+							"type": "text",
+						}
+					]
+				}
+			]
+		},
+		{
+			"title": "Packaging",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3.packaging.certificate",
+					"title": "Certificate",
+					"type": "path",
+					"allowFolders": false,
+					"allowFiles": true,
+					"description": "Select the .p12 file to build your AIR app with",
 					"note": "@TODO Need to see how to implement a UI for this...",
 					"comment": [
-                		{
-                    		"key": "as3.packaging.certificateCreate",
-                    		"title": "Create",
-                    		"type": "command"
-                		},
-        				{
-            				"key": "actionscipt.clearExportPassword",
-            				"title": "Clear",
-            				"type": "command"
-        				}
+						{
+							"key": "as3.packaging.certificateCreate",
+							"title": "Create",
+							"type": "command"
+						},
+						{
+							"key": "actionscipt.clearExportPassword",
+							"title": "Clear",
+							"type": "command"
+						}
 					]
-                },
+				},
 				{
 					"key": "as3.packaging.type",
 					"title": "Export as",
@@ -586,134 +586,134 @@
 					"default": "Signed AIR package",
 				},
 				{
-                    "key": "as3.packaging.timestamp",
-                    "title": "Timestamp",
-                    "type": "bool",
-                    "default": true
+					"key": "as3.packaging.timestamp",
+					"title": "Timestamp",
+					"type": "bool",
+					"default": true
 				},
-                {
-                    "key": "as3.packaging.excludedFiles",
-                    "title": "Files to exclude when packaging",
-                    "type": "pathArray",
-                    "allowFolders": true,
-                    "allowFiles": true
-                },
-                {
-                    "key": "as3.packaging.anes",
-                    "title": "Native extensions",
-                    "description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
-                    "type": "pathArray",
+				{
+					"key": "as3.packaging.excludedFiles",
+					"title": "Files to exclude when packaging",
+					"type": "pathArray",
+					"allowFolders": true,
+					"allowFiles": true
+				},
+				{
+					"key": "as3.packaging.anes",
+					"title": "Native extensions",
+					"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+					"type": "pathArray",
 					"relative": true,
-                    "allowFolders": false,
-                    "allowFiles": true,
-                    "comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package"
-                }
-            ]
-        },
-        {
-            "title": "Modules",
-            "type": "section",
-            "description": "Specify the modules to build for this project (Not sure how to handle this, but it was in FB 4.6...)",
-            "children": [
-                {
-                    "key": "as3.modules.list",
-                    "title": "Modules",
-                    "type": "pathArray",
+					"allowFolders": false,
+					"allowFiles": true,
+					"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package"
+				}
+			]
+		},
+		{
+			"title": "Modules",
+			"type": "section",
+			"description": "Specify the modules to build for this project (Not sure how to handle this, but it was in FB 4.6...)",
+			"children": [
+				{
+					"key": "as3.modules.list",
+					"title": "Modules",
+					"type": "pathArray",
 					"relative": true,
-                    "allowFolders": false,
-                    "allowFiles": true,
-                }
-            ]
-        }
-    ],
+					"allowFolders": false,
+					"allowFiles": true,
+				}
+			]
+		}
+	],
 
-    "commands": {
-        "files": [
-            {
-                "title": "New ActionScript file",
-                "command": "as3mxml.newActionScriptFile"
-            }
-        ],
-        "editor": [
-            {
-                "title": "Add Import",
-                "command": "as3mxml.addImport"
-            },
-            {
-                "title": "Add MXML Namespace",
-                "command": "as3mxml.addMXMLNamespace"
-            },
-            {
-                "title": "Organize Imports In Uri",
-                "command": "as3mxml.organizeImportsInUri"
-            },
-            {
-                "title": "Organize Imports In Directory",
-                "command": "as3mxml.organizeImportsInDirectory"
-            },
-            {
-                "title": "Add Missing Imports In Uri",
-                "command": "as3mxml.addMissingImportsInUri"
-            },
-            {
-                "title": "Remove Unused Imports In Uri",
-                "command": "as3mxml.removeUnusedImportsInUri"
-            },
-            {
-                "title": "Sort Imports In Directory",
-                "command": "as3mxml.sortImportsInUri"
-            },
-            {
-                "title": "Get Active Project URIs",
-                "command": "as3mxml.getActiveProjectURIs"
-            },
-            {
-                "title": "Get Library Definition Text",
-                "command": "as3mxml.getLibraryDefinitionText"
-            }
-        ],
-        "extensions": [
-            {
-                "title": "Restart AS3MXML LSP",
-                "command": "as3mxml.restart"
-            },
-            {"separator": true},
-            {
-                "title": "Export Release Build...",
-                "command": "actionscipt.exportRelease"
-            },
-            {
-                "title": "Clear Certifcate Password",
-                "command": "actionscipt.clearExportPassword"
-            },
-            {
-                "title": "Test Input Box",
-                "command": "actionscript3.paneltest"
-            },
-            {"separator": true},
-            {
-                "title": "Import FlashBuilder settings",
-                "command": "actionscipt.importFBSettings"
-            },
-            {"separator": true},
-            {
-                "title": "AIR / ActionScript 3 Reference",
-                "command": "actionscipt.as3reference"
-            },
-            {"separator": true},
-            {"separator": true},
-            {
-                "title": "HOVER TEST!!",
-                "command": "as3mxml.hovertest"
-            },
-            {
-                "title": "CODE ACTION!!",
-                "command": "as3mxml.codeaction"
-            },
-            {
-                "title": "DOCUMENT SYMBOLS!!",
-                "command": "as3mxml.documentsymbols"
-            }
-        ]
-    }
+	"commands": {
+		"files": [
+			{
+				"title": "New ActionScript file",
+				"command": "as3mxml.newActionScriptFile"
+			}
+		],
+		"editor": [
+			{
+				"title": "Add Import",
+				"command": "as3mxml.addImport"
+			},
+			{
+				"title": "Add MXML Namespace",
+				"command": "as3mxml.addMXMLNamespace"
+			},
+			{
+				"title": "Organize Imports In Uri",
+				"command": "as3mxml.organizeImportsInUri"
+			},
+			{
+				"title": "Organize Imports In Directory",
+				"command": "as3mxml.organizeImportsInDirectory"
+			},
+			{
+				"title": "Add Missing Imports In Uri",
+				"command": "as3mxml.addMissingImportsInUri"
+			},
+			{
+				"title": "Remove Unused Imports In Uri",
+				"command": "as3mxml.removeUnusedImportsInUri"
+			},
+			{
+				"title": "Sort Imports In Directory",
+				"command": "as3mxml.sortImportsInUri"
+			},
+			{
+				"title": "Get Active Project URIs",
+				"command": "as3mxml.getActiveProjectURIs"
+			},
+			{
+				"title": "Get Library Definition Text",
+				"command": "as3mxml.getLibraryDefinitionText"
+			}
+		],
+		"extensions": [
+			{
+				"title": "Restart AS3MXML LSP",
+				"command": "as3mxml.restart"
+			},
+			{"separator": true},
+			{
+				"title": "Export Release Build...",
+				"command": "actionscipt.exportRelease"
+			},
+			{
+				"title": "Clear Certifcate Password",
+				"command": "actionscipt.clearExportPassword"
+			},
+			{
+				"title": "Test Input Box",
+				"command": "actionscript3.paneltest"
+			},
+			{"separator": true},
+			{
+				"title": "Import FlashBuilder settings",
+				"command": "actionscipt.importFBSettings"
+			},
+			{"separator": true},
+			{
+				"title": "AIR / ActionScript 3 Reference",
+				"command": "actionscipt.as3reference"
+			},
+			{"separator": true},
+			{"separator": true},
+			{
+				"title": "HOVER TEST!!",
+				"command": "as3mxml.hovertest"
+			},
+			{
+				"title": "CODE ACTION!!",
+				"command": "as3mxml.codeaction"
+			},
+			{
+				"title": "DOCUMENT SYMBOLS!!",
+				"command": "as3mxml.documentsymbols"
+			}
+		]
+	}
 }

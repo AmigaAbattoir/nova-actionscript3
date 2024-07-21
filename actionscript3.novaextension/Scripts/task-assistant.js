@@ -79,8 +79,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			var libPaths = nova.workspace.config.get("as3.build.library.additional");
 
-			var libPaths = nova.workspace.config.get("as3.build.library.additional");
-
 			var releasePath = "bin-release-temp";
 
 			/** @TODO Figure out what type of build... */
@@ -136,7 +134,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 					passwordGet = nova.notifications.add(request);
 				} else {
-					// We have a password, fufill the promise
+					// We have a password, fulfill the promise
 					passwordGet = Promise.resolve( { identifier: "Export Release Build...", actionIdx: 0, textInputValue: passwordCheck });
 				}
 
@@ -170,11 +168,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					args.push("pkcs12");
 
 					args.push("-keystore");
+					/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 					args.push(nova.workspace.config.get("as3.packaging.certificate"));
 
 					args.push("-storepass");
 					args.push(password);
 
+					/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 					var doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
 					if(doTimestamp==false) {
 						args.push("-tsa");
@@ -363,8 +363,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					sourceDir = nova.path.expanduser(sourceDir);
 				}
 				if(sourceDir.includes("${PROJECT_FRAMEWORKS}")) {
-					console.log("Change project frameworks!!!");
-					sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase);
+					sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
 				}
 				args.push("--source-path+=" + sourceDir);
 			});
@@ -373,11 +372,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// This too should be from settings
 		if(libPaths) {
 			libPaths.forEach((libPath) => {
-				/*
 				// @NOTE, not sure this is needed, but it may come in handy
 				if(libPath.includes("${PROJECT_FRAMEWORKS}")) {
-					libPath = libPath.replace("${PROJECT_FRAMEWORKS}",flexSDKBase);
+					libPath = libPath.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
 				}
+				if(libPath.includes("{locale}")) {
+					/** @TODO Need to figure out how to get locale... Maybe a setting in the extension or preferences */
+					libPath = libPath.replace("{locale}","en_US");
+				}
+				/*
 				//
 				// Actually, if it's wrong, it's wrong. That shouldn't be skipped
 				try {
@@ -539,6 +542,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		console.log("buildType = "+buildType)
 		/** @TODO Get preferences for what screen size */
+		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 		if(buildType=="airmobile") {
 			args.push("-screensize");
 			args.push(config.get("as3.task.device"));
@@ -548,9 +552,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		if(profile!="default") {
 			args.push("-profile");
 			args.push(profile);
+		} else {
+			// If it's default, make sure to use mobileDevice if were are in a airmobile task. Otherwise, we'll get errors
+			if(profile=="default" && buildType=="airmobile") {
+				args.push("-profile");
+				args.push("mobileDevice");
+			}
 		}
 
 		// ADL wants the directory with the ANEs
+		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 		var anes = nova.workspace.config.get("as3.packaging.anes");
 		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 		// ones that to the destination dir.
@@ -735,32 +746,119 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		nova.workspace.config.set("as3.compiler.additional",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","additionalCompilerArguments"));
 
-		// Packaging
-/*
-		console.log("actionscriptPropertiesXml: ");
-		consoleLogObject(actionscriptPropertiesXml);
-		console.log("--------------------------------------");
-		console.log(
-			String(actionscriptPropertiesXml.select("//airSettings")).trim()
-		);
-		consoleLogObject(actionscriptPropertiesXml.select("//airSettings")).trim();
-		console.log("--------------------------------------");
-*/
+		// @NOTE Modules and Workers. Never used them, not sure how they get setup here.
 
-/** @NOTE Need to loop through "buildTargets" for each <buildTarget>!! And these should be added as tasks
-		nova.workspace.config.set("as3.packaging.certificate",actionscriptPropertiesXml.getAttributeFromNodeByName("airSettings","airCertificatePath"));
+		// Packaging, make separate tasks for it
+		actionscriptPropertiesXml.findNodesByName("buildTarget").forEach((buildTarget) => {
+			var taskName = "";
+			var taskJson = {
+								"extension" : {
+									"identifier" : "com.abattoirsoftware.actionscript3",
+									"name" : "ActionScript 3"
+								}
+							};
 
-		nova.workspace.config.set("as3.packaging.timestamp",actionscriptPropertiesXml.getAttributeFromNodeByName("airSettings","airTimestamp"));
+			switch(buildTarget["@"]["buildTargetName"]) {
+				case "default": {
+					taskName = "ActionScript - AIR";
+					taskJson["extensionTemplate"] = "actionscript-air";
+					break;
+				}
+				case "com.adobe.flexide.multiplatform.ios.platform": {
+					taskName = "ActionScript - Apple iOS";
+					taskJson["extensionTemplate"] = "actionscript-airmobile";
+					break;
+				}
+				case "com.qnx.flexide.multiplatform.qnx.platform": {
+					taskName = "ActionScript - BlackBerry Table OS";
+					taskJson["extensionTemplate"] = "actionscript-airmobile";
+					console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
+					break;
+				}
+				case "com.adobe.flexide.multiplatform.android.platform": {
+					taskName = "ActionScript - Google Android";
+					taskJson["extensionTemplate"] = "actionscript-airmobile";
+					break;
+				}
+				case "device": {
+					if(buildTarget["@"]["platformId"]) {
+						taskJson["extensionTemplate"] = "actionscript-airmobile";
+						switch (buildTarget["@"]["platformId"]) {
+							case "com.adobe.flexide.multiplatform.ios.platform": {
+								taskName = "ActionScript - iOS Device";
+								break;
+							}
+							case "com.adobe.flexide.multiplatform.android.platform": {
+								taskName = "ActionScript - Android Device";
+								break;
+							}
+							default: {
+								console.log("Uknown device type of " + buildTarget["@"]["platformId"]);
+								taskName = "ActionScript - " + buildTarget["@"]["platformId"];
+								break;
+							}
+						}
+					} else {
+						taskName = "ActionScript - AIR";
+					}
+					break;
+				}
+			}
 
-		var excludedInPackage = []
-		actionscriptPropertiesXml.select("//airExcludes").content.forEach((excludes) => {
-			if(excludes!="") {
-				console.log("Add an exclude to packaging with entry of [" + getAttribute(excludes,"path") + "]");
-				excludedInPackage.push(getAttribute(excludes,"path"));
+			if(taskJson!={}) {
+				taskJson["extensionValues"] = {};
+
+				var airSettings = actionscriptPropertiesXml.findChildNodeByName(buildTarget["children"], "airSettings");
+			//	consoleLogObject(airSettings);
+				//console.log("airCertificatePath: " + airSettings["@"]["airCertificatePath"]);
+				if(airSettings["@"]["airCertificatePath"]!="") {
+					taskJson.extensionValues["as3.packaging.certificate"] = airSettings["@"]["airCertificatePath"];
+				}
+				//console.log("airTimestamp: " + airSettings["@"]["airTimestamp"]);
+				if(airSettings["@"]["airTimestamp"]!="") {
+					taskJson.extensionValues["as3.packaging.timestamp"] = airSettings["@"]["airTimestamp"];
+				}
+
+				// @NOTE Not sure what to do here...
+				//console.log("newLaunchParams: " + airSettings["@"]["newLaunchParams"]);
+				//console.log("modifiedLaunchParams: " + airSettings["@"]["modifiedLaunchParams"]);
+				//console.log("newPackagingParams: " + airSettings["@"]["newPackagingParams"]);
+				//console.log("modifiedPackagingParams: " + airSettings["@"]["modifiedPackagingParams"]);
+
+				var airExcludes = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "airExcludes");
+				var excludedInPackage = []
+
+				airExcludes["children"].forEach((excludes) => {
+					console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
+					excludedInPackage.push(excludes["@"]["path"]);
+				});
+				if(excludedInPackage.length>0) {
+					taskJson.extensionValues["as3.packaging.excludedFile"] = excludedInPackage;
+				}
+
+				var anePaths = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "anePaths");
+				var anePathsInPackage = [];
+
+			//	consoleLogObject(anePaths);
+				anePaths["children"].forEach((anePath) => {
+			//		consoleLogObject(anePath);
+					console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
+					anePathsInPackage.push(anePath["@"]["path"]);
+				});
+				if(anePathsInPackage.length>0) {
+					taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
+				}
+
+				console.log("-----------------------------================------------------------");
+				console.log(taskName);
+				consoleLogObject(taskJson);
+				console.log("-----------------------------================------------------------");
+
+				var taskFile = nova.fs.open(nova.workspace.path + "/.nova/Tasks/"+"Test-"+taskName+".json","w");
+				taskFile.write(JSON.stringify(taskJson,null,2));
+				taskFile.close();
 			}
 		});
-		nova.workspace.config.set("as3.packaging.excludedFiles",excludedInPackage);
-*/
 	}
 
 	/**
@@ -776,6 +874,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		if(data.type=="mobile") {
 			buildType = "airmobile";
 		}
+
+		console.log("as3.packaging.excludedFile: " + config.get("as3.packaging.excludedFile"));
 
 		// Get the context.config so we can get the Task settings!
 		var whatKind = config.get("actionscript3.request");
@@ -821,6 +921,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		} else if(action==Task.Run) { //} && data.type=="actionscript") {
 			// @TODO Check if the output files are there, otherwise prompt to build
 			var profile = config.get("as3.task.profile");
+
 			if(whatKind=="debug") {
 				return this.debugRun(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 			} else {

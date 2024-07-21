@@ -2,15 +2,15 @@
 
 Extension for ActionScript 3 and MXML in [Panic's Nova](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as an LSP (which only works if there's an `asconfig.json` in the directory).
 
-And uses Panic Nova's tasks cleaning/building/running.
+And uses Panic Nova's tasks cleaning/building/running, which can be pull in from Flash Builder configuration files.
 
-More details about AS3MXML are in the [actionscript3.novaextension README.md](actionscript3.novaextension/README.md)
+More details about ActionScript 3 for Nova are in the [actionscript3.novaextension README.md](actionscript3.novaextension/README.md)
 
 Currently a work in progress. Issues work, and some features like Jump to Definition work occasionally.
 
 # Syntax check
 
-The syntax provided with the AS3MXML is not to Nova's liking and doesn't fully recognize things, need to reworked.
+The syntax provided with the AS3MXML is not to Nova's liking and doesn't fully recognize things, needs to reworked.
 
 I stared working on using the Syntax XML from Panic's Javascript extensions, and have made a bit of progress.
 
@@ -24,13 +24,11 @@ About [AIR ADL command line](https://help.adobe.com/en_US/air/build/WSfffb011ac5
 
 ## FlashBuilder migration
 
-A lot of the settings from Flash Builder can be imported to the Nova project's workspace settings. (Task may be added too)
+A lot of the settings from Flash Builder can be imported to the Nova project's workspace settings.
 
 **@TODO**
- * Import Flash Builder project when opening the first time.
- * Try to automatically add a task to the project (based on AIR/Mobile/Web)
-
-For now, you need to manually add a Task, and then run the command from the menu command will log to console what the settings should be.
+ * Import Flash Builder project when opening a project for the first time.
+ * Make an "Export Build" look for tasks and allow you to select which ones to build.
 
 ### .flexProperties
 
@@ -54,3 +52,4 @@ Not read yet.
 It will read this and rename the Nova project to the same name as the FlashBuilder project.
 
 If there is a tag of `<linkedResources>` with a `<type>` of 2, then warn the user that these types of links are not supported in Nova.
+
