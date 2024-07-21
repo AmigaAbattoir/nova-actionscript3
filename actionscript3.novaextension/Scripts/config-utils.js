@@ -1,4 +1,4 @@
-const { isWorkspace } = require("./nova-utils.js");
+const { showNotification, isWorkspace } = require("./nova-utils.js");
 
 exports.getWorkspaceOrGlobalConfig = function(configName) {
 	var config = nova.config.get(configName);
@@ -49,11 +49,16 @@ exports.determineFlexSDKBase = function() {
 
 	if(exports.getWorkspaceOrGlobalConfig("as3.compiler.useDefault")=="Use a specific SDK") {
 		var specificSdk = exports.getWorkspaceOrGlobalConfig("as3.compiler.specificSdk");
-		if(specificSdk!=null && specificSdk.charAt(0)=="~") {
-			specificSdk = nova.path.expanduser(specificSdk);
-		}
-		if(specificSdk!=null && (nova.fs.access(specificSdk, nova.fs.F_OK | nova.fs.X_OK)!=false)) {
-			flexSDKBase = specificSdk;
+		if(specificSdk!=null) {
+			if(specificSdk.charAt(0)=="~") {
+				specificSdk = nova.path.expanduser(specificSdk);
+			}
+
+			if(nova.fs.access(specificSdk, nova.fs.F_OK | nova.fs.X_OK)!=false) {
+				flexSDKBase = specificSdk;
+			} else {
+				showNotification("Could not find specific AIR SDK", "Could not find specific AIR SDK at\n " + specificSdk + ", using default of " + flexSDKBase, "Oh no!");
+			}
 		}
 	}
 
