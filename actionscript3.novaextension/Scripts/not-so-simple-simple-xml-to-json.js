@@ -400,6 +400,21 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
+	 * Finds children nodes by their name within a given array of nodes.
+	 *
+	 * @param {Array} children - The array of child nodes to search within.
+	 * @param {String} childName - The name of the child node to find.
+	 * @returns {Object|Array|null} - The matching node, an array of matching nodes, or null if no match is found.
+	 */
+	findChildNodeByName(children, childName) {
+		const matchingChildren = children.filter(child => child.name === childName);
+		if (matchingChildren.length === 0) {
+			return null;
+		}
+		return matchingChildren.length === 1 ? matchingChildren[0] : matchingChildren;
+	}
+
+	/**
 	 * Searches the JSON for particular nodes
 	 *
 	 * @param {JSON} nodes - The JSON array of nodes to search through
