@@ -10,7 +10,7 @@ Currently a work in progress. Issues work, and some features like Jump to Defini
 
 # Syntax check
 
-The syntax provided with the AS3MXML is not to Nova's liking and doesn't fully recognize things, needs to reworked.
+The syntax provided with the AS3MXML is not to Nova's liking and doesn't fully recognize things, needs to be reworked.
 
 I stared working on using the Syntax XML from Panic's Javascript extensions, and have made a bit of progress.
 
@@ -25,10 +25,10 @@ About [AIR ADL command line](https://help.adobe.com/en_US/air/build/WSfffb011ac5
 ## FlashBuilder migration
 
 A lot of the settings from Flash Builder can be imported to the Nova project's workspace settings.
+This will go through your existing project, and make Tasks for each build target there was in the Flash Builder project
 
 **@TODO**
  * Import Flash Builder project when opening a project for the first time.
- * Make an "Export Build" look for tasks and allow you to select which ones to build.
 
 ### .flexProperties
 

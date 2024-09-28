@@ -4,23 +4,28 @@
  * Not so simple, simple XML to JSON (ns3x2j for short)
  *
  * Used for Nova to parse XML to a JSON array. It keeps the structure of the XML, and keeps attributes
- * and content separate
+ * and content separate.
+ *
+ * This class provides a parser that converts XML content into a JSON structure, preserving attributes, text content,
+ * and the hierarchical structure of the XML. It also has the ability to track the position of nodes within the XML.
  *
  * @author ChatGPT and Christopher Pollati
+ * @version 1.0
  */
 exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 
 	/**
 	 * Takes a string of text as XML, and converts it into a JSON object
 	 *
-	 * @param {String} xmlString - The XML content that should be parsed
+	 * @param {string} xmlString - The XML content that should be parsed
+	 * @param {boolean} trackPosition - Whether to track the position (line and column) of nodes in the XML (optional).
 	 */
 	constructor(xmlString, trackPosition = false) {
 		this.xmlString = xmlString;
 		this.trackPosition = trackPosition;
 		this.currentIndex = 0;
-		this.lineNumber = 1;   // Track the current line number
-		this.columnNumber = 0; // Track the current column number
+		this.lineNumber = 1;
+		this.columnNumber = 0;
 		this.jsonArray = [];
 		const rootNode = this.parseNode();
 		if (rootNode) {
@@ -28,6 +33,17 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 		}
 	}
 
+	/**
+	 * Generates a JSON representation of an XML node.
+	 *
+	 * @param {string} nodeName - The name of the XML node
+	 * @param {Array} attributes - The attributes of this node (as key-value pairs)
+	 * @param {Array} children - An array of children nodes
+	 * @param {string} textContent - The text contents of this node, if any
+	 * @param {number} line - The line number where the node starts (if tracking position).
+	 * @param {number} column - The column number where the node starts (if tracking position).
+	 * @returns {Object} The JSON representation of the node.
+	 */
 	generateNode(nodeName, attributes, children, textContent, line, column) {
 		return {
 			name: nodeName,
@@ -43,6 +59,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 
 	/**
 	 * Handles taking the XML node and converting it into JSON
+	 * @returns {Object|null} The JSON representation of the node or null if no valid node is found.
 	 */
 	parseNode() {
 		this.skipWhitespace();
@@ -101,7 +118,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
-	 * Helps to skip an XML declaration
+	 * Helps to skip an XML declaration  (e.g., <?xml version="1.0" ?>).
 	 */
 	skipDeclaration() {
 		if (this.xmlString.substr(this.currentIndex, 4) !== '?xml') {
@@ -124,7 +141,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
-	 * Used to skip comments, should handled nested comments too!
+	 * Used to skip XML comments, supports nested comments too!
 	 */
 	skipComment() {
 		if (this.xmlString.substr(this.currentIndex, 3) !== "!--") {
@@ -153,7 +170,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	/**
 	 * Used to move where were are in the XML string, accounting that the `currentIndex` and `columnNumber` need to be adjusted
 	 *
-	 * @param {Number} value - How many spaces
+	 * @param {number} value - The number of characters to move forward.
 	 */
 	moveCurrentIndex(value) {
 		this.currentIndex += value;
@@ -170,6 +187,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 
 	/**
 	 * Gets the current `lineNumber` and `columnNumber`
+	 * @returns {string} The current line and column in the format 'line: x, col: y'.
 	 */
 	getLineColumn() {
 		return `line: ${this.lineNumber}, col: ${this.columnNumber}`;
@@ -188,7 +206,8 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
-	 * Checks for the nodes name, otherwise throws an error.
+	 * Parses and returns the name of the current node.
+	 * @returns {string} The name of the node.
 	 */
 	parseNodeName() {
 		const start = this.currentIndex;
@@ -202,7 +221,8 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
-	 * Checks for the attributes in a node.
+	 *  Parses and returns the attributes of the current node as a key-value pair object.
+	 * @returns {Object} The attributes of the node.
 	 */
 	parseAttributes() {
 		const attributes = {};
@@ -225,7 +245,8 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
-	 * Handles parsing the values of the attribute.
+	 * Parses and returns the value of the current attribute.
+	 * @returns {string} The value of the attribute.
 	 */
 	parseAttributeValue() {
 		const quote = this.xmlString[this.currentIndex];
@@ -246,9 +267,10 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
-	 * Handles going through the children of a node
+	 * Parses and returns the the children of a node
 	 *
-	 * @param {String} parentNodeName - The parent's node name so we know when to stop parsing the node
+	 * @param {string} parentNodeName - The parent's node name so we know when to stop parsing the node
+	 * @returns {Array} An array of child nodes.
 	 */
 	parseChildren(parentNodeName) {
 		const children = [];
@@ -306,7 +328,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	 * Helps to display an error, that may be helpful for reading. Tries to show the line where the error occurs,
 	 * and adds double brackets at the offending spot.
 	 *
-	 * @param {String} message - The error message
+	 * @param {string} message - The error message
 	 */
 	showErrorContext(message) {
 		const start = Math.max(0, this.currentIndex - 20);
@@ -325,8 +347,10 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	/* ---- Helpers ---- */
 
 	/**
-	 * Helper to find a particular node by it's name
-	 * @param {String} nodeName - The name of the node you are looking for
+	 * Finds nodes by their name and returns an array of matching nodes.
+	 *
+	 * @param {string} nodeName - The name of the node to search for.
+	 * @returns {Array} An array of matching nodes.
 	 */
 	findNodesByName(nodeName) {
 		const result = [];
@@ -335,9 +359,10 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
-	 * Returnsa all the attributes for a specific node.
+	 * Returns the attributes of a specific node.
 	 *
-	 * @param {String} nodeName - The node to get attributes of
+	 * @param {string} nodeName - The name of the node.
+	 * @returns {Array} An array of attribute objects for the specified node.
 	 */
 	getNodeAttributesByName(nodeName) {
 		const nodes = this.findNodesByName(nodeName);
@@ -350,8 +375,8 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	/**
 	 * Retrieves an attribute value from a node by their names.
 	 *
-	 * @param {String} nodeName - The name of the node to retrieve.
-	 * @param {String} attributeName - The name of the attribute to retrieve.
+	 * @param {string} nodeName - The name of the node to retrieve.
+	 * @param {string} attributeName - The name of the attribute to retrieve.
 	 * @returns {String|null} - The value of the attribute or null if not found.
 	 */
 	getAttributeFromNodeByName(nodeName, attributeName) {
@@ -369,7 +394,8 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	/**
 	 * Just return the line and column for a particular node by name
 	 *
-	 * @param {String} nodeName - The name of the node to find
+	 * @param {string} nodeName - The name of the node to find
+	 * @returns {Array} - Returns an array with a line and column where that node appear.
 	 */
 	 getNodePositionsByName(nodeName) {
 		const nodes = this.findNodesByName(nodeName);
@@ -385,8 +411,9 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	/**
 	 * Get a particular children of a particular node
 	 *
-	 * @param {String} nodeName - The name of the node to find
-	 * @param {String} childName - The name of the children to find
+	 * @param {string} nodeName - The name of the node to find
+	 * @param {string} childName - The name of the children to find
+	 * @returns {Object|Array|null} The matching child node(s) or null if not found.
 	 */
 	getNodeChildrenByName(nodeName, childName) {
 		const nodes = this.findNodesByName(nodeName);
@@ -403,7 +430,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	 * Finds children nodes by their name within a given array of nodes.
 	 *
 	 * @param {Array} children - The array of child nodes to search within.
-	 * @param {String} childName - The name of the child node to find.
+	 * @param {string} childName - The name of the child node to find.
 	 * @returns {Object|Array|null} - The matching node, an array of matching nodes, or null if no match is found.
 	 */
 	findChildNodeByName(children, childName) {
@@ -415,11 +442,11 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	}
 
 	/**
-	 * Searches the JSON for particular nodes
+	 * Recursively searches through nodes to find those with a specified name.
 	 *
-	 * @param {JSON} nodes - The JSON array of nodes to search through
-	 * @param {String} nodeName - The name of the nodes you are looking for
-	 * @param {Object} result - Where to store the results of the search.
+	 * @param {Array} nodes - The array of nodes to search through.
+	 * @param {string} nodeName - The name of the node to search for.
+	 * @param {Array} result - The array where matching nodes will be added.
 	 */
 	searchNodes(nodes, nodeName, result) {
 		for (let node of nodes) {
@@ -434,6 +461,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 
 	/**
 	 * Method to get the JSON array
+	 * @returns {Array} - The converted XML in JSON form
 	 */
 	getJSONArray() { return this.jsonArray; }
 };

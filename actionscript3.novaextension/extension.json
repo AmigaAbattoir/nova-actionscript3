@@ -112,6 +112,63 @@
 						["mobileDevice", "Mobile Device"],
 						["extendedMobileDevice", "Extended Mobile Device"]
 					],
+				},
+
+				{
+					"key": "as3.packaging.certificate",
+					"title": "Certificate",
+					"type": "path",
+					"allowFolders": false,
+					"allowFiles": true,
+					"description": "Select the .p12 file to build your AIR app with",
+					"note": "@TODO Need to see how to implement a UI for this...",
+					"comment": [
+						{
+							"key": "as3.packaging.certificateCreate",
+							"title": "Create",
+							"type": "command"
+						},
+						{
+							"key": "actionscipt.clearExportPassword",
+							"title": "Clear",
+							"type": "command"
+						}
+					]
+				},
+				{
+					"key": "as3.packaging.type",
+					"title": "Export as",
+					"type":  "enum",
+					"values": [
+						["Signed AIR package"],
+						["Singed native installer"],
+						["Singed application with captive runtime"],
+						["Intermediate AIRI package that must be manually signed later"]
+					],
+					"default": "Signed AIR package",
+				},
+				{
+					"key": "as3.packaging.timestamp",
+					"title": "Timestamp",
+					"type": "bool",
+					"default": true
+				},
+				{
+					"key": "as3.packaging.excludedFiles",
+					"title": "Files to exclude when packaging",
+					"type": "pathArray",
+					"allowFolders": true,
+					"allowFiles": true
+				},
+				{
+					"key": "as3.packaging.anes",
+					"title": "Native extensions",
+					"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+					"type": "pathArray",
+					"relative": true,
+					"allowFolders": false,
+					"allowFiles": true,
+					"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package"
 				}
 			]
 		},
@@ -200,12 +257,123 @@
 						["640x920:640x960", 	"iOS: iPodRetina - 640 x 920:640 x 960"],
 						["640x1096:640x1136",   "iOS: iPod5Retina - 640 x1096:640 x 1136"],
 					]
+				},
+
+
+				{
+					"key": "as3.packaging.certificate",
+					"title": "Certificate",
+					"type": "path",
+					"allowFolders": false,
+					"allowFiles": true,
+					"description": "Select the .p12 file to build your AIR app with",
+					"note": "@TODO Need to see how to implement a UI for this...",
+					"comment": [
+						{
+							"key": "as3.packaging.certificateCreate",
+							"title": "Create",
+							"type": "command"
+						},
+						{
+							"key": "actionscipt.clearExportPassword",
+							"title": "Clear",
+							"type": "command"
+						}
+					]
+				},
+				{
+					"key": "as3.packaging.type",
+					"title": "Export as",
+					"type":  "enum",
+					"values": [
+						["Signed AIR package"],
+						["Singed native installer"],
+						["Singed application with captive runtime"],
+						["Intermediate AIRI package that must be manually signed later"]
+					],
+					"default": "Signed AIR package",
+				},
+				{
+					"key": "as3.packaging.timestamp",
+					"title": "Timestamp",
+					"type": "bool",
+					"default": true
+				},
+				{
+					"key": "as3.packaging.excludedFiles",
+					"title": "Files to exclude when packaging",
+					"type": "pathArray",
+					"allowFolders": true,
+					"allowFiles": true
+				},
+				{
+					"key": "as3.packaging.anes",
+					"title": "Native extensions",
+					"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+					"type": "pathArray",
+					"relative": true,
+					"allowFolders": false,
+					"allowFiles": true,
+					"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package"
 				}
 			]
 		},
 	},
 
 	"config": [
+		{
+			"title": "Java",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3mxml.java.path",
+					"title": "Java Path",
+					"type": "path",
+					"placeholder": "/usr/bin/java",
+					"description": "This setting may be used to specify the exact path to the java executable that the extension should use (Note: it must be an executable, and not directory)."
+				}
+			]
+		},
+		{
+			"title": "SDKs",
+			"type": "section",
+			"children": [
+				{
+					"key": "as3mxml.sdk.default",
+					"title": "Default AIR SDK path",
+					"allowFolders": true,
+					"allowFiles": false,
+					"type": "path",
+					"default": "~/Applications/AIRSDK/",
+				},
+				{
+					"key": "as3mxml.sdk.searchPaths",
+					"title": "SDK Search Paths",
+					"allowFolders": true,
+					"allowFiles": false,
+					"type": "pathArray",
+					"placeholder": "",
+					"description": "(TODO) Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
+
+				},
+				{
+					"key": "as3mxml.sdk.animate",
+					"title": "Adobe Animate executable",
+					"type": "path",
+					"placeholder": "",
+					"description": "Specifies the absolute path of the Adobe Animate executable"
+				},
+				{
+					"key": "as3mxml.sdk.editor",
+					"title": "Editor SDK path",
+					"type": "path",
+					"allowFolders": true,
+					"allowFiles": false,
+					"default": "~/Applications/AIRSDK/",
+					"description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
+				},
+			]
+		},
 		{
 			"title": "Language Server",
 			"type": "section",
@@ -236,68 +404,21 @@
 			]
 		},
 		{
-			"title": "Java",
+			"title": "File Exclusions",
 			"type": "section",
+			"description": "For all projects, these files will not be copied to the output folder after compilations.",
 			"children": [
 				{
-					"key": "as3mxml.java.path",
-					"title": "Java Path",
-					"type": "path",
-					"placeholder": "/usr/bin/java",
-					"description": "(Advanced) If the extension cannot find Java automatically, this setting may be used to specify the exact path to the java executable that the extension should use (Note: it must be an executable, and not directory)."
-				}
-			]
-		},
-		{
-			"title": "SDKs",
-			"type": "section",
-			"children": [
-				{
-					"key": "as3mxml.sdk.default",
-					"title": "Default AIR SDK path",
-					"allowFolders": true,
-					"allowFiles": false,
-					"type": "path",
-					"default": "~/Applications/AIRSDK/",
+					"key": "as3.fileExclusion.extensions",
+					"title": "File Extensions",
+					"type": "stringArray",
+					"default": [ ".java",".class",".properties",".mxml",".as",".swc",".fxg"]
 				},
 				{
-					"key": "as3mxml.sdk.searchPaths",
-					"title": "SDK Search Paths",
-					"allowFolders": true,
-					"allowFiles": false,
-					"type": "pathArray",
-					"placeholder": "",
-					"description": "Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
-
-				},
-				{
-					"key": "as3mxml.sdk.animate",
-					"title": "Adobe Animate executable",
-					"type": "path",
-					"placeholder": "",
-					"description": "Specifies the absolute path of the Adobe Animate executable"
-				},
-				{
-					"key": "as3mxml.sdk.editor",
-					"title": "Editor SDK path",
-					"type": "path",
-					"allowFolders": true,
-					"allowFiles": false,
-					"default": "~/Applications/AIRSDK/",
-					"description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
-				},
-			]
-		},
-		{
-			"title": "Additional Options...",
-			"type": "section",
-			"children": [
-				{
-					"key": "as3mxml.projectImport.prompt",
-					"title": "Automatically import Flash Builder projects",
-					"type": "boolean",
-					"default": true,
-					"description": "Specifies whether to automatically import a project folder from Flash Builder when present. If disabled, you can still do this manually form the menu."
+					"key": "as3.fileExclusion.names",
+					"title": "File Names",
+					"type": "stringArray",
+					"default": [ ".DS_Store",".git",".svn",".classpath", "flex-config.xml","air-config.xml","services-config.xml","remoting-config.xml","proxy-config.xml","messaging-config.xml","data-management-config.xml" ]
 				},
 			]
 		},
@@ -316,24 +437,18 @@
 			]
 		},
 		{
-			"title": "File Exclusions",
+			"title": "Additional Options...",
 			"type": "section",
-			"description": "Select the files that you do not want copied to the output folder after compilations",
 			"children": [
 				{
-					"key": "as3.fileExclusion.extensions",
-					"title": "File Extensions",
-					"type": "stringArray",
-					"default": [ ".java",".class",".properties",".mxml",".as",".swc",".fxg"]
-				},
-				{
-					"key": "as3.fileExclusion.names",
-					"title": "File Names",
-					"type": "stringArray",
-					"default": [ ".DS_Store",".git",".svn",".classpath", "flex-config.xml","air-config.xml","services-config.xml","remoting-config.xml","proxy-config.xml","messaging-config.xml","data-management-config.xml" ]
+					"key": "as3mxml.projectImport.prompt",
+					"title": "Automatically import Flash Builder projects",
+					"type": "boolean",
+					"default": true,
+					"description": "(TODO) Specifies whether to automatically import a project folder from Flash Builder when present. If disabled, you can still do this manually form the menu."
 				},
 			]
-		}
+		},
 	],
 
 	"configWorkspace": [
@@ -368,7 +483,7 @@
 				},
 				{
 					"key": "as3.build.output",
-					"title": "Output folder",
+					"title": "Output Folder",
 					"type": "path",
 					"relative": true,
 					"allowFolders": true,
@@ -377,7 +492,7 @@
 					"description": "The location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
 				},
 				{
-					"title": "Source path",
+					"title": "Source Path",
 					"type": "section",
 					"description": "Additional source folders outside of the main source folder",
 					"children": [
@@ -456,7 +571,7 @@
 				{
 					"title": "Native Extensions",
 					"type": "section",
-					"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your applications and use them like stnadard libraries",
+					"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your applications and use them like standard libraries",
 					"children": [
 						{
 							"key": "as3.build.anes",
@@ -467,17 +582,17 @@
 							"allowFiles": true
 						},
 						{
-							"key": "as3.packaging.certificateCreate",
+							"key": "as3.packaging.addAneButton",
 							"title": "Add ANE",
 							"type": "command"
 						},
 						{
-							"key": "as3.packaging.certificateCreate",
+							"key": "as3.packaging.addAneFolderButton",
 							"title": "Add Folder",
 							"type": "command"
 						},
 						{
-							"key": "as3.packaging.certificateCreate",
+							"key": "as3.packaging.addAneRefreshButton",
 							"title": "Refresh",
 							"type": "command"
 						},
@@ -499,7 +614,7 @@
 							"type": "enum",
 							"values": [ "Use default SDK","Use a specific SDK"],
 							"default": "Use default SDK",
-							"description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale, the classic Apache Flex or Adobe Flex SDKs, and the Feathers SDK."
+							"description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale, the classic Apache Flex or Adobe Flex SDKs."
 						},
 						{
 							"key": "as3.compiler.specificSdk",

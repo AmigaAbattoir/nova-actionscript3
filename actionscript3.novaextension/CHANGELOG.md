@@ -1,3 +1,7 @@
+## Version 0.7.1
+
+* Made each Task have it's own build/packaging setting.
+
 ## Version 0.7.0
 
 * Removed other XML parser stuff and updated code to use NS3X2J for parsing FlashBuilder's XML files.

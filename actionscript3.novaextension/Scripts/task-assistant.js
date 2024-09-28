@@ -43,213 +43,314 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return result;
 	}
 
+	quickChoicePalette(items, placeholder, addAll = false) {
+		return new Promise((resolve) => {
+			if(addAll) {
+				items.unshift( "All" );
+			}
+
+			nova.workspace.showChoicePalette(items, {
+				placeholder: placeholder,
+			}, (value,index) => {
+				/*
+				nova.workspace.showInformativeMessage(`Got choice: [[${value}]]`);
+				console.log("Got choice:", value);
+				console.log("Got index:", index);
+				*/
+				resolve({ value, index });
+			});
+		})
+	}
+
 	/**
-	 * Handles packaging the project
+	 * Handles packaging the project. We are going to use Tasks as our guide on how to package them. In Flash Builder, you could have several targets, which
+	 * we have converted to Tasks using the Import Flash Builder functionality. First, we check if there are any tasks. Then we proceed to read them
 	 */
 	packageBuild() {
-		// We need a project UUID to save the certificate password in a later step, but let's check
-		// first. It should generate one if possible, but on the unlikely event, we should abort.
-		var projectUUID = determineProjectUUID();
-		projectUUID.then((resolve) => { // Now that we have the UUID, let's try to make a build
-			var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
-			//console.log("MAIN APP: [[" + mainApplicationPath + "]]");
-			if(mainApplicationPath==null) {
-				nova.workspace.showErrorMessage("Please configure the workspace's settings to select a main application file. You can either manually do so, or use the \"Import Flash Builder settings\" options if migrating from Flash Builder");
-			}
-			var appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
+		var tasks = [];
+		var taskJson;
+		var taskConfig = null;
 
-			// Use this to get setting from the extension or the workspace!
-			var flexSDKBase = determineFlexSDKBase();
-			if(flexSDKBase==null) {
-				nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
-			}
-
-			var mainSrcDir = nova.path.join(nova.workspace.path, nova.workspace.config.get("as3.build.source.main"));
-			if(mainSrcDir==null) {
-				mainSrcDir = "src";
-			}
-
-			var isFlex = nova.workspace.config.get("as3.application.isFlex");
-			var exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
-			var packageName = (isFlex ? mainApplicationPath.replace(".mxml",".air") : mainApplicationPath.replace(".as",".air"));
-
-			var copyAssets = nova.workspace.config.get("as3.compiler.copy");
-
-			var sourceDirs = nova.workspace.config.get("as3.build.source.additional");
-
-			var libPaths = nova.workspace.config.get("as3.build.library.additional");
-
-			var releasePath = "bin-release-temp";
-
-			/** @TODO Figure out what type of build... */
-			this.build("air", true, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, "release", nova.path.join(nova.workspace.path, releasePath), exportName, true).then((resolve) => {
-				console.log("this.build() resolve:");
-				consoleLogObject(resolve);
-				// @TODO - If there is warnings, ask if you want to continue, or abort.
-
-				// Loop through the output, and copy things unless specified to exclude like the .actionScriptProperties
-				let alsoIgnore = getWorkspaceOrGlobalConfig("as3.packaging.excludedFiles");
-				//console.log("alsoIgnore: ");
-				//consoleLogObject(alsoIgnore);
-				if(alsoIgnore) {
-					alsoIgnore.forEach((ignore) => {
-						//console.log("Ignroe: " + ignore);
-						//console.log("[["+nova.workspace.path + "/" + releasePath + "/" + ignore +"]]");
-						try{
-							if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isFile()) {
-								//console.log("    REMOVE FILE + " + ignore + " !");
-								nova.fs.remove(nova.workspace.path + "/" + releasePath + "/" + ignore);
-							} else if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isDirectory()) {
-								//console.log("    REMOVE DIR + " + ignore + " !");
-								nova.fs.rmdir(nova.workspace.path + "/" + releasePath + "/" + ignore);
-							} else {
-								//console.log("    Don't do anything " + ignore + " !");
-							}
-						} catch(error) {
-							// @TODO, Flash Builder would remove this entry from the excluded items
-							//console.log("    Not there skip " + error);
+		// Ensure Tasks folder is available (and check if they are ones of our extension)!
+		// @NOTE Unfortunately, it doesn't seem there is a way to get these from Nova, so we have to manually read and hope they are good!
+		if(nova.fs.access(nova.workspace.path + "/.nova/Tasks", nova.fs.F_OK | nova.fs.X_OK)) {
+			var files = nova.fs.listdir(nova.workspace.path + "/.nova/Tasks/");
+			files.forEach((file) => {
+				if(file.indexOf(".json")!=-1) {
+					// Try to get the file as JSON
+					try {
+						taskJson = JSON.parse(this.getStringOfWorkspaceFile("/.nova/Tasks/" + file,false));
+						// Only add thos that have an extension identifier of our extension!
+						if(taskJson["extension"]["identifier"]=="com.abattoirsoftware.actionscript3") {
+							tasks.push(file);
 						}
-						//console.log("DONE!");
-					});
+					} catch(error) { }
 				}
-
-				// Check for password, if no, show password.
-				// @TODO We should do something like FB where when you enter the password, it tries to verify it. Once it's correct, you can continue.
-				var passwordCheck = nova.credentials.getPassword(projectUUID,"release-build");
-				if(passwordCheck==null) {
-					passwordCheck = "";
-				}
-
-				// THis will be a promise, I promise!
-				var passwordGet;
-
-				// If password is empty, let's try to get it.
-				if(passwordCheck=="") {
-					var request = new NotificationRequest("Export Release Build...");
-					request.title = "Digital Signature ";
-					request.body = "Enter the password for the certificate " + nova.workspace.config.get("as3.packaging.password") ;
-					request.textInputValue = passwordCheck;
-					request.type = "input";
-					request.actions = ["This time", "Save", "Cancel"];
-
-					passwordGet = nova.notifications.add(request);
-				} else {
-					// We have a password, fulfill the promise
-					passwordGet = Promise.resolve( { identifier: "Export Release Build...", actionIdx: 0, textInputValue: passwordCheck });
-				}
-
-				passwordGet.then((reply) => {
-					var password;
-					switch(reply.actionIdx) {
-						case 2: { // Cancel
-							console.log("Cancel");
-							// @TODO Ask to remove build?
-							return;
-							break;
-						}
-						case 1: { // Save the password
-							password = reply.textInputValue;
-							// @NOTE Should we also tie in the certificate name? Only useful if using different certificates I guess.
-							nova.credentials.setPassword(projectUUID,"release-build",password);
-							break;
-						}
-						case 0: { // This time
-							password = reply.textInputValue;
-							break;
-						}
-					}
-
-					var command = flexSDKBase + "/bin/adt";
-					var args = [];
-
-					args.push("-package");
-
-					args.push("-storetype");
-					args.push("pkcs12");
-
-					args.push("-keystore");
-					/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-					args.push(nova.workspace.config.get("as3.packaging.certificate"));
-
-					args.push("-storepass");
-					args.push(password);
-
-					/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-					var doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
-					if(doTimestamp==false) {
-						args.push("-tsa");
-						args.push("none");
-					}
-
-					// AIR Package name
-					args.push(packageName);
-
-					// Descriptor
-					args.push(releasePath + "/" + appXMLName);
-
-					// Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
-					nova.fs.listdir(nova.workspace.path + "/" + releasePath).forEach(filename => {
-						if(filename!=appXMLName) {
-							args.push("-C");
-							args.push(releasePath);
-							args.push(filename);
-						}
-					});
-
-					args.unshift(command);
-					var process = new Process("/usr/bin/env", {
-						args: args,
-						cwd: nova.workspace.path
-					});
-
-					consoleLogObject(process);
-					if (nova.inDevMode()) {
-						console.log(" *** COMMAND [[" + command + "]] ARG: \n");
-						consoleLogObject(args);
-					}
-
-					var stdout = "";
-					var stderr = "";
-					process.onStdout(function(line) {
-						//console.log("STDOUT: " + line);
-						stdout += line;
-					});
-					process.onStderr(function(line) {
-						//console.log("STDERR: " + line);
-						stderro += line;
-					});
-					process.start();
-					process.onDidExit((status) => {
-						consoleLogObject(status);
-						var title = "Export Package";
-						var message = "Okay?!!!";
-						if(status==0) {
-							showNotification("Export Package Successful!", "Congrats!");
-
-							// @TODO, add button to reveal path
-							//nova.fs.rmdir(nova.path.join(nova.workspace.path, "bin-release-temp"));
-						} else {
-							var result = resolveStatusCodeFromADT(status);
-							title = result.title;
-							message = result.message;
-						}
-						nova.workspace.showErrorMessage("*** ERROR - " + title + " ***\n\n" + message);
-					})
-				}, error => {
-					console.log("passwordGet.then((error): ");
-					nova.workspace.showErrorMessage("*** ERROR - Password failed! ***\n\nSomething happened when trying to use or save the pasword!");
-				},(reject) => {
-					console.log("passwordGet.then((reject): ");
-					nova.workspace.showErrorMessage("*** Password failed! ***\n\n", "rej" + reject);
-				});
-			}, (reject) => {
-				// To make this a little neater, remove the workspace's path from the stderr messages
-				var message = reject.stderr.replaceAll(nova.workspace.path,"");
-				nova.workspace.showErrorMessage("*** ERROR - Export Release Build failed! ***\n\nOne or more errors were found while trying to build the release version. Unable to export.\n" + message);
 			});
-		}, (reject) => {
-			nova.workspace.showErrorMessage("*** ERROR - Project UUID Missing ***\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu, or ensure that `uuidgen` is on your system's path!");
-		});
+		}
+
+		if(tasks.length==0) {
+			// If there are not tasks, then show the error and then out
+			nova.workspace.showErrorMessage("Please create at least one Task and adjust it's settings. You can either manually do so, or use the \"Import Flash Builder settings\" options if migrating from Flash Builder");
+		} else {
+			// Since we have tasks, we can attempt a release build.
+			var taskFileNamePromise;
+			if(tasks.length==1) {
+				// If only one, then we're going to resolve the promise to the first file name
+				taskFileNamePromise = Promise.resolve(tasks[0]);
+			} else {
+				// Sort the task names. But we need to strip the extension first so it matches the listing in the Task drop down
+				tasks.sort((a, b) => {
+					const strippedA = a.replace(".json", "");
+					const strippedB = b.replace(".json", "");
+					return strippedA.localeCompare(strippedB, undefined, { numeric: true, sensitivity: 'base' });
+				});
+
+				// If there are multiple tasks, ask which one to build
+				var placeholder = "Select which Task item to build? Select one from below";
+
+				// Unless we've attempted to build before, then we will default to the last one selected as the placeholder
+				if(nova.workspace.config.get("as3.packaging.lastReleaseBuilt")!=null) {
+					placeholder = nova.workspace.config.get("as3.packaging.lastReleaseBuilt")
+				}
+
+				// Show the choice palette to get the name of the task file
+				taskFileNamePromise = this.quickChoicePalette(tasks,placeholder).then((choice) => choice.value);
+			}
+
+			// Now that we have a task file name, let's try to get the config!
+			taskFileNamePromise.then((taskFileName) => {
+				//console.log("Task File Name: [[" + taskFileName + "]]");
+				// If it's undefined, then the user escaped the palette
+				if(taskFileName==undefined) {
+					return;
+				}
+
+				// If we have a task file name, then let's process it
+				if(taskFileName!="") {
+					// Since we have a name, let's set the last task
+					nova.workspace.config.set("as3.packaging.lastReleaseBuilt",taskFileName);
+
+					taskJson = JSON.parse(this.getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName,false));
+					try {
+						if(taskJson["extensionTemplate"].startsWith("actionscript-air")==false) {
+							nova.workspace.showErrorMessage("Sorry, Export Release Build does not yet handle " + taskJson["extensionTemplate"] + "!");
+							return;
+						}
+						taskConfig = taskJson["extensionValues"];
+					} catch(error) { }
+
+					if(taskConfig==null) {
+						nova.workspace.showErrorMessage("Could not parse Task, are you sure you created it with the ActionScript 3 extension?!");
+						return;
+					}
+				}
+
+				// We need a project UUID which we use to save the certificate password in a later step, but let's check
+				// first. It should generate one if possible, but on the unlikely event, we should abort.
+				var projectUUID = determineProjectUUID();
+				projectUUID.then((resolve) => { // Now that we have the UUID, let's try to make a build
+					var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+					//console.log("MAIN APP: [[" + mainApplicationPath + "]]");
+					if(mainApplicationPath==null) {
+					}
+					var appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
+
+					// Use this to get setting from the extension or the workspace!
+					var flexSDKBase = determineFlexSDKBase();
+					if(flexSDKBase==null) {
+						nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
+					}
+
+					var mainSrcDir = nova.path.join(nova.workspace.path, nova.workspace.config.get("as3.build.source.main"));
+					if(mainSrcDir==null) {
+						mainSrcDir = "src";
+					}
+
+					var isFlex = nova.workspace.config.get("as3.application.isFlex");
+					var exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
+					var packageName = (isFlex ? mainApplicationPath.replace(".mxml",".air") : mainApplicationPath.replace(".as",".air"));
+
+					var copyAssets = nova.workspace.config.get("as3.compiler.copy");
+
+					var sourceDirs = nova.workspace.config.get("as3.build.source.additional");
+
+					var libPaths = nova.workspace.config.get("as3.build.library.additional");
+
+					var releasePath = "bin-release-temp";
+
+					/** @TODO Figure out what type of build... */
+					this.build("air", true, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, "release", nova.path.join(nova.workspace.path, releasePath), exportName, true).then((resolve) => {
+						console.log("this.build() resolve:");
+						consoleLogObject(resolve);
+						// @TODO - If there is warnings, ask if you want to continue, or abort.
+
+						// Loop through the output, and copy things unless specified to exclude like the .actionScriptProperties
+						//let alsoIgnore = getWorkspaceOrGlobalConfig("as3.packaging.excludedFiles");
+						let alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
+						//console.log("alsoIgnore: ");
+						//consoleLogObject(alsoIgnore);
+						if(alsoIgnore) {
+							alsoIgnore.forEach((ignore) => {
+								//console.log("Ignroe: " + ignore);
+								//console.log("[["+nova.workspace.path + "/" + releasePath + "/" + ignore +"]]");
+								try{
+									if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isFile()) {
+										//console.log("    REMOVE FILE + " + ignore + " !");
+										nova.fs.remove(nova.workspace.path + "/" + releasePath + "/" + ignore);
+									} else if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isDirectory()) {
+										//console.log("    REMOVE DIR + " + ignore + " !");
+										nova.fs.rmdir(nova.workspace.path + "/" + releasePath + "/" + ignore);
+									} else {
+										//console.log("    Don't do anything " + ignore + " !");
+									}
+								} catch(error) {
+									// @TODO, Flash Builder would remove this entry from the excluded items
+									//console.log("    Not there skip " + error);
+								}
+								//console.log("DONE!");
+							});
+						}
+
+						// Check for password, if no, show password.
+						// @TODO We should do something like FB where when you enter the password, it tries to verify it. Once it's correct, you can continue.
+						var passwordCheck = nova.credentials.getPassword(projectUUID,"release-build");
+						if(passwordCheck==null) {
+							passwordCheck = "";
+						}
+
+						// This will be a promise, I promise!
+						var passwordGet;
+
+						// If password is empty, let's try to get it.
+						if(passwordCheck=="") {
+							var request = new NotificationRequest("Export Release Build...");
+							request.title = "Digital Signature ";
+							request.body = "Enter the password for the certificate " + taskConfig["as3.packaging.certificate"];
+							request.textInputValue = passwordCheck;
+							request.type = "input";
+							request.actions = ["This time", "Save", "Cancel"];
+
+							passwordGet = nova.notifications.add(request);
+						} else {
+							// We have a password, fulfill the promise
+							passwordGet = Promise.resolve( { identifier: "Export Release Build...", actionIdx: 0, textInputValue: passwordCheck });
+						}
+
+						passwordGet.then((reply) => {
+							var password;
+							switch(reply.actionIdx) {
+								case 2: { // Cancel
+									console.log("Cancel");
+									// @TODO Ask to remove build?
+									return;
+									break;
+								}
+								case 1: { // Save the password
+									password = reply.textInputValue;
+									// @NOTE Should we also tie in the certificate name? Only useful if using different certificates I guess.
+									nova.credentials.setPassword(projectUUID,"release-build",password);
+									break;
+								}
+								case 0: { // This time
+									password = reply.textInputValue;
+									break;
+								}
+							}
+
+							var command = flexSDKBase + "/bin/adt";
+							var args = [];
+
+							args.push("-package");
+
+							args.push("-storetype");
+							args.push("pkcs12");
+
+							args.push("-keystore");
+							/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
+							args.push(taskConfig["as3.packaging.certificate"]);
+
+							args.push("-storepass");
+							args.push(password);
+
+							/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
+							var doTimestamp = taskConfig["as3.packaging.timestamp"];
+							if(doTimestamp==false) {
+								args.push("-tsa");
+								args.push("none");
+							}
+
+							// AIR Package name
+							args.push(packageName);
+
+							// Descriptor
+							args.push(releasePath + "/" + appXMLName);
+
+							// Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
+							nova.fs.listdir(nova.workspace.path + "/" + releasePath).forEach(filename => {
+								if(filename!=appXMLName) {
+									args.push("-C");
+									args.push(releasePath);
+									args.push(filename);
+								}
+							});
+
+							args.unshift(command);
+							var process = new Process("/usr/bin/env", {
+								args: args,
+								cwd: nova.workspace.path
+							});
+
+							consoleLogObject(process);
+							if (nova.inDevMode()) {
+								console.log(" *** COMMAND [[" + command + "]] ARG: \n");
+								consoleLogObject(args);
+							}
+
+							var stdout = "";
+							var stderr = "";
+							process.onStdout(function(line) {
+								//console.log("STDOUT: " + line);
+								stdout += line;
+							});
+							process.onStderr(function(line) {
+								//console.log("STDERR: " + line);
+								stderro += line;
+							});
+							process.start();
+							process.onDidExit((status) => {
+								consoleLogObject(status);
+								var title = "Export Package";
+								var message = "Okay?!!!";
+								if(status==0) {
+									showNotification("Export Package Successful!", "Congrats!");
+
+									// @TODO, add button to reveal path
+									//nova.fs.rmdir(nova.path.join(nova.workspace.path, "bin-release-temp"));
+								} else {
+									var result = resolveStatusCodeFromADT(status);
+									title = result.title;
+									message = result.message;
+									nova.workspace.showErrorMessage("*** ERROR - " + title + " ***\n\n" + message);
+								}
+							})
+						}, error => {
+							console.log("passwordGet.then((error): ");
+							nova.workspace.showErrorMessage("*** ERROR - Password failed! ***\n\nSomething happened when trying to use or save the pasword!");
+						},(reject) => {
+							console.log("passwordGet.then((reject): ");
+							nova.workspace.showErrorMessage("*** Password failed! ***\n\n", "rej" + reject);
+						});
+					}, (reject) => {
+						// To make this a little neater, remove the workspace's path from the stderr messages
+						var message = reject.stderr.replaceAll(nova.workspace.path,"");
+						nova.workspace.showErrorMessage("*** ERROR - Export Release Build failed! ***\n\nOne or more errors were found while trying to build the release version. Unable to export.\n" + message);
+					});
+				}, (reject) => {
+					nova.workspace.showErrorMessage("*** ERROR - Project UUID Missing ***\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu, or ensure that `uuidgen` is on your system's path!");
+				});
+			});
+		}
 	}
 
 	/**
@@ -760,23 +861,23 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			switch(buildTarget["@"]["buildTargetName"]) {
 				case "default": {
-					taskName = "ActionScript - AIR";
+					taskName = "AS3 - AIR";
 					taskJson["extensionTemplate"] = "actionscript-air";
 					break;
 				}
 				case "com.adobe.flexide.multiplatform.ios.platform": {
-					taskName = "ActionScript - Apple iOS";
+					taskName = "AS3 - Apple iOS";
 					taskJson["extensionTemplate"] = "actionscript-airmobile";
 					break;
 				}
 				case "com.qnx.flexide.multiplatform.qnx.platform": {
-					taskName = "ActionScript - BlackBerry Table OS";
+					taskName = "AS3 - BlackBerry Table OS";
 					taskJson["extensionTemplate"] = "actionscript-airmobile";
 					console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
 					break;
 				}
 				case "com.adobe.flexide.multiplatform.android.platform": {
-					taskName = "ActionScript - Google Android";
+					taskName = "AS3 - Google Android";
 					taskJson["extensionTemplate"] = "actionscript-airmobile";
 					break;
 				}
@@ -785,21 +886,21 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						taskJson["extensionTemplate"] = "actionscript-airmobile";
 						switch (buildTarget["@"]["platformId"]) {
 							case "com.adobe.flexide.multiplatform.ios.platform": {
-								taskName = "ActionScript - iOS Device";
+								taskName = "AS3 - iOS Device";
 								break;
 							}
 							case "com.adobe.flexide.multiplatform.android.platform": {
-								taskName = "ActionScript - Android Device";
+								taskName = "AS3 - Android Device";
 								break;
 							}
 							default: {
 								console.log("Uknown device type of " + buildTarget["@"]["platformId"]);
-								taskName = "ActionScript - " + buildTarget["@"]["platformId"];
+								taskName = "AS3 - " + buildTarget["@"]["platformId"];
 								break;
 							}
 						}
 					} else {
-						taskName = "ActionScript - AIR";
+						taskName = "AS3 - AIR";
 					}
 					break;
 				}
@@ -829,11 +930,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				var excludedInPackage = []
 
 				airExcludes["children"].forEach((excludes) => {
-					console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
+					//console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
 					excludedInPackage.push(excludes["@"]["path"]);
 				});
 				if(excludedInPackage.length>0) {
-					taskJson.extensionValues["as3.packaging.excludedFile"] = excludedInPackage;
+					taskJson.extensionValues["as3.packaging.excludedFiles"] = excludedInPackage;
 				}
 
 				var anePaths = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "anePaths");
@@ -842,17 +943,17 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			//	consoleLogObject(anePaths);
 				anePaths["children"].forEach((anePath) => {
 			//		consoleLogObject(anePath);
-					console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
+					//console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
 					anePathsInPackage.push(anePath["@"]["path"]);
 				});
 				if(anePathsInPackage.length>0) {
 					taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
 				}
 
-				console.log("-----------------------------================------------------------");
-				console.log(taskName);
-				consoleLogObject(taskJson);
-				console.log("-----------------------------================------------------------");
+				// Ensure Tasks folder is available!
+				if(nova.fs.access(nova.workspace.path + "/.nova/Tasks", nova.fs.F_OK | nova.fs.X_OK)===false) {
+					nova.fs.mkdir(nova.workspace.path + "/.nova/Tasks/");
+				}
 
 				var taskFile = nova.fs.open(nova.workspace.path + "/.nova/Tasks/"+"Test-"+taskName+".json","w");
 				taskFile.write(JSON.stringify(taskJson,null,2));
@@ -862,7 +963,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	}
 
 	/**
-	 * Handles the Clean/Build/Run stuff.
+	 * Handles the Clean/Build/Run stuff from Nova's UI.
 	 * @param {class} context - What's coming from the build options
 	 */
 	resolveTaskAction(context) {
@@ -870,12 +971,17 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var config = context.config;
 		var action = context.action;
 
+console.log("CONTEXT:");
+consoleLogObject(context);
+console.log("CONFIG:");
+consoleLogObject(config);
+
 		var buildType = "air";
 		if(data.type=="mobile") {
 			buildType = "airmobile";
 		}
 
-		console.log("as3.packaging.excludedFile: " + config.get("as3.packaging.excludedFile"));
+		console.log("as3.packaging.excludedFiles: " + config.get("as3.packaging.excludedFiles"));
 
 		// Get the context.config so we can get the Task settings!
 		var whatKind = config.get("actionscript3.request");
