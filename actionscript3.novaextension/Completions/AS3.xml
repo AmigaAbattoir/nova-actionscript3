@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <completions>
     <provider>
-		<selector>ActionScript 3</selector>
-        <expression>\b[a-zA-Z0-9-_]*</expression>
+		<syntax>MXML</syntax>
+		<syntax>ActionScript 3</syntax>
+		<selector>*:not(comment, style.value)</selector>
+		<expression>\b[a-zA-Z0-9-_]*</expression>
         <set>actionscript3.keyword.statements</set>
         <set>actionscript3.keyword.attribute</set>
         <set>actionscript3.keyword.definition3</set>
@@ -39,7 +41,7 @@
         <completion string="with" />
     </set>
 
-    <set name="actionscript3.keyword.attribute">
+    <set name="actionscript3.keyword.attribute" symbol="keyword">
         <completion string="dynamic" />
         <completion string="final" />
         <completion string="internal" />
@@ -52,17 +54,17 @@
     </set>
 
     <set name="actionscript3.keyword.definition3">
-        <completion string="... " />
-        <completion string="class" />
-        <completion string="const" />
+        <completion string="... " symbol="arguement"/>
+        <completion string="class" symbol="class"/>
+        <completion string="const" symbol="constant"/>
         <completion string="extends" />
         <completion string="function" />
-        <completion string="get" />
+        <completion string="get" symbol="getter" />
         <completion string="implements" />
         <completion string="interface" />
         <completion string="namespace" />
         <completion string="package" />
-        <completion string="set" />
+        <completion string="set" symbol="setter"/>
         <completion string="var" />
     </set>
 
@@ -79,7 +81,7 @@
         <completion string="object_proxy" />
     </set>
 
-    <set name="actionscript3.keyword.primary_expression" symbol="const">
+    <set name="actionscript3.keyword.primary_expression" symbol="constant">
         <completion string="false" />
         <completion string="null" />
         <completion string="this" />
@@ -88,7 +90,7 @@
 
     <!-- Top Level -->
     <!-- https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/package-detail.html -->
-    <set name="actionscript3.keyword.constants" symbol="const">
+    <set name="actionscript3.keyword.constants" symbol="constant">
         <completion string="Infinity" />
         <completion string="-Infinity" />
         <completion string="NaN" />

@@ -1,3 +1,8 @@
+## Version 0.7.2
+
+* Got completions working from the completion XMLs.
+* Added completions for AIR Descriptor XMLs.
+
 ## Version 0.7.1
 
 * Made each Task have it's own build/packaging setting.

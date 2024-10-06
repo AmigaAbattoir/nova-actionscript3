@@ -1,0 +1,145 @@
+<completions>
+	<provider name="airdescriptor">
+		<syntax>xml</syntax>
+		<selector>xml.airdescriptor</selector>
+		<set>xml.airdescriptor</set>
+		<set>xml.airdescriptor.application</set>
+		<set>xml.airdescriptor.application.values</set>
+		<set>xml.airdescriptor.application.initialWindow</set>
+		<set>xml.airdescriptor.application.encryptedLocalStorage</set>
+		<set>xml.airdescriptor.application.iphone</set>
+		<set>xml.airdescriptor.application.mac</set>
+		<set>xml.airdescriptor.application.android</set>
+		<set>xml.airdescriptor.application.windows</set>
+	</provider>
+
+	<set name="xml.airdescriptor" symbol="tag">
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+		<completion string="application">
+			<behavior variables="true">
+				<append>$[] xmlns="http://ns.adobe.com/air/application/"&gt;&lt;/${completion}&gt;</append>
+			</behavior>
+		</completion>
+		<completion string="initialWindow" />
+		<completion string="encryptedLocalStorage" />
+		<completion string="iPhone" />
+		<completion string="android" />
+		<completion string="macOS" />
+		<completion string="windows" />
+	</set>
+
+	<set name="xml.airdescriptor.application" symbol="tag">
+		<completion string="id" />
+		<completion string="versionNumber" />
+		<completion string="versionLabel" />
+		<completion string="publisherID" />
+		<completion string="name" />
+		<completion string="filename" />
+		<completion string="description" />
+		<completion string="copyright" />
+		<completion string="architecture" />
+		<completion string="gpuPreference" />
+		<completion string="icon" />
+		<completion string="supportedProfiles" />
+		<completion string="supportedLanguages" />
+		<completion string="installFolder" />
+		<completion string="programMenuFolder" />
+		<completion string="customUpdateUI" />
+		<completion string="allowBrowserInvocation" />
+		<completion string="embedFonts" />
+		<completion string="resdir" />
+		<completion string="fileTypes" />
+		<completion string="extensions" />
+		<completion string="allowMultipleInstances" />
+		<completion string="stacktraces" />
+	</set>
+
+	<set name="xml.airdescriptor.application.values" symbol="tag">
+		<completetion string="text"/>
+	</set>
+
+	<set name="xml.airdescriptor.application.initialWindow" symbol="tag">
+		<completion string="title"/>
+		<completion string="content"/>
+		<completion string="depthAndStencil"/>
+		<completion string="systemChrome"/>
+		<completion string="transparent"/>
+		<completion string="visible"/>
+		<completion string="maxSize"/>
+		<completion string="minSize"/>
+		<completion string="maximizable"/>
+		<completion string="minimizable"/>
+		<completion string="resizable"/>
+		<completion string="x"/>
+		<completion string="y"/>
+		<completion string="height"/>
+		<completion string="width"/>
+		<completion string="aspectRatio"/>
+		<completion string="autoOrients"/>
+		<completion string="orientationAnimation"/>
+		<completion string="fullScreen"/>
+		<completion string="renderMode"/>
+		<completion string="requestedDisplayResolution"/>
+		<completion string="allowLowQuality"/>
+	</set>
+
+	<set name="xml.airdescriptor.application.encryptedLocalStorage" symbol="tag">
+		<completion string="fallbackMode"/>
+		<completion string="storageMode"/>
+	</set>
+
+	<set name="xml.airdescriptor.application.iphone" symbol="tag">
+		<completion string="Entitlements"/>
+		<completion string="InfoAdditions"/>
+		<completion string="externalSwfs"/>
+		<completion string="forceCPURenderModeForDevices"/>
+		<completion string="requestedDisplayResolution"/>
+		<completion string="disableCustomKeyboard"/>
+		<completion string="excludeDefaultUsageDescriptions"/>
+	</set>
+
+	<set name="xml.airdescriptor.application.mac" symbol="tag">
+		<completion string="Entitlements"/>
+		<completion string="InfoAdditions"/>
+	</set>
+
+	<set name="xml.airdescriptor.application.android" symbol="tag">
+		<completion string="colorDepth"/>
+		<completion string="containsVideo"/>
+		<completion string="supportsAndroidTV"/>
+		<completion string="banner"/>
+		<completion string="banner160x90"/>
+		<completion string="banner240x135"/>
+		<completion string="banner320x180"/>
+		<completion string="banner480x270"/>
+		<completion string="banner640x360"/>
+		<completion string="webContentsDebuggingEnabled"/>
+		<completion string="assetPacks"/>
+		<completion string="manifestAdditions"/>
+		<completion string="BuildLegacyAPK"/>
+		<completion string="addAirToAppID"/>
+		<completion string="buildArchitectures"/>
+		<completion string="createAppBundle"/>
+		<completion string="uncompressedExtensions"/>
+		<completion string="newFontRenderingFromAPI"/>
+		<completion string="webViewAllowFileAccess"/>
+		<completion string="preventDeviceModelAccess"/>
+		<completion string="disableSensorAccess"/>
+		<completion string="runtimeInBackgroundThread"/>
+		<completion string="storageAccessFrameworkFromAPI"/>
+		<completion string="displayCutoutMode"/>
+		<completion string="gradleVersion"/>
+		<completion string="androidGradlePluginVersion"/>
+		<completion string="androidBuildToolsVersion"/>
+		<completion string="androidCompileSdkVersion"/>
+		<completion string="manifestPlaceholders"/>
+	</set>
+
+	<set name="xml.airdescriptor.application.windows" symbol="tag">
+		<completion string="UseWebView2"/>
+		<completion string="maxD3D"/>
+		<completion string="clipboardFullHTML"/>
+	</set>
+</completions>
