@@ -762,7 +762,7 @@
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
                     <scope name="actionscript3.return-type">
 						<starts-with>
-							<expression>(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
+							<expression>(?:\s*(:)\s*([a-zA-Z_\$\*][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
 							<capture number="1" name="acitonscript3.keyword.operator"/>
 							<capture number="2" name="actionscript3.identifier.type"/>
 						</starts-with>
@@ -812,7 +812,7 @@
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
 					<scope name="actionscript3.return-type">
 						<starts-with>
-							<expression>(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
+							<expression>(?:\s*(:)\s*([a-zA-Z_\$\*][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
 							<capture number="1" name="acitonscript3.keyword.operator"/>
 							<capture number="2" name="actionscript3.keyword.type"/>
 						</starts-with>
@@ -900,9 +900,9 @@
                     <include syntax="self" collection="arguments" />
                     <include syntax="self" collection="comments" optional="true" repeat="true" />
 					<!-- Need this to be optional since constructors are not properly recognised -->
-					<scope name="actionscript3.return-type" optional="true">
+					<scope name="actionscript3.return-type" optional="false">
 						<starts-with>
-							<expression>(?:\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
+							<expression>(?:\s*(:)\s*([a-zA-Z_\$\*][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*))</expression>
 							<capture number="1" name="acitonscript3.keyword.operator"/>
 							<capture number="2" name="actionscript3.keyword.return-type"/>
 						</starts-with>
