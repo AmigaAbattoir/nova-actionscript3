@@ -752,39 +752,49 @@
 		"editor": [
 			{
 				"title": "Add Import",
-				"command": "as3mxml.addImport"
+				"subtitle": "You know you want to!",
+				"command": "as3mxml.addImport",
+				"when": "(editorSyntax == 'actionscript' || editorSyntax == 'mxml') && as3mxmlCodeIntelligenceReady"
 			},
 			{
 				"title": "Add MXML Namespace",
-				"command": "as3mxml.addMXMLNamespace"
+				"command": "as3mxml.addMXMLNamespace",
+				"when": "(editorSyntax == 'mxml') && as3mxmlCodeIntelligenceReady"
 			},
 			{
 				"title": "Organize Imports In Uri",
-				"command": "as3mxml.organizeImportsInUri"
+				"command": "as3mxml.organizeImportsInUri",
+				"when": "(editorSyntax == 'actionscript' || editorSyntax == 'mxml') && as3mxmlCodeIntelligenceReady"
 			},
 			{
 				"title": "Organize Imports In Directory",
-				"command": "as3mxml.organizeImportsInDirectory"
+				"command": "as3mxml.organizeImportsInDirectory",
+				"when": "(editorSyntax == 'actionscript' || editorSyntax == 'mxml') && as3mxmlCodeIntelligenceReady"
 			},
 			{
 				"title": "Add Missing Imports In Uri",
-				"command": "as3mxml.addMissingImportsInUri"
+				"command": "as3mxml.addMissingImportsInUri",
+				"when": "(editorSyntax == 'actionscript' || editorSyntax == 'mxml') && as3mxmlCodeIntelligenceReady"
 			},
 			{
 				"title": "Remove Unused Imports In Uri",
-				"command": "as3mxml.removeUnusedImportsInUri"
+				"command": "as3mxml.removeUnusedImportsInUri",
+				"when": "(editorSyntax == 'actionscript' || editorSyntax == 'mxml') && as3mxmlCodeIntelligenceReady"
 			},
 			{
 				"title": "Sort Imports In Directory",
-				"command": "as3mxml.sortImportsInUri"
+				"command": "as3mxml.sortImportsInUri",
+				"when": "as3mxmlCodeIntelligenceReady==true"
 			},
 			{
 				"title": "Get Active Project URIs",
-				"command": "as3mxml.getActiveProjectURIs"
+				"command": "as3mxml.getActiveProjectURIs",
+				"when": "(editorSyntax == 'actionscript' || editorSyntax == 'mxml') && as3mxmlCodeIntelligenceReady"
 			},
 			{
 				"title": "Get Library Definition Text",
-				"command": "as3mxml.getLibraryDefinitionText"
+				"command": "as3mxml.getLibraryDefinitionText",
+				"when": "(editorSyntax == 'actionscript' || editorSyntax == 'mxml') && as3mxmlCodeIntelligenceReady"
 			}
 		],
 		"extensions": [
@@ -801,8 +811,9 @@
 				"title": "Clear Certifcate Password",
 				"command": "actionscipt.clearExportPassword"
 			},
+			{"separator": true},
 			{
-				"title": "Test Input Box",
+				"title": "Test UI",
 				"command": "actionscript3.paneltest"
 			},
 			{"separator": true},
@@ -815,15 +826,6 @@
 				"title": "AIR / ActionScript 3 Reference",
 				"command": "actionscipt.as3reference"
 			},
-			{"separator": true},
-			{
-				"title": "CODE ACTION!!",
-				"command": "as3mxml.codeaction"
-			},
-			{
-				"title": "DOCUMENT SYMBOLS!!",
-				"command": "as3mxml.documentsymbols"
-			}
 		]
 	}
 }

@@ -8,14 +8,12 @@ var taskprovider = null;
 var as3mxmlCodeIntelligenceReady = false;
 
 exports.activate = function() {
-	langserver = new AS3MXMLLanguageServer();
 	taskprovider = new ActionScript3TaskAssistant();
 
-
 	// Handles Tasks for us so we can build/clean/run
-	nova.assistants.registerTaskAssistant(taskprovider, {
-		identifier: "actionscript",
-	});
+	nova.assistants.registerTaskAssistant(taskprovider, { identifier: "actionscript" });
+
+	langserver = new AS3MXMLLanguageServer();
 
 	//                                          [ Nova stuff...                     ][ Our params to pass]
 	nova.commands.register("actionscript.clean",(workspace, workspacePath, sourcePath, outputPath) => {
@@ -80,6 +78,13 @@ exports.activate = function() {
 	});
 
 	nova.commands.register("actionscipt.as3reference",() => { nova.openURL("https://airsdk.dev/reference"); });
+
+	nova.commands.register("as3mxml.restart", (editor) => {
+		langserver.stop();
+		as3mxmlCodeIntelligenceReady = false;
+		nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
+		langserver = new AS3MXMLLanguageServer();
+	});
 /*
 	if (nova.inDevMode()) {
 		console.log(">>>> AS3MXML Activated");
@@ -228,7 +233,6 @@ class AS3MXMLLanguageServer {
 			var clientOptions = {
 				syntaxes: ["actionscript","mxml"],
 				debug: true,
-
 				documentSelector: [
 					{ scheme: "file", language: "actionscript" },
 					{ scheme: "file", language: "mxml" },
@@ -237,20 +241,6 @@ class AS3MXMLLanguageServer {
 					configurationSection: "as3mxml",
 				},
 				trace: "verbose",
-/*
-				// Not sure if this is needed?
-				uriConverters: {
-					code2Protocol: (value) => {
-						//return normalizeUri(value);
-						console.log(" Called code2Protocol!");
-						return nova.path.normalize(value);
-					},
-					//this is just the default behavior, but we need to define both
-					protocol2Code: (value) => {
-						return value;
-					}
-				},
-*/
 				initializationOptions: {
 					preferredRoyaleTarget: "SWF", // Should be SWF or JS for Royale, but for now let's just try this...
 					notifyActiveProject: true,
@@ -270,179 +260,16 @@ class AS3MXMLLanguageServer {
 				}
 
 				client.start();
-
 				client.onDidStop((error) => { console.log("**** AS3MXML ERROR: " + error + ". It may be still running: ", client.running); });
-/*
-				nova.assistants.registerCompletionAssistant("as3", new CompletionProvider(), {
-					triggerChars: new Charset(".")
+
+				client.onNotification("initialized", (param) => {
+					console.log(" !!!Got initialized notificatiON!!");
+					showNotification("ActionScript 3", "LSP Initialized! What now...");
 				});
-*/
-				// ------------------------------------------------------------------------
-				// Add so that when new files open we send the textDocument/didOpen
-				nova.workspace.onDidAddTextEditor((editor) => {
-					if(editor.document.syntax=="ActionScript 3" || editor.document.syntax=="MXML" || editor.document.syntax=="xml" ) {
-						let version = 0;
 
-						// 1 - Send notification of textDocument/didOpen
-						console.log(" >>> Firing off textDocument/didOpen for the file " + editor.document.uri);
-						client.sendNotification("textDocument/didOpen", {
-							textDocument:  {
-								uri: editor.document.uri,
-								languageId: "actionscript",
-								version: version,
-								text: editor.document.getTextInRange(new Range(0, editor.document.length))
-							}
-						});
-
-						// 2 - Send request textDocument/codeAction
-						client.sendRequest("textDocument/codeAction", {
-							textDocument: {
-								uri: editor.document.uri,
-							},
-							range: {
-								start: {
-									line: 0,
-									character: 0
-								},
-								end: {
-									line: 0,
-									character: 0
-								}
-							},
-							context: {
-								diagnostics: [],
-								triggerKind: 2
-							}
-						}).then((result) => {
-							// console.log(" <><><><> Sent textDocument/codeAction");
-						});
-
-						// 3 - Send request textDocument/documentSymbol
-						client.sendRequest("textDocument/documentSymbol", {
-							textDocument: {
-								uri: editor.document.uri,
-							},
-						}).then((result) => {
-							console.log(" <><><><> Sent textDocument/documentSymbol...");
-							console.log("RSULTS: " + JSON.stringify(results,null,4));
-						});
-
-						// ----------------------------------------------------------------------
-						// On Change
-						editor.onDidStopChanging(() => {
-							version++;
-
-/*
-							console.log("CURPOS:");
-							console.log(JSON.stringify(editor.selectedRange,null,4));
-
-							const cursorPosition = editor.selectedRange.start;
-							consoleLogObject(cursorPosition);
-*/
-							var rr = rangeToLspRange(editor.document, editor.selectedRange)
-/*
-							console.log("RR Values; ");
-							consoleLogObject(rr);
-
-							client.sendRequest("textDocument/hover", {
-								textDocument: { uri: nova.workspace.activeTextEditor.document.uri },
-								position: rr.end
-							}).then((result) => { console.log("Hovered"); });
-*/
-							client.sendNotification("textDocument/didChange", {
-								textDocument: {
-									uri: editor.document.uri,
-									version: version
-								},
-								contentChanges: [
-									{
-										range: rangeToLspRange(editor.document, editor.selectedRange),
-										rangeLength: 0,
-										text: ""
-									}
-								]
-							});
-
-/*
-							client.sendRequest("textDocument/completion", {
-								textDocument: {
-									uri: editor.document.uri,
-								},
-								position: {
-									line: rr.end.line,
-									character: rr.end.character+1
-								},
-								context: {
-									triggerKind: 1,
-								}
-							}).then((result) => {
-								console.log(" <><><><> Sent textDocument/compeletion...");
-								client.sendRequest("textDocument/codeAction", {
-									textDocument: {
-										uri: editor.document.uri,
-									},
-									range: {
-										start: {
-											line: rr.end.line,
-											character: rr.end.character+1
-										},
-										end: {
-											line: rr.end.line,
-											character: rr.end.character+1
-										}
-									},
-									context: {
-										diagnostics: [],
-										triggerKind: 2,
-									}
-								}).then((result) => {
-									console.log(" <><><><> Sent textDocument/codeAction...");
-								})
-*/
-/*
-							});
-*/
-							console.log(" <><><><> Sent textDocument/didStopChanging...");
-						});
-
-						// ----------------------------------------------------------------------
-						// On Save
-						editor.onDidSave((editor) => {
-							console.log(" <><><><> SHoud do Sending notification 'textDocument/didSave'.");
-							client.sendNotification("textDocument/didSave", {
-								textDocument: {
-									uri: editor.document.uri,
-								}
-							});
-							console.log(" <><><><> SHoud do Sending notification 'workspace/didChangeWatchedFiles'.");
-
-							client.sendNotification("workspace/didChangeWatchedFiles", {
-								changes: [
-									{
-										uri: editor.document.uri,
-										type: 2
-									}
-								]
-							});
-						});
-
-						// ----------------------------------------------------------------------
-						// On Close
-						editor.onDidDestroy((editor) => {
-							const textDocument = {
-								uri: editor.document.uri,
-							}
-							client.sendNotification("textDocument/didClose", { textDocument: textDocument });
-						});
-					} else {
-						console.log(" >>> NOT firing off textDocument/didOpen for the file " + editor.document.uri + " because it's a " + editor.document.syntax);
-					}
-				})
-				// ------------------------------------------------------------------------
-
-				// Should do this after initialized, but not sure
+				// Send Change workspace config slightly after startup
+				// Ideally, it should be onNotification("initialized")...
 				setTimeout(function() {
-					// 2. Send Change workspace config
 					// @NOTE Should do programmatically, just copying from VSCode to see if it works!
 					const config = {
 						settings: {
@@ -518,7 +345,7 @@ class AS3MXMLLanguageServer {
 					client.sendNotification("workspace/didChangeConfiguration", config);
 
 					console.log(" >>> Sending request of workspace/executeCommand!! ");
-					// 3. Set perferred target?
+					// Set perferred target (need to change for Royale...)
 					client.sendRequest("workspace/executeCommand", {
 						command: "as3mxml.setRoyalePreferredTarget",
 						arguments: [
@@ -534,75 +361,16 @@ class AS3MXMLLanguageServer {
 				// Notification Handlers
 				client.onNotification("as3mxml/logCompilerShellOutput", (param) => {
 					console.log(" !!!Got as3mxml/logCompilerShellOutput notificatiON!!");
-				})
+				});
 
 				client.onNotification("as3mxml/clearCompilerShellOutput", () => {
 					console.log(" !!!Got as3mxml/clearCompilerShellOutput notificatiON!!");
-				})
+				});
 
 				client.onNotification("as3mxml/setActionScriptActive", () => {
-					console.log(")))))))))))) as3mxml/setActionScriptActive (((((((((((");
-					console.log(")))))))))))) as3mxml/setActionScriptActive (((((((((((");
-					console.log(")))))))))))) as3mxml/setActionScriptActive (((((((((((");
-					console.log(")))))))))))) as3mxml/setActionScriptActive (((((((((((");
-					console.log(")))))))))))) as3mxml/setActionScriptActive (((((((((((");
-					console.log(")))))))))))) as3mxml/setActionScriptActive (((((((((((");
-					console.log(")))))))))))) as3mxml/setActionScriptActive (((((((((((");
-					console.log(")))))))))))) as3mxml/setActionScriptActive (((((((((((");
-					console.log(" HEY HEY!! Got a notification on as3mxml/setActionScriptActive. No parameters provided.");
-
 					as3mxmlCodeIntelligenceReady = true;
-					const execComm = {
-						command: "as3mxml.codeIntelligenceReady",
-						arguments: [
-							"SWF"
-						]
-					};
-					client.sendRequest("workspace/executeCommand", execComm).then((result) => {
-						console.log("Send workspace/executeCommand.. should codeIntelligenceReady...");
-					});
+					nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
 				});
-
-				client.onNotification("client/registerCapability", (params) => {
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-					console.log(" HEY HEY!! Got notification to client/registerCapability");
-				});
-				// ------------------------------------------------------------------------
-
-				// ------------------------------------------------------------------------
-				// Request Handlers
-				client.onRequest("client/registerCapability", (params) => {
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					console.log(" HEY HEY!! Got requested to client/registerCapability");
-					consoleLogObject(params);
-
-					// Do we send right back?!
-					client.sendRequest("client/registerCapability", {}).then((result) => {
-						console.log("Now what?");
-						console.log("Now what?");
-						console.log("Now what?");
-						console.log("Now what?");
-						console.log("Now what?");
-						console.log("Now what?");
-					});
-				});
-				// ------------------------------------------------------------------------
 
 				// ------------------------------------------------------------------------
 				// Configuration Change Handlers
@@ -622,6 +390,13 @@ class AS3MXMLLanguageServer {
 					nova.commands.invoke("as3mxml.restart");
 				});
 				// ------------------------------------------------------------------------
+
+				// @TODO Can I check with initialized?
+				setTimeout(function() {
+					if(as3mxmlCodeIntelligenceReady==false) {
+						showNotification("ActionScript 3 not ready", "ActionScript & MXML code intelligence disabled. Either no sdk found or you need to create a file named 'asconfig.json' to enable all features.")
+					}
+				}, 2500);
 
 				nova.subscriptions.add(client);
 				this.languageClient = client;
@@ -659,204 +434,3 @@ class AS3MXMLLanguageServer {
 		}
 	}
 }
-
-nova.commands.register("as3mxml.restart", (editor) => {
-	langserver.stop();
-	as3mxmlCodeIntelligenceReady = false;
-	langserver = new AS3MXMLLanguageServer();
-});
-
-nova.commands.register("as3mxml.codeIntelligenceReady", (editor) => {
-	console.log("as3mxml.codeIntelligenceReady was received. Think it just sets the variable!");
-	as3mxmlCodeIntelligenceReady = true;
-});
-
-nova.commands.register("as3mxml.hovertest", (editor) => {
-	if (nova.inDevMode()) { console.log("Called... as3mxml.hovertest"); }
-
-	if(langserver) {
-		var position = rangeToLspRange(nova.workspace.activeTextEditor.document, nova.workspace.activeTextEditor.selectedRange);
-
-		if (nova.inDevMode()) {
-			console.log("Selectd Range:");
-			console.log(nova.workspace.activeTextEditor.selectedRange);
-			consoleLogObject( nova.workspace.activeTextEditor.selectedRange);
-			console.log("POSITION:");
-			consoleLogObject(position);
-		}
-
-		langserver.languageClient.sendRequest("textDocument/hover", {
-			textDocument: { uri: nova.workspace.activeTextEditor.document.uri },
-			position: position.start
-		}).then((result) => {
-			if(result!==true) {
-				showNotification("Hover Test", result.contents.value);
-			}
-		}, (error) => {
-			showNotification("Hover Test ERROR!", error);
-			consoleLogObject(error);
-		});
-	}
-});
-
-nova.commands.register("as3mxml.didclose", (editor) => {
-	if (nova.inDevMode()) { console.log("Called... as3mxml.didclose"); }
-
-	if(langserver) {
-		const fullRange = new Range(0, nova.workspace.activeTextEditor.document.length);
-		const text = nova.workspace.activeTextEditor.document.getTextInRange(fullRange);
-
-		console.log(" | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		console.log(" | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		console.log(" | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		const textDocument = {
-			uri: nova.workspace.activeTextEditor.document.uri,
-			// languageId: "actionscript",
-			// version: 1,
-			// text: nova.workspace.activeTextEditor.document.getTextInRange(fullRange)
-		}
-		const payload = {
-			textDocument: textDocument
-		}
-
-		langserver.languageClient.sendRequest("textDocument/didClose", payload).then((result) => {
-			console.log(" 222 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		});
-	}
-});
-
-nova.commands.register("as3mxml.textchange", (editor) => {
-	if (nova.inDevMode()) { console.log("Called... as3mxml.textchange"); }
-
-	if(langserver) {
-		const fullRange = new Range(0, nova.workspace.activeTextEditor.document.length);
-		const text = nova.workspace.activeTextEditor.document.getTextInRange(fullRange);
-
-		console.log(" | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		console.log(" | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		console.log(" | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		const textDocument = {
-			uri: nova.workspace.activeTextEditor.document.uri,
-			languageId: "actionscript",
-			version: 1,
-			text: nova.workspace.activeTextEditor.document.getTextInRange(fullRange)
-		}
-		const payload = {
-			textDocument: textDocument
-		}
-
-		langserver.languageClient.sendNotification("textDocument/didChange", payload).then((result) => {
-			console.log(" 222 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		});
-	}
-});
-
-nova.commands.register("as3mxml.didopen", (editor) => {
-	if (nova.inDevMode()) { console.log("Called... as3mxml.didopen"); }
-
-	if(langserver) {
-		const fullRange = new Range(0, nova.workspace.activeTextEditor.document.length);
-		const textDocument = {
-			uri: nova.workspace.activeTextEditor.document.uri,
-			languageId: "actionscript",
-			version: 1,
-			text: nova.workspace.activeTextEditor.document.getTextInRange(fullRange)
-		}
-		langserver.languageClient.sendNotification("textDocument/didOpen", { textDocument: textDocument });
-	}
-});
-
-nova.commands.register("as3mxml.fullhover", (editor) => {
-	if (nova.inDevMode()) { console.log("Called... as3mxml.fullhover"); }
-
-	if(langserver) {
-		const fullRange = new Range(0, nova.workspace.activeTextEditor.document.length);
-		const text = nova.workspace.activeTextEditor.document.getTextInRange(fullRange);
-
-		console.log(" | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-		const textDocument = {
-			uri: nova.workspace.activeTextEditor.document.uri,
-			languageId: "ActionScript 3",
-			version: 1,
-			text: nova.workspace.activeTextEditor.document.getTextInRange(fullRange)
-		}
-		const payload = {
-			textDocument: textDocument
-		}
-
-		langserver.languageClient.sendNotification("textDocument/didOpen", payload);
-
-		setTimeout(function() {
-			console.log(" 222 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-			console.log("Send didOpen.. should codeAction...");
-			langserver.languageClient.sendRequest("textDocument/codeAction", {
-				textDocument: {
-					uri: nova.workspace.activeTextEditor.document.uri,
-				},
-				range: {
-					start: {
-						line: 0,
-						character: 0
-					},
-					end: {
-						line: 0,
-						character: 0
-					}
-				},
-				context: {
-					diagnostics: [],
-					triggerKind: 2
-				}
-			}).then((result) => {
-				console.log(" 333 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |");
-				console.log("Send did codeAction.. should documentSymbol...");
-				langserver.languageClient.sendRequest("textDocument/documentSymbol", {
-					textDocument: {
-						uri: nova.workspace.activeTextEditor.document.uri,
-					}
-				}).then((result) => {
-					console.log("Send did documentSymbol.. now what?...");
-				});
-			});
-		}, 1000);
-	}
-});
-
-nova.commands.register("as3mxml.documentsymbols", (editor) => {
-	if (nova.inDevMode()) { console.log("Called... as3mxml.documentsymbols"); }
-
-	if(langserver) {
-		langserver.languageClient.sendRequest("textDocument/documentSymbol", {
-			textDocument: { uri: nova.workspace.activeTextEditor.document.uri },
-		});
-	}
-});
-
-nova.commands.register("as3mxml.codeaction", (editor) => {
-	if (nova.inDevMode()) { console.log("Called... as3mxml.codeaction"); }
-
-	if(langserver) {
-		var position = rangeToLspRange(nova.workspace.activeTextEditor.document, nova.workspace.activeTextEditor.selectedRange);
-		console.log("Selectd Range:");
-		console.log(nova.workspace.activeTextEditor.selectedRange);
-		consoleLogObject( nova.workspace.activeTextEditor.selectedRange);
-		console.log("POSITION:");
-		consoleLogObject(position);
-
-		langserver.languageClient.sendRequest("textDocument/codeAction", {
-			textDocument: { uri: nova.workspace.activeTextEditor.document.uri },
-			position: position.start,
-			context: {
-				diagnostics: [],
-				triggerKind: 2
-			}
-		}).then((result) => {
-			if(result!==true) {
-				showNotification("Hover Test", result.contents.value);
-			}
-		}, (error) => {
-			showNotification("Hover Test ERROR!", error);
-			consoleLogObject(error);
-		});
-	}
-});
