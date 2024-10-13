@@ -3,7 +3,7 @@
 	"name": "ActionScript 3",
 	"organization": "",
 	"description": "ActionScript & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
-	"version": "0.7.0",
+	"version": "0.7.3",
 	"keywords": ["actionscript 3","flash","adobe air","mxml" ],
 	"categories": [
 		"issues",
@@ -816,11 +816,6 @@
 				"command": "actionscipt.as3reference"
 			},
 			{"separator": true},
-			{"separator": true},
-			{
-				"title": "HOVER TEST!!",
-				"command": "as3mxml.hovertest"
-			},
 			{
 				"title": "CODE ACTION!!",
 				"command": "as3mxml.codeaction"

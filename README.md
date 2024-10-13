@@ -6,7 +6,7 @@ And uses Panic Nova's tasks cleaning/building/running, which can be pull in from
 
 More details about ActionScript 3 for Nova are in the [actionscript3.novaextension README.md](actionscript3.novaextension/README.md)
 
-Currently a work in progress. Issues work, and some features like Jump to Definition work occasionally.
+Currently a work in progress. Issues work, completion, hovers and some features like Jump to Definition work (occasionally).
 
 # Syntax check
 

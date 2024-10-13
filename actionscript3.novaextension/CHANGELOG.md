@@ -1,3 +1,8 @@
+## Version 0.7.3
+
+* More work on getting AS3MXML integrated
+* Added clips
+
 ## Version 0.7.2
 
 * Got completions working from the completion XMLs.
