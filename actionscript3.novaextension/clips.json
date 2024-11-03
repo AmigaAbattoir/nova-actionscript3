@@ -22,9 +22,16 @@
 			"children": [
 				{
 					"syntax": "mxml",
-					"content": "<${1:mx:}Button id=\"${2:button}\" label=\"${3:myButton}\" click=\"${4:onClick}(${5:event})\">${6:cursor}",
-					"name": "mx:button",
+					"content": "<${0:mx:}AdvancedDataGrid id=\"${1:adg}\" width=\"${2:200}\" height=\"${3:200}\" dataProvider=\"{${4:dataprovider}}\">\n \t \t <${0:mx:}groupedColumns>\n\t\t<${0:mx:}AdvancedDataGridColumn dataField=\"${5:fieldName}\"/>\n\t\t</${0:mx:}groupedColumns>\n\t\t</${0:mx}AdvancedDataGrid>$6",
+					"name": "mx:AdvancedDataGrid",
+					"trigger": "<mx:",
+					"description": "Creates an Advanced DataGrid"
+				},
+				{
+					"syntax": "mxml",
 					"description": "Creates a MX Button",
+					"name": "mx:button",
+					"content": "<mx:Button id=\"${0:button}\" label=\"${2:myButton}\" click=\"${3:onClick}\">",
 				},
 				{
 					"syntax": "mxml",

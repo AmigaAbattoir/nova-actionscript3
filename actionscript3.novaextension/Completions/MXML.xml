@@ -1,18 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <completions>
-    <provider>
-		<selector>MXML</selector>
-		<expression>&amp;[a-zA-Z0-9-_]*</expression>
-		<trigger>&amp;</trigger>
-        <set>mxml.entities</set>
-    </provider>
+	<provider name="mxml">
+		<syntax>mxml</syntax>
+		<selector>*</selector>
+		<expression>\b[a-zA-Z0-9-_]*</expression>
+		<set>mxml.entities</set>
+	</provider>
 
-    <!-- Entities -->
-    <set name="mxml.entities">
-        <completion string="&quot;" />
-        <completion string="&amp;" />
-        <completion string="&apos;" />
-        <completion string="&lt;" />
-        <completion string="&gt;" />
-    </set>
+	<!-- Entities -->
+	<set name="mxml.entities" symbol="tag">
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+	</set>
 </completions>

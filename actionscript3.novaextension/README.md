@@ -1,21 +1,33 @@
 # ActionScript 3 for Nova
 
-Is an **Experimental/ _(kinda not)_ Work _(ing)_ In Progress** extension that uses the ActionScript & MXML language server.
+Is a **Work In Progress** extension for ActionScript 3 & MXML.
 
-It currently provides for ActionScript 3 files:
+It currently provides:
 
- * **Symbols** - *NOTE:* Not correctly showing it in the hierarchy properly
+ * **Syntax Highlighting**
 
- * **Language intelligence**
-   * Issues (*Note:* needs an `asconfig.json` file to work)
+ * **Code Folding**
 
- * **Tasks** -  *NOTE:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile apps. Also, handles ANEs. Still looking into mobile, and web (maybe with Ruffle too at some point)
+ * **Symbols** - *Note:* MXML is still not correct in the hierarchy.
 
- * **Exporting AIR Packages** - *NOTE:* Currently, limited to desktop/extendedDesktop AIR builds.
+ * **Issues** - *Note:* needs an `asconfig.json` file to work)
+
+ * **Language intelligence** - *Note:* needs an `asconfig.json` file to work)
+
+ * **Completions** for the following:
+   * **ActionScript 3** - *Note:* needs an `asconfig.json` file to work
+   * **MXML** - *Note:* Still wonky and also needs an `asconfig.json` file to work for
+   * **AIR Descriptor XML**
+
+ * **Clips** - *Note:* Still way early in progress.
+
+ * **Tasks** -  *Note:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile apps. Also, handles ANEs. Still looking into mobile, and web (maybe with Ruffle too at some point)
+
+ * **Exporting AIR Packages** - *Note:* Currently, limited to desktop/extendedDesktop AIR builds.
 
 ## Notes
 
-The LSP used to gather issues is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.20.1.
+The LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.21.1.
 
 Started setting up LSP using the [How to use the ActionScript and MXML language server with Sublime Text](https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text) from the repo's Wiki.
 
@@ -25,7 +37,7 @@ Also, took some stuff from [BowlerHatLLC/eclipse-as3mxml](https://github.com/Bow
 
 I don't think its syntaxes work with Nova well. I am in the process of reworking to so that Nova will give the correct symbols.
 
-Cleaning/Building/Running are done by using `mxmlc` for compiling, packaging and running with `adt` from an (Harman) Adobe Air or Flex SDK.
+Cleaning/Building/Running are done by using `mxmlc` for compiling, packaging and running with `adt` from an (Harman) Adobe Air or Flex SDK, not using AS3MXML.
 
 ## Requirements
 

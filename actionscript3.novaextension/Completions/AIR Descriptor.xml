@@ -14,46 +14,181 @@
 	</provider>
 
 	<set name="xml.airdescriptor" symbol="tag">
+		<!-- We want these to be open/closed tags -->
 		<behavior variables="true" suffix="(?!&gt;)">
 			<append>&gt;$[]&lt;/${completion}&gt;</append>
 		</behavior>
+		<!-- However, the "application" tag should have the version set, so let's force the cursor there! -->
 		<completion string="application">
 			<behavior variables="true">
-				<append>$[] xmlns="http://ns.adobe.com/air/application/"&gt;&lt;/${completion}&gt;</append>
+				<append> xmlns="http://ns.adobe.com/air/application/$[version]"&gt;
+&lt;/${completion}&gt;</append>
 			</behavior>
+			<description>The `application` element is the top-level element within the Application Descriptor XML file.</description>
 		</completion>
-		<completion string="initialWindow" />
-		<completion string="encryptedLocalStorage" />
-		<completion string="iPhone" />
-		<completion string="android" />
-		<completion string="macOS" />
-		<completion string="windows" />
 	</set>
 
 	<set name="xml.airdescriptor.application" symbol="tag">
-		<completion string="id" />
-		<completion string="versionNumber" />
-		<completion string="versionLabel" />
-		<completion string="publisherID" />
-		<completion string="name" />
-		<completion string="filename" />
-		<completion string="description" />
-		<completion string="copyright" />
-		<completion string="architecture" />
-		<completion string="gpuPreference" />
-		<completion string="icon" />
-		<completion string="supportedProfiles" />
-		<completion string="supportedLanguages" />
-		<completion string="installFolder" />
-		<completion string="programMenuFolder" />
-		<completion string="customUpdateUI" />
-		<completion string="allowBrowserInvocation" />
-		<completion string="embedFonts" />
-		<completion string="resdir" />
-		<completion string="fileTypes" />
-		<completion string="extensions" />
-		<completion string="allowMultipleInstances" />
-		<completion string="stacktraces" />
+		<!-- We want these to be open/closed tags -->
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+		<completion string="initialWindow">
+			<description>Provides information about the first window that will be created for an application by the AIR runtime.</description>
+		</completion>
+		<completion string="encryptedLocalStorage">
+			<description>Provides details about how the AIR runtime should handle some of the features and mechanisms used for Encrypted Local Storage.
+
+This provides a mechanism for applications to store sensitive details for a user, in a way that cannot be accessed by other users - or by other applications, without the user being complicit.
+
+Note that the user - or an administrator - may be able to get information from which to decrypt some of the data, so this is not 100% secure, but is intended to limit programmatic access only to the intended user.</description>
+		</completion>
+		<completion string="iPhone">
+			<description>Provides platform-specific settings for applications running on iOS and tvOS devices including the iPhone and iPad.</description>
+		</completion>
+		<completion string="android">
+			<description>Provides platform-specific settings for applications running on Android devices.</description>
+		</completion>
+		<completion string="macOS">
+			<description>Provides platform-specific settings for applications running on the macOS operating systems.</description>
+		</completion>
+		<completion string="windows">
+			<description>Provides platform-specific settings for applications running on the Windows operating systems.</description>
+		</completion>
+
+		<completion string="id">
+			<description>Required: An identifier string for the application, known as the application ID. A reverse DNS-style identifier is often used, but this style is not required.
+
+Content
+The ID value is restricted to the following characters:
+
+0–9
+a–z
+A–Z
+. (dot)
+- (hyphen)
+The value must contain 1 to 212 characters. This element is required.
+</description>
+		</completion>
+		<completion string="versionNumber">
+			<description>Required: The version number for the application. This can contain a sequence of up to three integers separated by periods. Each integer must be a number between 0 and 999 (inclusive).</description>
+		</completion>
+		<completion string="versionLabel">
+			<description>A version string that will be displayed to the user in installation dialogs. If this value is not provided, the `versionNumber` field will be used instead.</description>
+		</completion>
+		<completion string="publisherID">
+			<description>Deprecated: This may only be specified when creating a package for updating an application originally created with AIR version 1.5.2 or earlier.</description>
+		</completion>
+		<completion string="name">
+			<description>The name of the application, to display within the installation dialogs. If this value is not provided, the filename field will be used instead.
+
+Note that this element may either be a simple string, or may contain a set of localised names.</description>
+		</completion>
+		<completion string="filename">
+			<description>Required: The filename to use when installing the application. This can contain any UTF-8 character above 0x1F, other than one of: *"/:&gt;&lt;?\|, and must not start or end with a space or dot.
+
+It is advised to keep the filename set to the ASCII range of characters, particularly when targeting an iPhone or iPad device, to avoid issues with the filesystems on these devices.</description>
+		</completion>
+		<completion string="description">
+			<description>A description to display within the installation dialogs. This element may either be a simple string, or may contain a set of localised descriptions.</description>
+		</completion>
+		<completion string="copyright">
+			<description>The copyright information for the AIR application. On Mac OS, the copyright text appears in the About dialog box for the installed application.
+
+On Mac OS, the copyright information is also used in the NSHumanReadableCopyright field in the Info.plist file for the application.</description>
+		</completion>
+		<completion string="architecture">
+			<description>The architecture value determines the architecture of the Windows captive app, being either "32" or "64".
+
+Defaults to 32 if not supplied.</description>
+		</completion>
+		<completion string="gpuPreference">
+			<description>An element containing a set of icon files of varying sizes that are used to create the application icon.
+
+The icon property specifies one or more icon files to be used for the application. Including an icon is optional. If you do not specify an icon property, the operating system displays a default icon.
+
+The path specified is relative to the application root directory. Icon files must be in the PNG format.
+
+If an element for a given size is present, the image in the file must be exactly the size specified. If all sizes are not provided, the closest size is scaled to fit for a given use of the icon by the operating system.</description>
+		</completion>
+		<completion string="icon">
+			<description>An element containing a set of icon files of varying sizes that are used to create the application icon.
+
+The icon property specifies one or more icon files to be used for the application. Including an icon is optional. If you do not specify an icon property, the operating system displays a default icon.
+
+The path specified is relative to the application root directory. Icon files must be in the PNG format.
+
+If an element for a given size is present, the image in the file must be exactly the size specified. If all sizes are not provided, the closest size is scaled to fit for a given use of the icon by the operating system.</description>
+		</completion>
+		<completion string="supportedProfiles">
+			<description>Identifies the profiles that are supported for the application. Any combination of the following profiles can be specified:
+
+`desktop`: The desktop profile is for AIR applications that are installed on a desktop computer using an AIR file. These applications do not have access to the NativeProcess class (which provides communication with native applications).
+`extendedDesktop`: The extended desktop profile is for AIR applications that are installed on a desktop computer using a native application installer. These applications have access to the NativeProcess class and can run AIR Native Extensions.
+`mobileDevice`: The mobile device profile is for mobile applications.
+`extendedMobileDevice`: The extended mobile device profile is not currently in use.
+The supportedProfiles property is optional. When you do not include this element in the application descriptor file, the application can be compiled and deployed for any profile. To specify multiple profiles, separate each with a space character. For example, the following setting specifies that the application is only available in the desktop and extended profiles:</description>
+		</completion>
+		<completion string="supportedLanguages">
+			<description>Identifies the languages supported by the application. This element is only used by iOS, Mac captive runtime, and Android applications. This element is ignored by all other application types.
+
+If you do not specify this element, then by default the packager performs the following actions based on the application type:
+
+`iOS` — All languages supported by the AIR runtime are listed in the iOS app store as supported languages of the application.
+`Mac` captive runtime — Application packaged with captive bundle has no localization information.
+`Android` — Application bundle has resources for all languages supported by the AIR runtime.
+The element should contain a space-delimited list of supported languages. Valid language values are ISO 639-1 values for the languages supported by the AIR runtime: en, de, es, fr, it, ja, ko, pt, ru, cs, nl, pl, sv, tr, zh, da, nb, iw.</description>
+		</completion>
+		<completion string="installFolder">
+			<description>Identifies the subdirectory of the default installation directory.
+
+On Windows, the default installation subdirectory is the Program Files directory. On Mac OS, it is the /Applications directory. On Linux, it is /opt/.
+
+For example, if the installFolder property is set to "Acme" and an application is named "ExampleApp", then the application is installed in C:\Program Files\Acme\ExampleApp on Windows, in /Applications/Acme/Example.app on MacOS, and /opt/Acme/ExampleApp on Linux.
+
+If you do not specify an installFolder property, the application is installed in a subdirectory of the default installation directory, based on the name property.</description>
+		</completion>
+		<completion string="programMenuFolder">
+			<description>Identifies the location in which to place shortcuts to the application in the All Programs menu of the Windows operating system or in the Applications menu on Linux.
+
+This setting is currently ignored on other operating systems.
+
+The string used for the programMenuFolder value can contain any Unicode (UTF-8) character except those that are prohibited from use as folder names on various file systems (see the filename element for the list of exceptions). Do not use a forward slash (/) character as the last character of this value.</description>
+		</completion>
+		<completion string="customUpdateUI">
+			<description>Indicates whether an application will provide its own update dialogs.
+
+If false (or missing), AIR presents standard update dialogs to the user. Only desktop applications distributed as AIR files can use the built-in AIR update system.
+
+When the installed version of your application has the customUpdateUI element set to true and the user then double-clicks the AIR file for a new version or installs an update of the application using the seamless install feature, the runtime opens the installed version of the application. The runtime does not open the default AIR application installer. Your application logic can then determine how to proceed with the update operation. (The application ID and publisher ID in the AIR file must match the values in the installed application for an upgrade to proceed.)
+</description>
+		</completion>
+		<completion string="allowBrowserInvocation">
+			<description>This setting was used to trigger the launch of an AIR application from a browser - however this used a utility running within the Flash Player in the browser.
+
+Following the removal of support for the Flash Player, this setting will be ignored.
+</description>
+		</completion>
+		<completion string="embedFonts">
+			<description>Allows you to use custom fonts on StageText in the AIR application. The embedFonts element may contain any number of font elements.</description>
+		</completion>
+		<completion string="resdir">
+			<description>A folder that should be treated as containing Android resources files, to be merged in with the standard AIR application resources when building an APK or Android App Bundle file.</description>
+		</completion>
+		<completion string="fileTypes">
+			<description>The fileTypes element allows you to declare the file types with which an AIR application can be associated on a desktop installation.
+
+When an AIR application is installed, any declared file type is registered with the operating system. If these file types are not already associated with another application, they are associated with the AIR application. To override an existing association between a file type and another application, use the NativeApplication.setAsDefaultApplication() method at run time (preferably with the user’s permission).</description>
+		</completion>
+		<completion string="extensions">
+			<description>Identifies the AIR Native Extensions used by an application. This element contains a list of extensionID entries, each of which declares the identifier of an AIR Native Extension that will need to be loaded by the AIR runtime at application start-up.</description>
+		</completion>
+		<completion string="allowMultipleInstances">
+			<description>Available: 50.0.0.1: This setting can be used to allow multiple instances of a desktop AIR application to be launched as separate processes, rather than the standard behaviour of new invocations just resulting in an InvokeEvent being sent to a running instance of the application. Note that on macOS, opening a new instance of an application must be done via `open -n`.</description>
+		</completion>
+		<completion string="stacktraces">
+			<description>Available: 50.1.1.1: Controls the availability and verbosity of stack traces available to the application. The setting may be none, standard or verbose. Before this flag, the availability of stack traces depended on the SWF version number, and the verbosity on whether or not the SWF file included debug information (file name and line number details). none means that no stack traces are generated when an error is raised. standard would cause a stack trace to be created but without file and line information. verbose would then include the file and line details, assuming these are available within the SWF file.</description>
+		</completion>
 	</set>
 
 	<set name="xml.airdescriptor.application.values" symbol="tag">
@@ -61,85 +196,375 @@
 	</set>
 
 	<set name="xml.airdescriptor.application.initialWindow" symbol="tag">
-		<completion string="title"/>
-		<completion string="content"/>
-		<completion string="depthAndStencil"/>
-		<completion string="systemChrome"/>
-		<completion string="transparent"/>
-		<completion string="visible"/>
-		<completion string="maxSize"/>
-		<completion string="minSize"/>
-		<completion string="maximizable"/>
-		<completion string="minimizable"/>
-		<completion string="resizable"/>
-		<completion string="x"/>
-		<completion string="y"/>
-		<completion string="height"/>
-		<completion string="width"/>
-		<completion string="aspectRatio"/>
-		<completion string="autoOrients"/>
-		<completion string="orientationAnimation"/>
-		<completion string="fullScreen"/>
-		<completion string="renderMode"/>
-		<completion string="requestedDisplayResolution"/>
-		<completion string="allowLowQuality"/>
+			<!-- We want these to be open/closed tags -->
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+		<completion string="title">
+			<description>Specifies the title displayed in the title bar of the initial application window. A title is only displayed if the systemChrome element is set to standard.</description>
+		</completion>
+		<completion string="content">
+			<description>Required: The value specified for the content element is the URL for the main content file of the application. This may be either a SWF file or an HTML file.</description>
+		</completion>
+		<completion string="depthAndStencil">
+			<description>Indicates that the application requires the use of the depth or stencil buffer. You typically use these buffers when working with 3D content.</description>
+		</completion>
+		<completion string="systemChrome">
+			<description>Specifies whether the initial application window is created with the standard title bar, borders, and controls provided by the operating system. The system chrome setting of the window cannot be changed at run time. This can be set to one of the following values:
+
+`none` — No system chrome is provided. The application (or an application framework such as Flex) is responsible for displaying window chrome.
+`standard` (default) — System chrome is provided by the operating system.</description>
+		</completion>
+		<completion string="transparent">
+			<description>Specifies whether the initial application window is alpha-blended with the desktop. A window with transparency enabled may draw more slowly and require more memory. The transparent setting cannot be changed at run time.</description>
+		</completion>
+		<completion string="visible">
+			<description>Specifies whether the initial application window is visible as soon as it is created.
+
+AIR windows, including the initial window, are created in an invisible state by default. You can display a window by calling the activate() method of the NativeWindow object or by setting the visible property to true. You may want to leave the main window hidden initially, so that changes to the window’s position, the window’s size, and the layout of its contents are not shown.</description>
+		</completion>
+		<completion string="maxSize">
+			<description>Specifies the maximum size allowed for the window.
+
+If you do not set a maximum size, it is determined by the operating system.
+
+Content
+Two integers representing the maximum width and height, separated by whites pace.</description>
+		</completion>
+		<completion string="minSize">
+			<description>Specifies the minimum size allowed for the window.
+
+Content
+Two integers representing the minimum width and height, separated by whites pace. Note that the minimum size imposed by the operating system takes precedence over the value set in the application descriptor.</description>
+		</completion>
+		<completion string="maximizable">
+			<description>Specifies whether the window can be minimized.</description>
+		</completion>
+		<completion string="minimizable">
+			<description>Specifies whether the window can be minimized.</description>
+		</completion>
+		<completion string="resizable">
+			<description>Specifies whether the window can be resized.</description>
+		</completion>
+		<completion string="x">
+			<description>The horizontal position of the initial application window.
+
+In most cases, it is better to let the operating system determine the initial position of the window rather than assigning a fixed value.
+
+The origin of the screen coordinate system (0,0) is the top, left-hand corner of the main desktop screen (as determined by the operating system).</description>
+		</completion>
+		<completion string="y">
+			<description>The vertical position of the initial application window.
+
+In most cases, it is better to let the operating system determine the initial position of the window rather than assigning a fixed value.
+
+The origin of the screen coordinate system (0,0) is the top, left-hand corner of the main desktop screen (as determined by the operating system).</description>
+		</completion>
+		<completion string="height">
+			<description>The initial height of the main window of the application.
+
+If you do not set this value, it is determined by the settings in the root SWF file or, in the case of an HTML-based AIR application, by the operating system.
+
+The maximum dimension of a window is 4096 pixels.</description>
+		</completion>
+		<completion string="width">
+			<description>The initial width of the main window of the application.
+
+If you do not set this value, it is determined by the settings in the root SWF file or, in the case of an HTML-based AIR application, by the operating system.
+
+The maximum dimension of a window is 4096 pixels.</description>
+		</completion>
+		<completion string="aspectRatio">
+			<description>📱Specifies the aspect ratio of the application. Options are any, portrait or landscape.
+
+If not specified, the application opens in the "natural" aspect ratio and orientation of the device. The natural orientation varies from device to device. Typically, it is the portrait aspect ratio on small-screen devices such as phones. On some devices, such as the iPad tablet, the application opens in the current orientation.</description>
+		</completion>
+		<completion string="autoOrients">
+			<description>Specifies whether the orientation of content in the application automatically reorients as the device itself changes physical orientation.</description>
+		</completion>
+		<completion string="orientationAnimation">
+			<description>Specifies whether the screen orientation changing (when a device changes physical orientation, if the autoOrients flag is true) is animated or not.
+
+This value can be standard - meaning, the standard operating system animation is applied - or none which will mean the animation is removed and orientation changes happen instantaneously.</description>
+		</completion>
+		<completion string="softKeyboardBehavior">
+			<description>Specifies the default behavior of the application when a virtual keyboard is displayed. The default behavior is to pan the application upward.
+
+The runtime keeps the focused text field or interactive object on the screen. Use the pan option if your application does not provide its own keyboard handling logic.
+
+You can also turn off the automatic behavior by setting the softKeyboardBehavior element to none.
+
+In this case, text fields and interactive objects dispatch a SoftKeyboardEvent when the soft keyboard is raised, but the runtime does not pan or resize the application.
+
+It is your application’s responsibility to keep the text entry area in view.
+</description>
+		</completion>
+		<completion string="fullScreen">
+			<description>TODO:: the Adobe documentation does not match the observed behaviour.</description>
+		</completion>
+		<completion string="renderMode">
+			<description>Specifies whether to use graphics processing unit (GPU) acceleration, if supported on the current device. This can be set to one of the following values:
+
+`auto` (default) — currently falls back to CPU mode.
+`cpu` — hardware acceleration is not used.
+`direct` — rendering composition occurs in the CPU; blitting uses the GPU.
+`gpu` — hardware rendering acceleration is used, if available.
+Note that direct mode is required in order to use Stage3D APIs and frameworks such as Starling.</description>
+		</completion>
+		<completion string="requestedDisplayResolution">
+			<description>Specifies whether the application desires to use the standard or high resolution on a computer monitor with a high-resolution screen.
+
+When set to standard (the default), the screen will appear to the application as a standard-resolution screen. When set to `high`, the application can address each high-resolution pixel.
+
+For example, on a 4K/UHD monitor, if the setting is standard then the full-screen stage dimensions would be 1920x1080, and each application pixel is rendered using four screen pixels.
+
+If the setting is high, the full-screen stage dimensions match the monitor at 3840x2160.
+
+On devices with standard-resolution screens, the stage dimensions match the screen dimensions no matter which setting is used.</description>
+		</completion>
+		<completion string="allowLowQuality">
+			<description>Available: 33.1.1.795: Specifies whether the application can be set into the "low" or "medium" values for the Stage quality.
+
+On desktop/multi-window versions of AIR, the `Stage.quality` value is normally pegged to `high` or `best`; without this value being set to `true`, the runtime will ignore requests to reduce the quality to `medium` or `low`.
+
+</description>
+		</completion>
 	</set>
 
 	<set name="xml.airdescriptor.application.encryptedLocalStorage" symbol="tag">
-		<completion string="fallbackMode"/>
-		<completion string="storageMode"/>
+		<!-- We want these to be open/closed tags -->
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+		<completion string="fallbackMode">
+			<description>The value specified for the fallback mode may be `never`, `always`, or `once`.
+
+Fallback is used if the application calls getItem on an encrypted local store, and the requested item is not found in the new (AIR 51) ELS storage location.
+
+It is also invoked when an element is removed (to remove it from the fallback store location as well as the new ELS storage), and when an item is set (it is removed from the fallback store whilst being set in the new ELS storage).
+
+`always` (default) - the fallback location is always checked if a data request could not be found from the newer ELS storage location.
+`never` - the fallback location is never invoked. Data that may have been stored by versions of the application that used earlier AIR SDK versions will not be accessible.
+`once` - the fallback location is available during the first run of an application that uses ELS functions. So for example this could be used to migrate data from the fallback store location to the new ELS storage.
+Once an application has been closed and the new ELS data written, any application with once as the fallback mode will no longer be able to read from the fallback storage.
+
+</description>
+		</completion>
+		<completion string="storageMode">
+			<description>The value specified for the storage mode may be `os_store` or `file`.
+
+Storage mode refers to how the ELS system stores the user-specific encryption key that is used when securing the application data. It does not change the mechanisms used for the ELS data store itself: the latest mechanism is always chosen when writing new data.
+
+`os_store` (default) — the ELS key is stored in operating system specific secure storage. This uses different mechanisms - Windows Credential Manager, MacOS KeyChain storage, Linux LibSecret, Android private mode storage.
+`file` - the ELS key is stored in a file in a user-private location on the file system. Generally this will be in the user's private application storage folders but the paths may vary.
+One of the reasons for using file storage is to eliminate any possibility that the OS-specific key storage mechanism could prompt for user input unexpectedly, which can lead to unnecessary confusion.</description>
+		</completion>
 	</set>
 
 	<set name="xml.airdescriptor.application.iphone" symbol="tag">
-		<completion string="Entitlements"/>
-		<completion string="InfoAdditions"/>
-		<completion string="externalSwfs"/>
-		<completion string="forceCPURenderModeForDevices"/>
-		<completion string="requestedDisplayResolution"/>
-		<completion string="disableCustomKeyboard"/>
-		<completion string="excludeDefaultUsageDescriptions"/>
+		<!-- We want these to be open/closed tags -->
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+		<completion string="Entitlements">
+			<behavior variables="true">
+				<append>&gt;
+	&lt;![CDATA[
+	]]&gt;
+&lt;/${completion}&gt;</append>
+			</behavior>
+			<description>iOS uses properties called entitlements to provide application access to additional resources and capabilities. Use the Entitlements element to specify this information in a mobile iOS application.
+
+Entitlements are provided as key-value pairs enclosed in a CDATA block. For more information, see the Entitlements documentation in the Apple Developer website.</description>
+		</completion>
+		<completion string="InfoAdditions">
+			<behavior variables="true">
+				<append>&gt;
+	&lt;![CDATA[
+	]]&gt;
+&lt;/${completion}&gt;</append>
+			</behavior>
+			<description>Allows you to specify additional properties of an iOS application. Properties are provided as key-value pairs enclosed in a CDATA block and are injected into the application's Info.plist file.</description>
+		</completion>
+		<completion string="externalSwfs">
+			<description>Specifies the name of a text file that contains a list of SWFs (one per line) to be configured by ADT for remote hosting. You can minimize your initial application download size by packaging a subset of the SWFs used by your application and loading the remaining (asset-only) external SWFs at runtime using the Loader.load() method. To use this feature, you must package the application such that ADT moves all ActionScript ByteCode (ABC) from the externally loaded SWF files to the main application SWF, leaving a SWF file that contains only assets. This is to conform with the Apple Store’s rule that forbids downloading any code after an application is installed.</description>
+		</completion>
+		<completion string="forceCPURenderModeForDevices">
+			<description>Force CPU render mode for a specified set of devices. This feature effectively lets you selectively enable GPU render mode for the remaining iOS devices. You add this tag as a child of the iPhone tag and specify a space-separated list of device model names to force into CPU mode.</description>
+		</completion>
+		<completion string="requestedDisplayResolution">
+			<description>Specifies whether the application desires to use the standard or high resolution on a device with a high-resolution screen. When set to standard (the default), the screen will appear to the application as a standard-resolution screen. When set to high, the application can address each high-resolution pixel.</description>
+		</completion>
+		<completion string="disableCustomKeyboard">
+			<description>Available: 33.1.1.686: If this value is set to `true` it will prevent the use of third party keyboards from being used for text input. This should be set if there are privacy concerns about sensitive text entry.</description>
+		</completion>
+		<completion string="excludeDefaultUsageDescriptions">
+			<description>Available: 33.1.1.758: This setting can be used to prevent the AIR Developer Tool from generating automatic text fields ("Required by Apple") for the usage descriptions required by iOS for camera/photo and location access. If this is set to true then the developer should add their own values into the InfoAdditions section of the app descriptor file.</description>
+		</completion>
 	</set>
 
 	<set name="xml.airdescriptor.application.mac" symbol="tag">
-		<completion string="Entitlements"/>
-		<completion string="InfoAdditions"/>
+		<!-- We want these to be open/closed tags -->
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+		<completion string="Entitlements">
+			<description></description>
+		</completion>
+		<completion string="InfoAdditions">
+			<description></description>
+		</completion>
 	</set>
 
 	<set name="xml.airdescriptor.application.android" symbol="tag">
-		<completion string="colorDepth"/>
-		<completion string="containsVideo"/>
-		<completion string="supportsAndroidTV"/>
-		<completion string="banner"/>
-		<completion string="banner160x90"/>
-		<completion string="banner240x135"/>
-		<completion string="banner320x180"/>
-		<completion string="banner480x270"/>
-		<completion string="banner640x360"/>
-		<completion string="webContentsDebuggingEnabled"/>
-		<completion string="assetPacks"/>
-		<completion string="manifestAdditions"/>
-		<completion string="BuildLegacyAPK"/>
-		<completion string="addAirToAppID"/>
-		<completion string="buildArchitectures"/>
-		<completion string="createAppBundle"/>
-		<completion string="uncompressedExtensions"/>
-		<completion string="newFontRenderingFromAPI"/>
-		<completion string="webViewAllowFileAccess"/>
-		<completion string="preventDeviceModelAccess"/>
-		<completion string="disableSensorAccess"/>
-		<completion string="runtimeInBackgroundThread"/>
-		<completion string="storageAccessFrameworkFromAPI"/>
-		<completion string="displayCutoutMode"/>
-		<completion string="gradleVersion"/>
-		<completion string="androidGradlePluginVersion"/>
-		<completion string="androidBuildToolsVersion"/>
-		<completion string="androidCompileSdkVersion"/>
-		<completion string="manifestPlaceholders"/>
+		<!-- We want these to be open/closed tags -->
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+		<completion string="colorDepth">
+			<description>The bit-depth of color to use when rendering on Android devices. By default this is 32bit but can be set to 16bit as long as there is no use of StageVideo in an application.</description>
+		</completion>
+		<completion string="containsVideo">
+			<description>Specifies whether the application will contain any video content or not. This is used to determine whether to create a graphical surface for StageVideo content in the application.
+
+One of the following values:
+
+`true`
+`false`
+</description>
+		</completion>
+		<completion string="supportsAndroidTV">
+			<description>Set to `true` to specify that this application is intended for Android TV, as opposed to Android for mobile phones or tablets. If this flag is set, you also need to include a `banner` element.</description>
+		</completion>
+		<completion string="banner">
+			<description>Specifies a path to a 320x180 image that is used as the banner image for the application when displayed on the Android TV menu.
+
+This element must be present if `supportsAndroidTV` is set to true, and should not be present if `supportsAndroidTV` is missing or false.
+
+Note that from AIR 51.1, additional resolution banner images can be provided using `bannerWxH` tags.</description>
+		</completion>
+		<completion string="banner160x90">
+			<description>Available: 51.1.1.1: Specifies a path to an image (with pixel dimensions as provided in the name) that is used as the banner image for the application when displayed on the Android TV menu of a TV on the various density displays.</description>
+		</completion>
+		<completion string="banner240x135">
+			<description>Available: 51.1.1.1: Specifies a path to an image (with pixel dimensions as provided in the name) that is used as the banner image for the application when displayed on the Android TV menu of a TV on the various density displays.</description>
+		</completion>
+		<completion string="banner320x180">
+			<description>Available: 51.1.1.1: Specifies a path to an image (with pixel dimensions as provided in the name) that is used as the banner image for the application when displayed on the Android TV menu of a TV on the various density displays.</description>
+		</completion>
+		<completion string="banner480x270">
+			<description>Available: 51.1.1.1: Specifies a path to an image (with pixel dimensions as provided in the name) that is used as the banner image for the application when displayed on the Android TV menu of a TV on the various density displays.</description>
+		</completion>
+		<completion string="banner640x360">
+			<description>Available: 51.1.1.1: Specifies a path to an image (with pixel dimensions as provided in the name) that is used as the banner image for the application when displayed on the Android TV menu of a TV on the various density displays.</description>
+		</completion>
+		<completion string="webContentsDebuggingEnabled">
+			<description>Set to `true` to enable StageWebView debugging, so that developers can debug web content (HTML / CSS / JavaScript) used in AIR Android applications.
+
+To perform the debugging, connect your Android device to your machine via USB cable and navigate to `chrome://inspect` to debug embedded web content in your AIR application.</description>
+		</completion>
+		<completion string="assetPacks">
+			<description>This section contains a list of assetPack entries that define folders that should be packaged up for use by Android's Play Asset Delivery mechanism.</description>
+		</completion>
+		<completion string="manifestAdditions">
+			<behavior variables="true">
+				<append>&gt;
+	&lt;![CDATA[
+		&lt;manifest&gt;
+		&lt;/manifest&gt;
+	]]&gt;
+&lt;/${completion}&gt;</append>
+			</behavior>
+			<description>Contains a `CDATA` block of text that provides additional settings to be added to the generated Android application's manifest file (AndroidManifest.xml).</description>
+		</completion>
+		<completion string="BuildLegacyAPK">
+			<description>Available: 33.1.1.698: If `true` then adt will use the legacy build process to create an APK. The current process uses Android build tools and Gradle to create AAB and APK outputs. Setting this value to `true` will utilise the legacy Java build process for packaging an APK. It will not affect the AAB process.
+
+The default is `false`, which will use the modern Gradle build process. Note that setting this to `true` may cause problems for new applications needing some Android features or using ANEs.</description>
+		</completion>
+		<completion string="addAirToAppID">
+			<description>Available: 50.0.0.1: This flag provides a way to remove the default air. prefix that the AIR Developer Tool normally adds to an Android application ID. By default this is `true` which matches the earlier Adobe behaviour, but if an application already has a fully-qualified reverse domain name type identifier, then this could be set to `false` in order to generate an application without the prefix in the Android package ID.</description>
+		</completion>
+		<completion string="buildArchitectures">
+			<description>Available: 50.0.0.1: This is a utility setting to instruct the AIR Developer Tool to only use certain architectures in the final APK/AAB file. It overrides whatever might have been provided on the command line instruction to ADT, so this can be used to change the outputs of a build that was created via Adobe Animate or other IDEs that haven't been updated to provide the appropriate options.
+
+The default is `armv7,armv8,x86,x64` which means an Android App Bundle would include all of the supported platforms. To remove support for 32-bit devices, this could be updated to `armv8,x64`. Or to remove support for Intel-architecture devices, this could be set to `armv7,armv8`.</description>
+		</completion>
+		<completion string="createAppBundle">
+			<description>Available: 50.0.0.1: This is another utility, to force the AIR Developer Tool to create an Android App Bundle file even if the command line or IDE had requested an APK file. Note that the output filename will not be updated so if the request was to generate a file "output.apk" then this will be honoured even though this .apk file is actually an AAB.</description>
+		</completion>
+		<completion string="uncompressedExtensions">
+			<description>Available: 50.0.0.1: This utility setting can be used to specify a set of file extensions that should not be compressed when stored in the APK or AAB file. Normally these are compressed formats and so most files are added using the 'deflate' option, but using this setting the developer can prevent certain files from being compressed, which allows them to be accessed via some of the Android asset APIs.</description>
+		</completion>
+		<completion string="newFontRenderingFromAPI">
+			<description>Available: 33.1.1.779: Due to changes in the native Android font rendering code, the AIR runtime will switch to render text fields using the Android Java APIs when a device is running Android S or later. This option gives some finer control over this switch. By default the value is 31 which is the API level for Android S, but if a lower value is used, the new Java-based APIs will be used from that API level and above.
+
+To always use the Java-based font rendering, the value should be set to zero. To never use it (which is not advisable unless the text is always within the Latin character set) it can be set to 9999 or similar.</description>
+		</completion>
+		<completion string="webViewAllowFileAccess">
+			<description>Available: 33.1.1.698: Allows an Android webview control to access local files via `WebSettings.setAllowFileAccess(true)`. Default is `false`.</description>
+		</completion>
+		<completion string="preventDeviceModelAccess">
+			<description>Available: 33.1.1.795: This is a security/privacy setting to prevent the runtime from accessing the device model (`android.os.Build.MODEL`). Default is `false` and should be set to `true` if this `MODEL` property access should not be made.</description>
+		</completion>
+		<completion string="disableSensorAccess">
+			<description>Available: 50.1.1.1: This goes beyond the above privacy setting, to completely disable the access of sensor hardware APIs including input mechanisms, orientation sensors, and telephony services. Note that this value can be overriden by adding a file into the application's app storage folder, see release notes for further details.
+
+The default value is `false`, and should be set to true if required by privacy controls.</description>
+		</completion>
+		<completion string="runtimeInBackgroundThread">
+			<description>Available: 50.2.1.1: If `true`, this causes the AIR runtime to be launched in a separate, background thread rather than in the main Android UI thread. This should help prevent ANR (Application Not Responding) issues, but may require some updates in other Android Java code (i.e. from AIR Native Extensions that may need some of their code to run on the UI thread). Default is `false`.</description>
+		</completion>
+		<completion string="storageAccessFrameworkFromAPI">
+			<description>Available: 50.2.1.1: This changes how the ActionScript `File.browse...` methods work, and the file-based permission handling, due to changes in the Android file system security. The default value here is 30 which equates to Android R (11.0). From this version and beyond, the File browse methods will use the Storage Access Framework and launch the standard system intents to browse for opening and saving files or to select a folder. Permissions are then automatically granted and persisted for the selected files/folder.
+
+To switch to this mechanism from earlier versions of Android, the value can be changed to the appropriate API level, or to ensure this doesn't change behaviour yet, the value can be set much higher.</description>
+		</completion>
+		<completion string="displayCutoutMode">
+			<description>Available: 51.1.1.1: Specifies the style used by Android for handling cut-out elements from the display, and whether the application's window will render into an area that contains a cut-out.
+
+Values can be `default`, `always`, `never` or `shortEdges` as per the Android styles.</description>
+		</completion>
+		<completion string="gradleVersion">
+			<description>Available: 50.0.0.1: Specifies the version of Gradle that will be used for packaging the AIR application as an APK or AAB file. Gradle is the build mechanism that hosts the Android Gradle Plug-in which handles Android-specific packaging.
+
+Typically you will not need to adjust this value; AIR 51.0 has some capability to adjust it when necessary so that it can use recommended versions for targeting the more recent Android versions.</description>
+		</completion>
+		<completion string="androidGradlePluginVersion">
+			<description>Available: 50.0.0.1: Specifies the version of the Android Gradle Plug-in that will be used for packaging the AIR application as an APK or AAB file.
+
+Typically you will not need to adjust this value; AIR 51.0 has some capability to adjust it when necessary so that it can use recommended versions for targeting the more recent Android versions.</description>
+		</completion>
+		<completion string="androidBuildToolsVersion">
+			<description>Available: 51.1.1.1: Specifies the build-tools version to be used for packaging AIR applications as APK or AAB files, when using an Android Gradle Plug-in prior to version 8.</description>
+		</completion>
+		<completion string="androidCompileSdkVersion">
+			<description>Available: 51.1.1.1: Specifies the compile SDK API version to be used for packaging AIR applications as APK or AAB files, when using an Android Gradle Plug-in from version 8.</description>
+		</completion>
+		<completion string="manifestPlaceholders">
+			<description>Provides a way to add user/application specific variables into an Android application manifest.
+
+This element contains a list of `manifestPlaceholder` entries, each of which declares a name/value pair for a placeholder that the manifest can then use, in the format `name:'value'`.</description>
+		</completion>
 	</set>
 
 	<set name="xml.airdescriptor.application.windows" symbol="tag">
-		<completion string="UseWebView2"/>
-		<completion string="maxD3D"/>
-		<completion string="clipboardFullHTML"/>
+		<!-- We want these to be open/closed tags -->
+		<behavior variables="true" suffix="(?!&gt;)">
+			<append>&gt;$[]&lt;/${completion}&gt;</append>
+		</behavior>
+		<completion string="UseWebView2">
+			<description>Available: 33.1.1.620: Requests the runtime to try creating a Microsoft Edge "WebView2" component, rather than the IE-based "WebBrowser" control, when a native StageWebView element is created.
+
+This component will need to be present on an end user's computer before this works: please see Microsoft's information on downloading the WebView2 runtime
+
+As well as true/false values, a new option exclusive can be used from AIR SDK 51.0.0.2. In this mode, there will be no fallback to the IE-based "WebBrowser" control should the AIR runtime be unable to create a "WebView2" component.</description>
+		</completion>
+		<completion string="maxD3D">
+			<description>Available: 33.1.1.929: Sets a limit on the Direct3D APIs used by the AIR runtime on Windows. If this value is set, it should be an integer value and AIR will not use a Direct3D version higher than this value. Currently this means that to force the runtime to use Direct3D 9, it can be set to 9, and to prevent the runtime from using Direct3D, it can be set to 0. The default for new SWFs is Direct3D 11.</description>
+		</completion>
+		<completion string="clipboardFullHTML">
+			<description>Available: 50.0.0.1: This setting can be used to retrieve the full Windows clipboard entry for HTML strings. Default behaviour is false which will only provide the body text of the HTML contents. To ensure the full clipboard contents are retrieved for HTML strings, set the value to true.</description>
+		</completion>
 	</set>
 </completions>

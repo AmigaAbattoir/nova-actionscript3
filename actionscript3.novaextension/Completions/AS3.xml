@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <completions>
     <provider>
-		<syntax>MXML</syntax>
-		<syntax>ActionScript 3</syntax>
+		<syntax>mxml</syntax>
+		<syntax>actionscript</syntax>
 		<selector>*:not(comment, style.value)</selector>
 		<expression>\b[a-zA-Z0-9-_]*</expression>
         <set>actionscript3.keyword.statements</set>
         <set>actionscript3.keyword.attribute</set>
-        <set>actionscript3.keyword.definition3</set>
+        <set>actionscript3.keyword.definition</set>
         <set>actionscript3.keyword.directives</set>
         <set>actionscript3.keyword.namespaces</set>
         <set>actionscript3.keyword.primary_expression</set>
@@ -53,12 +53,12 @@
         <completion string="static   " />
     </set>
 
-    <set name="actionscript3.keyword.definition3">
+    <set name="actionscript3.keyword.definition">
         <completion string="... " symbol="arguement"/>
         <completion string="class" symbol="class"/>
         <completion string="const" symbol="constant"/>
         <completion string="extends" />
-        <completion string="function" />
+        <completion string="function" symbol="function" />
         <completion string="get" symbol="getter" />
         <completion string="implements" />
         <completion string="interface" />

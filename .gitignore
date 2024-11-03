@@ -18,3 +18,7 @@ Icon
 # Syncthing
 .stfolder/
 .stignore
+
+# Just testing stuff
+language-server-old/
+language-server-latest/

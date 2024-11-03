@@ -1,178 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-<syntax name="MXML">
+<syntax name="mxml">
     <meta>
         <name>MXML</name>
         <type>structured</type>
         <preferred-file-extension>mxml</preferred-file-extension>
-        <parent>ActionScript 3</parent>
     </meta>
+
     <detectors>
         <extension priority="1.0">mxml</extension>
+        <match-content lines="2" priority="0.3">&lt;\?xml</match-content>
     </detectors>
 
-    <scopes>
-        <scope name="meta.script.mxml">
-					<symbol type="block">
-						<context behavior="subtree" />
-					</symbol>
+<!-- Copied from Panic Nova's XML extension. But doesn't line up the elements in Symbols properly. Also, doesn't inject CSS. -->
+
+    <indentation>
+        <increase>
+            <expression>^\s*&lt;(([^!/?]|%)(?!.+?([/%]&gt;|&lt;/.+?&gt;))|[%!]--\s*$)</expression>
+        </increase>
+        <decrease>
+            <expression>^\s*(&lt;/[^&gt;]+&gt;|--&gt;|--%&gt;)</expression>
+        </decrease>
+    </indentation>
+
+    <comments>
+        <multiline>
             <starts-with>
-                <expression>(?=&lt;(?:fx|mx):Script(?:s+(?:w+:)?w+=([&quot;&apos;]).+1)*s*&gt;)</expression>
+                <expression>&lt;!--</expression>
             </starts-with>
             <ends-with>
-                <expression>(?&lt;=&lt;/(?:fx|mx):Script&gt;)</expression>
+                <expression>--&gt;</expression>
             </ends-with>
-            <subscopes>
-                <scope name="entity.name.tag.xml">
-                    <expression>&lt;(?:fx|mx):Script[^&gt;]*&gt;</expression>
-                </scope>
-                <scope name="entity.name.tag.xml">
-                    <expression>&lt;/(?:fx|mx):Script&gt;</expression>
-                </scope>
-                <scope name="meta.cdata.mxml.script">
-                    <starts-with>
-                        <expression>(?=&lt;!\[CDATA\[)</expression>
-                    </starts-with>
-                    <ends-with>
-                        <expression>(?&lt;=]]&gt;)</expression>
-                    </ends-with>
-                    <subscopes>
-                        <include syntax="self" collection="source.actionscript3" />
-                    </subscopes>
-                </scope>
-            </subscopes>
-        </scope>
-        <scope name="entity.name.tag.xml.mxml.style">
-            <starts-with>
-                <expression>&lt;(?:fx|mx):Style&gt;</expression>
-            </starts-with>
-            <ends-with>
-                <expression>&lt;/(?:fx|mx):Style&gt;</expression>
-            </ends-with>
-            <subscopes>
-                <include syntax="self" collection="source.css" />
-            </subscopes>
-        </scope>
-        <scope name="meta.metadata.mxml">
-            <starts-with>
-                <expression>(?=&lt;(?:fx|mx):Metadata(?:s+(?:w+:)?w+=([&quot;&apos;]).+1)*s*&gt;)</expression>
-            </starts-with>
-            <ends-with>
-                <expression>(?&lt;=&lt;/(?:fx|mx):Metadata&gt;)</expression>
-            </ends-with>
-            <subscopes>
-                <scope name="entity.name.tag.xml">
-                    <expression>&lt;(?:fx|mx):Metadata[^&gt;]*&gt;</expression>
-                </scope>
-                <scope name="entity.name.tag.xml">
-                    <expression>&lt;/(?:fx|mx):Metadata&gt;</expression>
-                </scope>
-                <scope name="comment.block.documentation.actionscript.3">
-                    <starts-with>
-                        <expression>/\*\*(?!/)</expression>
-                    </starts-with>
-                    <ends-with>
-                        <expression>\*/</expression>
-                    </ends-with>
-                    <subscopes>
-                        <scope name="keyword.other.documentation.actionscript.3.asdoc">
-                            <expression>@(copy|default|eventType|example|exampleText|includeExample|inheritDoc|internal|param|private|return|see|since|throws)\b</expression>
-                        </scope>
-                    </subscopes>
-                </scope>
-                <include syntax="self" collection="metadata" />
-            </subscopes>
-        </scope>
-        <include syntax="self" collection="text.xml" />
-    </scopes>
-    <collections>
-        <collection name="metadata">
-            <scope name="meta.metadata_info.actionscript.3">
-                <starts-with>
-                    <expression>\[\s*\b(\w+)\b</expression>
-                    <capture number="1" name="keyword.other.actionscript.3" />
-                </starts-with>
-                <ends-with>
-                    <expression>\]</expression>
-                </ends-with>
-                <subscopes>
-                    <include syntax="self" collection="metadata_info" />
-                </subscopes>
-            </scope>
-        </collection>
-        <collection name="metadata_info">
-            <scope>
-                <starts-with>
-                    <expression>\(</expression>
-                </starts-with>
-                <ends-with>
-                    <expression>\)</expression>
-                </ends-with>
-                <subscopes>
-                    <scope>
-                        <expression>(\w+)\s*=</expression>
-                        <capture number="1" name="variable.parameter.actionscript.3" />
-                    </scope>
-                    <include syntax="self" collection="strings" />
-                </subscopes>
-            </scope>
-        </collection>
-        <collection name="strings">
-            <scope name="string.quoted.double.actionscript.3">
-                <starts-with>
-                    <expression>&quot;</expression>
-                </starts-with>
-                <ends-with>
-                    <expression>&quot;</expression>
-                </ends-with>
-                <subscopes />
-            </scope>
-            <scope name="string.quoted.single.actionscript.3">
-                <starts-with>
-                    <expression>&apos;</expression>
-                </starts-with>
-                <ends-with>
-                    <expression>&apos;</expression>
-                </ends-with>
-                <subscopes />
-            </scope>
-        </collection>
-    </collections>
-</syntax>
--->
-<syntax name="MXML">
-<!-- Taken from Panic Nova's XML extension -->
-	<meta>
-		<name>MXML</name>
-		<type>structured</type>
-		<preferred-file-extension>mxml</preferred-file-extension>
-		<parent>xml</parent>
-	</meta>
-
-	<detectors>
-		<extension priority="1.0">mxml</extension>
-		<match-content lines="2" priority="0.3">&lt;\?xml</match-content>
-	</detectors>
-
-	<indentation>
-		<increase>
-			<expression>^\s*&lt;(([^!/?]|%)(?!.+?([/%]&gt;|&lt;/.+?&gt;))|[%!]--\s*$)</expression>
-		</increase>
-		<decrease>
-			<expression>^\s*(&lt;/[^&gt;]+&gt;|--&gt;|--%&gt;)</expression>
-		</decrease>
-	</indentation>
-
-	<comments>
-		<multiline>
-			<starts-with>
-				<expression>&lt;!--</expression>
-			</starts-with>
-			<ends-with>
-				<expression>--&gt;</expression>
-			</ends-with>
-		</multiline>
-	</comments>
+        </multiline>
+    </comments>
 
 	<surrounding-pairs>
 		<pair open="{" close="}" />
@@ -210,54 +69,12 @@
 			<ends-with>
 				<expression>\]\]&gt;</expression>
 			</ends-with>
-			<subsyntax name="ActionScript 3" export-symbols="true"/>
+			<!-- Added for ActionScript 3 -->
+			<subsyntax name="actionscript" export-symbols="true"/>
 			<subscopes>
 				<symbol>
 					<context behavior="subtree" type="tag-script" />
 				</symbol>
-			</subscopes>
-		</scope>
-
-		<!-- Take from HTML Extension by Panic! -->
-		<scope name="mxml.style" spell-check="false" lookup="documentation">
-			<starts-with>
-				<expression>(?=&lt;(?i:style)\b)</expression>
-			</starts-with>
-			<ends-with>
-				<expression>(?=&lt;/(?i:style)\b)</expression>
-			</ends-with>
-			<subscopes anchored="true" skip-whitespace="false">
-				<scope name="mxml.tag.style.open">
-					<symbol type="tag-style">
-						<context behavior="start" group-by-name="true">
-						<!-- Need to change how it is named.. we need to get fx|mx in the mix! -->
-							<auto-close string="&lt;/" completion="${name}&gt;" />
-						</context>
-					</symbol>
-					<starts-with>
-						<expression>&lt;((?i:style))</expression>
-						<capture number="1" name="mxml.tag.name" />
-					</starts-with>
-					<ends-with>
-						<expression>/?&gt;</expression>
-					</ends-with>
-					<subscopes>
-						<include syntax="self" collection="attributes" />
-					</subscopes>
-				</scope>
-				<scope name="mxml.style.content" optional="true">
-					<starts-with>
-						<expression>(?&lt;=&gt;)</expression>
-					</starts-with>
-					<ends-with>
-						<expression>(?=&lt;/(?i:style)\b)</expression>
-					</ends-with>
-					<subsyntax name="css">
-						<cut-off>
-							<expression>(?=&lt;/(?i:style|head|body|div)\b)</expression>
-						</cut-off>
-					</subsyntax>
-				</scope>
 			</subscopes>
 		</scope>
 

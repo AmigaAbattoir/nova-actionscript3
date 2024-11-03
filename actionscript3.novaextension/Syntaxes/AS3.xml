@@ -86,8 +86,8 @@
 					<include syntax="self" collection="class" />
 				<!--
 					<include syntax="self" collection="namespace_declaration" />
-					<include syntax="self" collection="use_namespace" />
 				-->
+					<include syntax="self" collection="use_namespace" />
 					<include syntax="self" collection="class_declaration" />
 					<include syntax="self" collection="method" />
 					<include syntax="self" collection="comments" />

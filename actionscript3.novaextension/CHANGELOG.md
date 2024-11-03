@@ -1,7 +1,8 @@
 ## Version 0.7.3
 
+* Using AS3MXML V 1.21.1
 * More work on getting AS3MXML integrated
-* Added clips
+* Started added clips and completions
 
 ## Version 0.7.2
 
