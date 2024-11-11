@@ -59,15 +59,7 @@ Note that the user - or an administrator - may be able to get information from w
 		<completion string="id">
 			<description>Required: An identifier string for the application, known as the application ID. A reverse DNS-style identifier is often used, but this style is not required.
 
-Content
-The ID value is restricted to the following characters:
-
-0–9
-a–z
-A–Z
-. (dot)
-- (hyphen)
-The value must contain 1 to 212 characters. This element is required.
+The ID value is restricted to the following characters: 0–9, a–z, A–Z, . (dot), - (hyphen). The value must contain 1 to 212 characters.
 </description>
 		</completion>
 		<completion string="versionNumber">
@@ -76,7 +68,7 @@ The value must contain 1 to 212 characters. This element is required.
 		<completion string="versionLabel">
 			<description>A version string that will be displayed to the user in installation dialogs. If this value is not provided, the `versionNumber` field will be used instead.</description>
 		</completion>
-		<completion string="publisherID">
+		<completion string="publisherID" deprecated="true">
 			<description>Deprecated: This may only be specified when creating a package for updating an application originally created with AIR version 1.5.2 or earlier.</description>
 		</completion>
 		<completion string="name">
@@ -95,7 +87,7 @@ It is advised to keep the filename set to the ASCII range of characters, particu
 		<completion string="copyright">
 			<description>The copyright information for the AIR application. On Mac OS, the copyright text appears in the About dialog box for the installed application.
 
-On Mac OS, the copyright information is also used in the NSHumanReadableCopyright field in the Info.plist file for the application.</description>
+On Mac OS, the copyright information is also used in the `NSHumanReadableCopyright` field in the Info.plist file for the application.</description>
 		</completion>
 		<completion string="architecture">
 			<description>The architecture value determines the architecture of the Windows captive app, being either "32" or "64".
@@ -544,7 +536,7 @@ Typically you will not need to adjust this value; AIR 51.0 has some capability t
 		<completion string="manifestPlaceholders">
 			<description>Provides a way to add user/application specific variables into an Android application manifest.
 
-This element contains a list of `manifestPlaceholder` entries, each of which declares a name/value pair for a placeholder that the manifest can then use, in the format `name:'value'`.</description>
+This element contains a list of `manifestPlaceholder` entries, each of which declares a name/value pair for a placeholder that the manifest can then use, in the format `name:'value'.</description>
 		</completion>
 	</set>
 
@@ -554,17 +546,23 @@ This element contains a list of `manifestPlaceholder` entries, each of which dec
 			<append>&gt;$[]&lt;/${completion}&gt;</append>
 		</behavior>
 		<completion string="UseWebView2">
-			<description>Available: 33.1.1.620: Requests the runtime to try creating a Microsoft Edge "WebView2" component, rather than the IE-based "WebBrowser" control, when a native StageWebView element is created.
+			<description>Available: 33.1.1.620
+
+Requests the runtime to try creating a Microsoft Edge "WebView2" component, rather than the IE-based "WebBrowser" control, when a native StageWebView element is created.
 
 This component will need to be present on an end user's computer before this works: please see Microsoft's information on downloading the WebView2 runtime
 
 As well as true/false values, a new option exclusive can be used from AIR SDK 51.0.0.2. In this mode, there will be no fallback to the IE-based "WebBrowser" control should the AIR runtime be unable to create a "WebView2" component.</description>
 		</completion>
 		<completion string="maxD3D">
-			<description>Available: 33.1.1.929: Sets a limit on the Direct3D APIs used by the AIR runtime on Windows. If this value is set, it should be an integer value and AIR will not use a Direct3D version higher than this value. Currently this means that to force the runtime to use Direct3D 9, it can be set to 9, and to prevent the runtime from using Direct3D, it can be set to 0. The default for new SWFs is Direct3D 11.</description>
+			<description>Available: 33.1.1.929
+
+Sets a limit on the Direct3D APIs used by the AIR runtime on Windows. If this value is set, it should be an integer value and AIR will not use a Direct3D version higher than this value. Currently this means that to force the runtime to use Direct3D 9, it can be set to 9, and to prevent the runtime from using Direct3D, it can be set to 0. The default for new SWFs is Direct3D 11.</description>
 		</completion>
 		<completion string="clipboardFullHTML">
-			<description>Available: 50.0.0.1: This setting can be used to retrieve the full Windows clipboard entry for HTML strings. Default behaviour is false which will only provide the body text of the HTML contents. To ensure the full clipboard contents are retrieved for HTML strings, set the value to true.</description>
+			<description>Available: 50.0.0.1
+
+This setting can be used to retrieve the full Windows clipboard entry for HTML strings. Default behaviour is false which will only provide the body text of the HTML contents. To ensure the full clipboard contents are retrieved for HTML strings, set the value to true.</description>
 		</completion>
 	</set>
 </completions>
