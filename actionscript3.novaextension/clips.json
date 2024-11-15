@@ -4,17 +4,72 @@
 			"name": "ActionScript 3",
 			"children": [
 				{
-					"syntax": "ActionScript 3",
-					"content": "if($0) {\n} else {\n}",
-					"name": "If / Else",
+					"syntax": "actionscript",
+					"trigger": "if",
+					"name": "ifelse",
 					"description": "Basic if else statement",
+					"content": "if (${0:condition}) {\n\t$1\n} else {\n\n}",
 				},
 				{
-					"syntax": "ActionScript 3",
+					"syntax": "actionscript",
 					"description": "Creates a Vector instance with type",
 					"name": "Vector",
 					"content": "var ${0:name}:Vector.<${1:type}> = new Vector.<${1:type}>();$2\n",
-				}
+				},
+				{
+					"syntax": "actionscript",
+					"name": "",
+					"description": "",
+					"content": "",
+				},
+				{
+					"syntax": "actionscript",
+					"name": "do",
+					"description": "do-while",
+					"content": "do {\n\t$1\n} while (${0:condition});\n",
+				},
+				{
+					"syntax": "actionscript",
+					"name": "for",
+					"description": "Simple loop",
+					"content": "for(var ${0:index}:int=0; ${0:index}&lt;${1:array}.length; ${0:index}++) {\n\t${2}\n}",
+				},
+				{
+					"syntax": "actionscript",
+					"name": "forin",
+					"description": "For in loop",
+					"content": "for (var ${key}:String in ${collection}) {\n\t${line_selection}${cursor}\n}",
+				},
+				{
+					"syntax": "actionscript",
+					"name": "foreach",
+					"description": "For each loop",
+					"content": "for each (var ${value}:${type} in ${collection}) {\n\t${line_selection}${cursor}\n}",
+				},
+				{
+					"syntax": "actionscript",
+					"name": "switch",
+					"description": "switch",
+					"content": "switch (${key}) {\n\tcase ${value}:\n\t\t${cursor}\n\t\tbreak;\n\n\tdefault:\n\t\tbreak;\n}",
+				},
+				{
+					"syntax": "actionscript",
+					"name": "try",
+					"description": "try catch",
+					"content": "try {\n\t${line_selection}${cursor}\n} catch (e) {\n\t// TODO: handle exception\n}",
+				},
+				{
+					"syntax": "actionscript",
+					"name": "while",
+					"description": "while loop",
+					"content": "while (${condition}) {\n\t${line_selection}${cursor}\n}",
+				},
+				{
+					"syntax": "actionscript",
+					"name": "",
+					"description": "",
+					"content": "",
+				},
 			],
 		},
 		{
@@ -30,6 +85,7 @@
 				{
 					"syntax": "mxml",
 					"description": "Creates a MX Button",
+					"trigger": "<mx:b",
 					"name": "mx:button",
 					"content": "<mx:Button id=\"${0:button}\" label=\"${2:myButton}\" click=\"${3:onClick}\">",
 				},
