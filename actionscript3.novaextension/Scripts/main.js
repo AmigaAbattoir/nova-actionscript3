@@ -7,7 +7,28 @@ var taskprovider = null;
 
 var as3mxmlCodeIntelligenceReady = false;
 
+
 exports.activate = function() {
+
+
+
+nova.commands.register("as3.packaging.certificateCreate", (workspace) => {
+	return new Promise((resolve) => {
+		console.log("Called... as3.packaging.certificateCreate");
+		showNotification("Create Certificate", "Still need to do...");
+		nova.workspace.showErrorMessage("Create Certificate", "Still need to do...");
+	});
+});
+
+nova.commands.register("actionscipt.clearExportPassword", (workspace) => {
+	return new Promise((resolve) => {
+		nova.workspace.showErrorMessage("Clear Password", "Still need to do...");
+		showNotification("Clear Password", "Still need to do...");
+	});
+});
+
+
+
 	taskprovider = new ActionScript3TaskAssistant();
 
 	// Handles Tasks for us so we can build/clean/run
@@ -85,6 +106,9 @@ exports.activate = function() {
 		nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
 		langserver = new AS3MXMLLanguageServer();
 	});
+
+
+
 /*
 	if (nova.inDevMode()) {
 		console.log(">>>> AS3MXML Activated");

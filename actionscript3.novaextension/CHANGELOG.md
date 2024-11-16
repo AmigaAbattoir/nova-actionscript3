@@ -1,8 +1,10 @@
 ## Version 0.7.3
 
+* Added some more modern device options (made Google Sheet https://docs.google.com/spreadsheets/d/1RlsuMwYp-ANTerziv12LxxH47GIsoeeBSdaEUdCDY5E/edit?gid=0#gid=0)
 * Using AS3MXML V 1.21.1
 * More work on getting AS3MXML integrated
 * Started added clips and completions
+* Make Exporting Release rely more on values in Tasks, making them different tasks per device
 
 ## Version 0.7.2
 

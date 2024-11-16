@@ -44,7 +44,8 @@
 		"onCommand:as3mxml.quickCompile",
 		"onCommand:as3mxml.quickCompileAndDebug",
 		"onCommand:as3mxml.quickCompileAndRun",
-		"onCommand:as3mxml.getActiveProjectURIs"
+		"onCommand:as3mxml.getActiveProjectURIs",
+		"onCommand:as3.packaging.certificateCreate",
 	],
 
 	"breakpoints": [
@@ -64,55 +65,610 @@
 	},
 
 	"taskTemplates": {
-		"actionscript-air": {
-			"name": "ActionScript - AIR",
-			"image": "Adobe_AIR_logo.svg.png",
-			"description": "Build and run AS3 or MXML project.",
+		"actionscript-flash": {
+			"name": "ActionScript - Flash",
+			"image": "Adobe_Flash_Player_SVG.svg.png",
+			"description": "Build and run a Flash or Flex project.",
 			"persistent": true,
 			"tasks": {
 				"build": {
 					"resolve": "actionscript",
-					"data": {
-						"type": "actionscript",
-					}
+					"data": { "type": "flash" }
 				},
 				"clean": {
 					"resolve": "actionscript",
-					"data": {
-						"type": "actionscript",
-					}
+					"data": { "type": "flash" }
 				},
 				"run": {
 					"resolve": "actionscript",
-					"data": {
-						"type": "actionscript",
-					}
+					"data": { "type": "flash" }
 				},
 			},
 			"config": [
 				{
-					"key": "as3.task.commandLine",
-					"title": "Command line arguments",
-					"type": "string",
+					"title": "Type of ActionScript",
+					"description": "Used to determine if the project is based on Flex or AIR"
 				},
 				{
-					"key": "as3.task.mainApplicationPath",
-					"title": "Publisher ID",
-					"type": "string",
+					"key": "as3.task.isFlex",
+					"title": "Is Flex based",
+					"type": "boolean",
+					"default": false
 				},
 				{
-					"key": "as3.task.profile",
-					"title": "Profile",
+					"title": "View Source",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.export.flash.includeSource",
+							"title": "Include source",
+							"link": "https://help.adobe.com/archive/en_US/flex/mobileapps/developing_mobile_apps_flex_4.6.pdf",
+							"description": "Learn how to add \"View Source\" menu item at ",
+							"type": "bool",
+							"default": false
+						}
+					]
+				},
+				{
+					"title": "Export",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.export.folder",
+							"title": "Export to folder",
+							"type": "path",
+							"relative": true,
+							"allowFolders": true,
+							"allowFiles": false,
+							"default": "bin-release",
+						}
+					]
+				}
+			]
+		},
+		"actionscript-air": {
+			"name": "ActionScript - AIR",
+			"image": "Adobe_AIR_logo.svg.png",
+			"description": "Build and run AS3 or MXML project with AIR for desktops.",
+			"persistent": true,
+			"tasks": {
+				"build": {
+					"resolve": "actionscript",
+					"data": { "type": "actionscript" }
+				},
+				"clean": {
+					"resolve": "actionscript",
+					"data": { "type": "actionscript" }
+				},
+				"run": {
+					"resolve": "actionscript",
+					"data": { "type": "actionscript" }
+				},
+			},
+			"config": [
+				{
+					"title": "Additional Options",
+					"description": "Some additional options that are used for generating the release build",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.task.commandLine",
+							"title": "Command line arguments",
+							"type": "string",
+						},
+						{
+							"key": "as3.task.mainApplicationPath",
+							"title": "Publisher ID",
+							"type": "string",
+						},
+						{
+							"key": "as3.task.profile",
+							"title": "Profile",
+							"type": "enum",
+							"default": "desktop",
+							"values": [
+								["default", "Default (first in app.xml)"],
+								["desktop", "Desktop"],
+								["extendedDesktop", "Extended Desktop"],
+								["mobileDevice", "Mobile Device"],
+								["extendedMobileDevice", "Extended Mobile Device"]
+							]
+						}
+					]
+				},
+				{
+					"title": "Export",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.export.folder",
+							"title": "Export to folder",
+							"type": "path",
+							"relative": true,
+							"allowFolders": true,
+							"allowFiles": false,
+							"default": "bin-release",
+							"description": "The location of folder containing the output, relative to your project's folder"
+						},
+						{
+							"key": "as3.export.basename",
+							"title": "Base filename",
+							"type": "string",
+							"placeholder": "Your project's main file minus .extension",
+						},
+						{
+							"key": "as3.packaging.type",
+							"title": "Export as",
+							"type":  "enum",
+							"values": [
+								["Signed AIR package"],
+								["Singed native installer"],
+								["Singed application with captive runtime"],
+								["Intermediate AIRI package that must be manually signed later"]
+							],
+							"default": "Signed AIR package",
+						}
+					]
+				},
+				{
+					"title": "Deployment",
+					"type": "section",
+					"children": [
+						{
+						}
+					]
+				},
+
+
+
+
+				{
+					"title": "Digital Signature",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.packaging.certificate",
+							"title": "Certificate",
+							"type": "path",
+							"allowFolders": false,
+							"allowFiles": true,
+							"description": "Select the .p12 file to build your AIR app with",
+							"note": "@TODO Need to see how to implement a UI for this...",
+						},
+						{
+							"key": "as3.packaging.certificateCreate",
+							"title": "Create",
+							"type": "command"
+						},
+						{
+							"key": "as3.packaging.certificateCreate",
+							"description": "When generating the project, it will ask you for your password and give you the option to store it in Keychain.",
+							"title": "Clear Password",
+							"type": "command"
+						},
+						{
+							"key": "as3.packaging.timestamp",
+							"title": "Timestamp",
+							"type": "bool",
+							"default": true
+						}
+					]
+				},
+				{
+					"title": "Package Contents",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.packaging.excludedFiles",
+							"title": "Files to exclude when packaging",
+							"type": "pathArray",
+							"allowFolders": true,
+							"allowFiles": true
+						}
+					]
+				},
+				{
+					"title": "Native Extensions",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.packaging.anes",
+							"title": "Native extensions",
+							"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+							"type": "pathArray",
+							"relative": true,
+							"allowFolders": false,
+							"allowFiles": true,
+							"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package, but I don't think that's possible in Nova"
+						}
+					]
+				}
+			]
+		},
+		"actionscript-android": {
+			"name": "ActionScript - Android Mobile",
+			"image": "Android-Adobe_AIR_logo.svg.png",
+			"description": "Build and run AS3 or MXML project with AIR for Android devices.",
+			"persistent": true,
+			"tasks": {
+				"build": {
+					"resolve": "actionscript",
+					"data": { "type": "mobile", "os": "android" }
+				},
+				"clean": {
+					"resolve": "actionscript",
+					"data": { "type": "mobile", "os": "android" }
+				},
+				"run": {
+					"resolve": "actionscript",
+					"data": { "type": "mobile", "os": "android" }
+				},
+			},
+			"config": [
+				{
+					"key": "as3.task.isFlex",
+					"title": "Is Flex Based",
+					"type": "boolean",
+					"default": false
+				},
+				{
+					"key": "as3.task.device",
+					"title": "Device",
 					"type": "enum",
-					"default": "desktop",
+					"default": "720x480:720x480",
 					"values": [
-						["default", "Default (first in app.xml)"],
-						["desktop", "Desktop"],
-						["extendedDesktop", "Extended Desktop"],
-						["mobileDevice", "Mobile Device"],
-						["extendedMobileDevice", "Extended Mobile Device"]
-					],
+						["720x480:720x480", 	"480 - 720 x 480:720 x 480"],
+						["1280x720:1280x720",   "720 - 1280 x 720:1280 x 720"],
+						["1920x1080:1920x1080", "1080 - 1920 x 1080:1920 x 1080"],
+						["480x816:480x854", 	"Droid - 480 x 816:480 x 854"],
+						["240x432:240x432", 	"FWQVGA - 240 x 432:240 x 432"],
+						["480x854:480x854", 	"FWΩVGA - 480 x 854:480 x 854"],
+						["320x480:320x480", 	"HVGA - 320 x 480:320 x 480"],
+						["480x762:480x800", 	"NexusOne - 480 x 762:480 x 800"],
+						["240x320:240x320", 	"QVGA - 240 x 320:240 x 320"],
+						["480x762:480x800", 	"SamsungGalaxyS - 480 x 762:480 x 800"],
+						["600x986:600x1024",	"SamsungGalaxyTab - 600 x 986:600 x 1024"],
+						["240x400:240x400", 	"WQVGA - 240 x 400:240 x 400"],
+						["480x800:480x800", 	"WVGA - 480 x 800:480 x 800"],
+						["1440x3088:1440x3088",	"Samsung Galaxy S23 Ultra - 1440 x 3088:1440 x 3088"],
+						["1080x2340:1080x2340",	"Samsung Galaxy S23+ - 1080 x 2340:1080 x 2340"],
+						["1080x2340:1080x2340",	"Samsung Galaxy S23 - 1080 x 2340:1080 x 2340"],
+						["1344x2992:1344x2992",	"Google Pixel 8 Pro - 1344 x 2992:1344 x 2992"],
+						["1080x2400:1080x2400",	"Google Pixel 8 - 1080 x 2400:1080 x 2400"],
+						["1440x3216:1440x3216",	"OnePlus 11 - 1440 x 3216:1440 x 3216"],
+						["1440x3200:1440x3200",	"Xiaomi 13 Pro - 1440 x 3200:1440 x 3200"],
+						["1080x2400:1080x2400",	"Xiaomi 13 - 1080 x 2400:1080 x 2400"],
+						["1644x3840:1644x3840",	"Sony Xperia 1 V - 1644 x 3840:1644 x 3840"],
+						["1080x2520:1080x2520",	"Sony Xperia 5 V - 1080 x 2520:1080 x 2520"],
+						["1440x3120:1440x3120",	"Google Pixel 7 Pro - 1440 x 3120:1440 x 3120"],
+						["1080x2400:1080x2400",	"Google Pixel 7 - 1080 x 2400:1080 x 2400"],
+						["1812x2176:1812x2176",	"Samsung Galaxy Z Fold5 - 1812 x 2176:1812 x 2176"],
+						["1080x2640:1080x2640",	"Samsung Galaxy Z Flip5 - 1080 x 2640:1080 x 2640"],
+						["1080x2412:1080x2412",	"OnePlus Nord 3 - 1080 x 2412:1080 x 2412"],
+						["1080x2400:1080x2400",	"Xiaomi Redmi Note 12 Pro - 1080 x 2400:1080 x 2400"],
+					]
 				},
+				{
+					"title": "Additional Options",
+					"description": "Some additional options that are used for generating the release build",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.task.commandLine",
+							"title": "Command line arguments",
+							"type": "string",
+						},
+						{
+							"key": "as3.task.mainApplicationPath",
+							"title": "Publisher ID",
+							"type": "string",
+						},
+						{
+							"key": "as3.task.profile",
+							"title": "Profile",
+							"type": "enum",
+							"default": "desktop",
+							"values": [
+								["default", "Default (first in app.xml)"],
+								["desktop", "Desktop"],
+								["extendedDesktop", "Extended Desktop"],
+								["mobileDevice", "Mobile Device"],
+								["extendedMobileDevice", "Extended Mobile Device"]
+							]
+						},
+						{
+							"key": "as3.packaging.timestamp",
+							"title": "Timestamp",
+							"type": "bool",
+							"default": true
+						},
+					]
+				},
+				{
+					"title": "Export",
+					"type": "section",
+					"description": "Options for exporting a release build of this application",
+					"children": [
+						{
+							"key": "as3.export.folder",
+							"title": "Export to folder",
+							"type": "path",
+							"relative": true,
+							"allowFolders": true,
+							"allowFiles": false,
+							"default": "bin-release",
+							"description": "The location of folder containing the output, relative to your project's folder"
+						},
+						{
+							"key": "as3.export.basename",
+							"title": "Base filename",
+							"type": "string",
+							"placeholder": "Your project's main file minus `.extension`",
+						},
+						{
+							"key": "as3.packaging.type",
+							"title": "Export as",
+							"type":  "enum",
+							"values": [
+								["Signed AIR package"],
+								["Singed application with captive runtime"],
+								["Intermediate AIRI package that must be manually signed later"]
+							],
+							"default": "Signed AIR package",
+						}
+					]
+				},
+				{
+					"title": "Deployment",
+					"type": "section",
+					"children": [
+						{
+							"title": "Install and launch application on any connected devices",
+							"key": "as3.deployment.launchConnected",
+							"type": "boolean",
+							"default": true
+						},
+						{
+							"title": "Export Options:",
+							"key": "as3.deployment.options",
+							"type": "enum",
+							"default": "captive",
+							"values": [
+								["captive", "Export application with captive runtime"],
+								["shared", "Export application that uses a shared AIR runtime"],
+							]
+						},
+						{
+							"title": "AIR download URL:",
+							"key": "as3.deployment.url",
+							"description": "The URL specified for an application must point to a download location on the store where the application will be hosted. You can also enter your own url.",
+							"type": "enum",
+							"radio": false,
+							"allowsCustom": true,
+							"default": "https://market.android.com/details?id=com.adobe.air",
+							"enabled": false,
+							"values": [
+								["https://market.android.com/details?id=com.adobe.air"],
+								["http://www.amazon.com/gp/mas/dl/android?p=com.adobe.air"]
+							]
+						}
+					]
+				},
+				{
+					"title": "Digital Signature",
+					"description": "Certificate and password options for building",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.packaging.certificate",
+							"title": "Certificate",
+							"type": "path",
+							"allowFolders": false,
+							"allowFiles": true,
+							"description": "Select the .p12 to sign this build with",
+						},
+						{
+							"description": "@TODO Need to see how to implement a UI for this...",
+							"key": "as3.packaging.certificateCreate",
+							"resolve": "as3.packaging.certificateCreate",
+							"title": "Create Certificate",
+							"type": "command"
+						},
+						{
+							"key": "actionscipt.clearExportPassword",
+							"title": "Store Password",
+							"description": "@TODO Stores the password for this certificate in your Keychain",
+							"type": "command"
+						},
+						{
+							"key": "actionscipt.clearExportPassword",
+							"title": "Clear Password",
+							"description": "@TODO Clears the password for this certificate from your Keychain if stored",
+							"type": "command"
+						}
+					]
+				},
+				{
+					"title": "Package Contents",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.packaging.excludedFiles",
+							"title": "Files to exclude when packaging",
+							"type": "pathArray",
+							"allowFolders": true,
+							"allowFiles": true
+						},
+					]
+				},
+				{
+					"title": "Native Extensions",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.packaging.anes",
+							"title": "Native extensions",
+							"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+							"type": "pathArray",
+							"relative": true,
+							"allowFolders": false,
+							"allowFiles": true,
+							"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package"
+						},
+						{
+								"key": "as3.ane.ignoreError",
+								"title": "Ignore Error",
+								"type": "boolean",
+								"default": "false"
+						},
+						{
+								"key": "as3.ane.refresh",
+								"title": "Refresh",
+								"type": "command"
+						}
+					]
+				},
+			]
+		},
+		"actionscript-ios": {
+			"name": "ActionScript - iOS",
+			"image": "iOS-Adobe_AIR_logo.svg.png",
+			"description": "Build and run AS3 or MXML project with AIR for iOS devices.",
+			"persistent": true,
+			"tasks": {
+				"build": {
+					"resolve": "actionscript",
+					"data": { "type": "mobile", "os": "ios" }
+				},
+				"clean": {
+					"resolve": "actionscript",
+					"data": { "type": "mobile", "os": "ios" }
+				},
+				"run": {
+					"resolve": "actionscript",
+					"data": { "type": "mobile", "os": "ios" }
+				},
+			},
+			"config": [
+				{
+					"key": "as3.task.isFlex",
+					"title": "Is Flex Based",
+					"type": "boolean",
+					"default": false
+				},
+				{
+					"key": "as3.task.device",
+					"title": "Device",
+					"type": "enum",
+					"default": "720x480:720x480",
+					"values": [
+						["720x480:720x480", 	"480 - 720 x 480:720 x 480"],
+						["1280x720:1280x720",   "720 - 1280 x 720:1280 x 720"],
+						["1920x1080:1920x1080", "1080 - 1920 x 1080:1920 x 1080"],
+						["768x1004:768x1024",   "iPad - 768 x 1004:768 x 1024"],
+						["1536x2008:1536x2048", "iPadRetina - 1536 x 2008:1536 x 2048"],
+						["320x460:320x480", 	"iPhone - 320 x 460:320 x 480"],
+						["640x920:640x960", 	"iPhoneRetina - 640 x 920:640 x 960"],
+						["640x1096:640x1136",   "iPhone5Retina - 640 x 1096:640 x 1136"],
+						["750x1294:750x1334",   "iPhone6 - 750 x 1294:750 x 1334"],
+						["1242x2148:1242x2208", "iPhone6Plus - 1242 x 2148:1242 x 2208"],
+						["320x460:320x480", 	"iPod - 320 x 460:320 x 480"],
+						["640x920:640x960", 	"iPodRetina - 640 x 920:640 x 960"],
+						["640x1096:640x1136",   "iPod5Retina - 640 x1096:640 x 1136"],
+						["1290x2796:1290x2796",	"iPhone 15 Pro Max - 1290 x 2796:1290 x 2796"],
+						["1179x2556:1179x2556",	"iPhone 15 Pro - 1179 x 2556:1179 x 2556"],
+						["1170x2532:1170x2532",	"iPhone 15 - 1170 x 2532:1170 x 2532"],
+						["1284x2778:1284x2778",	"iPhone 15 Plus - 1284 x 2778:1284 x 2778"],
+						["1290x2796:1290x2796",	"iPhone 14 Pro Max - 1290 x 2796:1290 x 2796"],
+						["1179x2556:1179x2556",	"iPhone 14 Pro - 1179 x 2556:1179 x 2556"],
+						["1170x2532:1170x2532",	"iPhone 14 - 1170 x 2532:1170 x 2532"],
+						["1284x2778:1284x2778",	"iPhone 14 Plus - 1284 x 2778:1284 x 2778"],
+						["750x1334:750x1334",	"iPhone SE (3rd Gen) - 750 x 1334:750 x 1334"],
+						["1284x2778:1284x2778",	"iPhone 13 Pro Max - 1284 x 2778:1284 x 2778"],
+						["1170x2532:1170x2532",	"iPhone 13 Pro - 1170 x 2532:1170 x 2532"],
+						["1170x2532:1170x2532",	"iPhone 13 - 1170 x 2532:1170 x 2532"],
+						["1080x2340:1080x2340",	"iPhone 13 Mini - 1080 x 2340:1080 x 2340"],
+						["2048x2732:2048x2732",	"iPad Pro 12.9\" (6th Gen) - 2048 x 2732:2048 x 2732"],
+						["1668x2388:1668x2388",	"iPad Pro 11\" (4th Gen) - 1668 x 2388:1668 x 2388"],
+						["1640x2360:1640x2360",	"iPad Air (5th Gen) - 1640 x 2360:1640 x 2360"],
+						["1488x2266:1488x2266",	"iPad Mini (6th Gen) - 1488 x 2266:1488 x 2266"],
+						["1640x2360:1640x2360",	"iPad 10th Gen - 1640 x 2360:1640 x 2360"],
+					]
+				},
+				{
+					"title": "Additional Options",
+					"description": "Some additional options that are used for generating the release build",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.task.commandLine",
+							"title": "Command line arguments",
+							"type": "string",
+						},
+						{
+							"key": "as3.task.mainApplicationPath",
+							"title": "Publisher ID",
+							"type": "string",
+						},
+						{
+							"key": "as3.task.profile",
+							"title": "Profile",
+							"type": "enum",
+							"default": "desktop",
+							"values": [
+								["default", "Default (first in app.xml)"],
+								["desktop", "Desktop"],
+								["extendedDesktop", "Extended Desktop"],
+								["mobileDevice", "Mobile Device"],
+								["extendedMobileDevice", "Extended Mobile Device"]
+							]
+						}
+					]
+				},
+				{
+					"title": "Export",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.export.folder",
+							"title": "Export to folder",
+							"type": "path",
+							"relative": true,
+							"allowFolders": true,
+							"allowFiles": false,
+							"default": "bin-release",
+							"description": "The location of folder containing the output, relative to your project's folder"
+						},
+						{
+							"key": "as3.export.basename",
+							"title": "Base filename",
+							"type": "string",
+							"placeholder": "Your project's main file minus .extension",
+						},
+						{
+							"key": "as3.packaging.type",
+							"title": "Export as",
+							"type":  "enum",
+							"values": [
+								["Signed AIR package"],
+								["Singed application with captive runtime"],
+								["Intermediate AIRI package that must be manually signed later"]
+							],
+							"default": "Signed AIR package",
+						}
+					]
+				},
+				{
+					"title": "Deployment",
+					"type": "section",
+					"children": [
+						{
+						}
+					]
+				},
+
+
+
 
 				{
 					"key": "as3.packaging.certificate",
@@ -175,26 +731,20 @@
 		"actionscript-airmobile": {
 			"name": "ActionScript - Mobile",
 			"image": "Adobe Device Central.png",
-			"description": "Build and run AS3 or MXML project for Mobile.",
+			"description": "Build and run AS3 or MXML project with AIR for mobile.",
 			"persistent": true,
 			"tasks": {
 				"build": {
 					"resolve": "actionscript",
-					"data": {
-						"type": "mobile",
-					}
+					"data": { "type": "mobile" }
 				},
 				"clean": {
 					"resolve": "actionscript",
-					"data": {
-						"type": "mobile",
-					}
+					"data": { "type": "mobile" }
 				},
 				"run": {
 					"resolve": "actionscript",
-					"data": {
-						"type": "mobile",
-					}
+					"data": { "type": "mobile" }
 				},
 			},
 			"config": [
@@ -203,29 +753,6 @@
 					"title": "Is Flex Based",
 					"type": "boolean",
 					"default": false
-				},
-				{
-					"key": "as3.task.commandLine",
-					"title": "Command line arguments",
-					"type": "string",
-				},
-				{
-					"key": "as3.task.mainApplicationPath",
-					"title": "Publisher ID",
-					"type": "string",
-				},
-				{
-					"key": "as3.task.profile",
-					"title": "Profile",
-					"type": "enum",
-					"default": "default",
-					"values": [
-						["default", "Default (first in app.xml)"],
-						["desktop", "Desktop"],
-						["extendedDesktop", "Extended Desktop"],
-						["mobileDevice", "Mobile Device"],
-						["extendedMobileDevice", "Extended Mobile Device"]
-					],
 				},
 				{
 					"key": "as3.task.device",
@@ -256,6 +783,79 @@
 						["320x460:320x480", 	"iOS: iPod - 320 x 460:320 x 480"],
 						["640x920:640x960", 	"iOS: iPodRetina - 640 x 920:640 x 960"],
 						["640x1096:640x1136",   "iOS: iPod5Retina - 640 x1096:640 x 1136"],
+					]
+				},
+
+				{
+					"title": "Additional Options",
+					"description": "Some additional options that are used for generating the release build",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.task.commandLine",
+							"title": "Command line arguments",
+							"type": "string",
+						},
+						{
+							"key": "as3.task.mainApplicationPath",
+							"title": "Publisher ID",
+							"type": "string",
+						},
+						{
+							"key": "as3.task.profile",
+							"title": "Profile",
+							"type": "enum",
+							"default": "desktop",
+							"values": [
+								["default", "Default (first in app.xml)"],
+								["desktop", "Desktop"],
+								["extendedDesktop", "Extended Desktop"],
+								["mobileDevice", "Mobile Device"],
+								["extendedMobileDevice", "Extended Mobile Device"]
+							]
+						}
+					]
+				},
+				{
+					"title": "Export",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.export.folder",
+							"title": "Export to folder",
+							"type": "path",
+							"relative": true,
+							"allowFolders": true,
+							"allowFiles": false,
+							"default": "bin-release",
+							"description": "The location of folder containing the output, relative to your project's folder"
+						},
+						{
+							"key": "as3.export.basename",
+							"title": "Base filename",
+							"type": "string",
+							"placeholder": "Your project's main file minus .extension",
+						},
+						{
+							"key": "as3.packaging.type",
+							"title": "Export as",
+							"type":  "enum",
+							"values": [
+								["Signed AIR package"],
+								["Singed native installer"],
+								["Singed application with captive runtime"],
+								["Intermediate AIRI package that must be manually signed later"]
+							],
+							"default": "Signed AIR package",
+						}
+					]
+				},
+				{
+					"title": "Deployment",
+					"type": "section",
+					"children": [
+						{
+						}
 					]
 				},
 
@@ -455,7 +1055,7 @@
 		{
 			"title": "Application",
 			"type": "section",
-			"description": "Select the main ActionScript or MXML",
+			"description": "Select the main ActionScript or MXML for the project",
 			"children": [
 				{
 					"key": "as3.application.mainApp",
@@ -468,8 +1068,16 @@
 			]
 		},
 		{
+			"title": "Build Packaging",
+			"type": "section",
+			"description": "Setting for building an AIR project (no effect for Flash projects)",
+			"children": [
+			]
+		},
+		{
 			"title": "Build Path",
 			"type": "section",
+			"description": "Set the source path and library path, as well as the output location for debug running",
 			"children": [
 				{
 					"key": "as3.build.source.main",
@@ -483,13 +1091,19 @@
 				},
 				{
 					"key": "as3.build.output",
-					"title": "Output Folder",
+					"title": "Output folder",
 					"type": "path",
 					"relative": true,
 					"allowFolders": true,
 					"allowFiles": false,
 					"default": "bin-debug",
 					"description": "The location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
+				},
+				{
+					"key": "as3.build.outputURL",
+					"title": "Output folder URL",
+					"type": "string",
+					"description": "(Flash only) The location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
 				},
 				{
 					"title": "Source Path",
@@ -509,7 +1123,7 @@
 				{
 					"title": "Library Path",
 					"type": "section",
-					"description": "Additonal library folders (* May need some work...)",
+					"description": "Additonal library folders to use when building",
 					"children": [
 						{
 							"key": "as3.build.linkage",
@@ -605,12 +1219,12 @@
 			"type": "section",
 			"children": [
 				{
-					"title": "Flex SDK version",
+					"title": "AIR/Flex SDK version",
 					"type": "section",
 					"children": [
 						{
 							"key": "as3.compiler.useDefault",
-							"title": "Use default SDK",
+							"title": "Use the default SDK",
 							"type": "enum",
 							"values": [ "Use default SDK","Use a specific SDK"],
 							"default": "Use default SDK",
@@ -627,7 +1241,83 @@
 					]
 				},
 				{
-					"title": "Options",
+					"title": "Adobe Flash Player options",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.flash.options",
+							"title": "Use the default SDK",
+							"type": "enum",
+							"values": [ "Use minimum version required by the Flex SDK","Use the specified version below"],
+							"default": "Use minimum version required by the Flex SDK",
+							"description": "Specifies the minimum version of Adobe Flash Player. If using a specified version, please use the numbers below."
+						},
+						{
+							"key": "as3.flash.minimum.major",
+							"title": "Major",
+							"type": "number",
+							"default": 11,
+							"min": 0,
+							"max": 100
+						},
+						{
+							"key": "as3.flash.minimum.minor",
+							"title": "Minor",
+							"type": "number",
+							"default": 1,
+							"min": 1,
+							"max": 100
+						},
+						{
+							"key": "as3.flash.minimum.revision",
+							"title": "Revision",
+							"type": "number",
+							"default": 0,
+							"min": 0,
+							"max": 100
+						},
+					],
+				},
+				{
+					"title": "HTML wrapper",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.flash.generatorType",
+							"title": "Which type of HTML to generate",
+							"type": "enum",
+							"values": [ "Classic","Ruffle"],
+							"default": "Classic",
+							"description": "Specifies which type of wrapper to generate for the project. Classic will use the default in the SDK. Ruffle will supply a version that will generate a simple page (no history)."
+						},
+						{
+							"key": "as3.flash.generateHTML",
+							"title": "Generate HTML wrapper file",
+							"type": "bool",
+							"default": true
+						},
+						{
+							"key": "as3.flash.checkTarget",
+							"title": "Check target player version",
+							"type": "bool",
+							"default": false
+						},
+						{
+							"key": "as3.flash.express",
+							"title": "Use Express Install",
+							"type": "bool",
+							"default": true
+						},
+						{
+							"key": "as3.flash.navigation",
+							"title": "Enable integration with browser navigation",
+							"type": "bool",
+							"default": true
+						},
+					]
+				},
+				{
+					"title": "Compiler options",
 					"type": "section",
 					"children": [
 						{
@@ -737,9 +1427,14 @@
 					"relative": true,
 					"allowFolders": false,
 					"allowFiles": true,
-				}
+				},
+				{
+					"key": "as3.modules.edit",
+					"title": "Edit...",
+					"type": "command"
+				},
 			]
-		}
+		},
 	],
 
 	"commands": {
@@ -826,6 +1521,15 @@
 				"title": "AIR / ActionScript 3 Reference",
 				"command": "actionscipt.as3reference"
 			},
+			{"separator": true},
+			{
+				"title": "AAA",
+				"command": "as3.packaging.certificateCreate"
+			},
+			{
+				"title": "AAA",
+				"command": "actionscipt.clearExportPassword"
+			}
 		]
 	}
 }

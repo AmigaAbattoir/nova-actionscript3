@@ -126,6 +126,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return;
 				}
 
+				var buildType = "air";
+
 				// If we have a task file name, then let's process it
 				if(taskFileName!="") {
 					// Since we have a name, let's set the last task
@@ -138,6 +140,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							return;
 						}
 						taskConfig = taskJson["extensionValues"];
+						switch(taskJson["extensionTemplate"]) {
+							case "actionscript-airmobile": {
+								buildType="airmobile";
+								break;
+							}
+						}
+
 					} catch(error) { }
 
 					if(taskConfig==null) {
@@ -177,10 +186,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 					var libPaths = nova.workspace.config.get("as3.build.library.additional");
 
+					var anePaths = nova.workspace.config.get("as3.packaging.anes");
+
 					var releasePath = "bin-release-temp";
 
 					/** @TODO Figure out what type of build... */
-					this.build("air", true, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, "release", nova.path.join(nova.workspace.path, releasePath), exportName, true).then((resolve) => {
+					this.build(buildType, true, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, "release", nova.path.join(nova.workspace.path, releasePath), exportName, true, anePaths).then((resolve) => {
 						console.log("this.build() resolve:");
 						consoleLogObject(resolve);
 						// @TODO - If there is warnings, ask if you want to continue, or abort.
@@ -315,7 +326,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							});
 							process.onStderr(function(line) {
 								//console.log("STDERR: " + line);
-								stderro += line;
+								stderr += line;
 							});
 							process.start();
 							process.onDidExit((status) => {
@@ -375,7 +386,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
 			fileNamesToExclude.push(appXMLName);
 			fileExtensionsToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.extensions");
+			console.log("Src DIR: [[" + sourceDirs + "]]")
+			console.log("Main Src DIR: [[" + mainSrcDir + "]]")
 			var copyDirs = sourceDirs.concat(mainSrcDir);
+			console.log("Copy DIR: [[" + copyDirs + "]]")
+			consoleLogObject("Copy DIR: " + copyDirs)
 			if(copyDirs!=null) {
 				copyDirs.forEach((copyDir) => {
 					if(copyDir.charAt(0)=="~") { // If a user shortcut, resolve
@@ -383,6 +398,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					} else if(copyDir.charAt(0)!="/") { // If it's not a slash, it's relative to the workspace path
 						copyDir = nova.path.join(nova.workspace.path, copyDir);
 				   }
+				   console.log("  >][[[] Starting to copy assets of [[" + copyDir + "]] to [[" + destDir + "]]")
 				   this.copyAssetsOf(copyDir, destDir, packageAfterBuild);
 				});
 			}
@@ -663,9 +679,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// ADL wants the directory with the ANEs
 		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-		var anes = nova.workspace.config.get("as3.packaging.anes");
+		var anes = config.get("as3.packaging.anePaths"); //nova.workspace.config.get("as3.packaging.anes");
 		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 		// ones that to the destination dir.
+		console.log("anes: " + JSON.stringify(anes));
 		if(anes) {
 			args.push("-extdir");
 			args.push(destDir + "/ane");
@@ -705,9 +722,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	copyAssetsOf(src, dest, packageAfterBuild = false) {
 		nova.fs.listdir(src).forEach(filename => {
 			let currPath = src + '/' + filename;
+			console.log(" >][[] " + currPath);
 			///if(this.ignoreCopy.includes(filename)==false) {
 			if(shouldIgnoreFileName(filename)==false) {
-				if (nova.fs.stat(currPath).isFile()) {
+				console.log(" >][[] Copy FILE" + currPath);
+				if (nova.fs.stat(currPath).isFile() || nova.fs.stat(currPath).isSymbolicLink()) {
 					try{
 						// We have to remove it before coping, or @TODO chack if we should replace or skip copying
 						if(nova.fs.access(dest+"/"+filename,nova.fs.constants.F_OK)) {
@@ -718,9 +737,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						console.log(" *** ERROR copyAssetsOf(): ",error);
 					}
 				} else if (nova.fs.stat(currPath).isDirectory()) {
+				console.log(" >][[] Copy DIRECTORY" + currPath);
 					nova.fs.mkdir(dest + "/" + filename);
 					// Let's also copy this directory too...
 					this.copyAssetsOf(currPath, dest + "/" + filename);
+				//} else if (nova.fs.stat(currPath).isSymbolicLink()) {
+				//	this.copyAssetsOf(currPath,dest + "/" + filename);
 				}
 			}
 		});
@@ -856,29 +878,35 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								"extension" : {
 									"identifier" : "com.abattoirsoftware.actionscript3",
 									"name" : "ActionScript 3"
-								}
+								},
+								"extensionTemplate" : "",
+								"extensionValues": { }
 							};
 
 			switch(buildTarget["@"]["buildTargetName"]) {
 				case "default": {
-					taskName = "AS3 - AIR";
+					taskName = "AS3 - Default";
 					taskJson["extensionTemplate"] = "actionscript-air";
+					taskJson.extensionValues["as3.target"] = "default";
 					break;
 				}
 				case "com.adobe.flexide.multiplatform.ios.platform": {
 					taskName = "AS3 - Apple iOS";
 					taskJson["extensionTemplate"] = "actionscript-airmobile";
+					taskJson.extensionValues["as3.target"] = "ios";
 					break;
 				}
 				case "com.qnx.flexide.multiplatform.qnx.platform": {
 					taskName = "AS3 - BlackBerry Table OS";
 					taskJson["extensionTemplate"] = "actionscript-airmobile";
+					taskJson.extensionValues["as3.target"] = "blackberry";
 					console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
 					break;
 				}
 				case "com.adobe.flexide.multiplatform.android.platform": {
 					taskName = "AS3 - Google Android";
 					taskJson["extensionTemplate"] = "actionscript-airmobile";
+					taskJson.extensionValues["as3.target"] = "android";
 					break;
 				}
 				case "device": {
@@ -907,8 +935,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 
 			if(taskJson!={}) {
-				taskJson["extensionValues"] = {};
-
 				var airSettings = actionscriptPropertiesXml.findChildNodeByName(buildTarget["children"], "airSettings");
 			//	consoleLogObject(airSettings);
 				//console.log("airCertificatePath: " + airSettings["@"]["airCertificatePath"]);
@@ -955,7 +981,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					nova.fs.mkdir(nova.workspace.path + "/.nova/Tasks/");
 				}
 
-				var taskFile = nova.fs.open(nova.workspace.path + "/.nova/Tasks/"+"Test-"+taskName+".json","w");
+				var taskFile = nova.fs.open(nova.workspace.path + "/.nova/Tasks/"+taskName+".json","w");
 				taskFile.write(JSON.stringify(taskJson,null,2));
 				taskFile.close();
 			}
@@ -973,8 +999,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 console.log("CONTEXT:");
 consoleLogObject(context);
-console.log("CONFIG:");
+console.log("CONFIG: ");
 consoleLogObject(config);
+console.log("data.type: " + data.type);
 
 		var buildType = "air";
 		if(data.type=="mobile") {
