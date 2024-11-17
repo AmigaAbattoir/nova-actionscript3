@@ -1,0 +1,323 @@
+[
+	{
+		"title": "Type of ActionScript",
+		"description": "Used to determine if the project is based on Flex or AIR",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.isFlex",
+				"title": "Is Flex Based",
+				"type": "boolean",
+				"default": false
+			}
+		]
+	},
+	{
+		"title": "Run Options",
+		"description": "Used when running the project",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.applicationFile",
+				"title": "Application file",
+				"type": "path",
+				"placeholder": "If empty, default's to project's Application File",
+				"allowFolders": false,
+				"allowFiles": true,
+				"filetype": [ "as","mxml" ]
+			},
+			{
+				"key": "as3.task.launchMethod",
+				"title": "Launch method",
+				"description": "When running, how should this be launched?",
+				"type": "enum",
+				"link": "http://www.adobe.com/go/fb_device_help",
+				"default": "desktop",
+				"values": [
+					["desktop", "On desktop"],
+					["device", "On device"]
+				]
+			},
+			{
+				"key": "as3.task.device",
+				"title": "Desktop Device",
+				"description": "When launching \"On desktop\", which device display should we simulate",
+				"type": "enum",
+				"values": [
+					["Barnes & Noble Nook Color - 1024 x 575:1024 x 575"],
+					["Dell Streak 7 - 800 × 461:800 × 461"],
+					["Google Nexus One - 800 x 442:800 x 442"],
+					["Google Nexus 5 - 800 × 442:800 × 442"],
+					["HTC Aria - 480 x 295:480 x 295"],
+					["HTC Desire - 800 x 455:800 x 455"],
+					["HTC Desire 2 - 800 × 442:800 × 442"],
+					["HTC Desire HD - 800 × 455:800 × 455"],
+					["HTC Desire S - 800 × 442:800 × 442"],
+					["HTC Desire Z - 800 x 442:800 x 442"],
+					["HTC Dream - 480 × 295:480 × 295"],
+					["HTC Driod Eris - 480 × 295:480 × 295"],
+					["HTC Droid Incredible - 800 × 442:800 × 442"],
+					["HTC Droid Incredible 2 - 800 × 455:800 × 455"],
+					["HTC EVO - 800 × 455:800 × 455"],
+					["HTC EVO 3D - 960 × 502:960 × 502"],
+					["HTC EVO Shift - 800 × 442:800 × 442"],
+					["HTC EVO View - 1024 x 575:1024 x 575"],
+					["HTC Gratia - 480 × 295:480 × 295"],
+					["HTC Hero - 480 × 295:480 × 295"],
+					["HTC Incredible S - 800 x 455:800 x 455"],
+					["HTC Inspire - 800 x 455:800 x 455"],
+					["HTC Legend - 480 x 295:480 x 295"],
+					["HTC Merge - 800 × 442:800 × 442"],
+					["HTC myTouch 3G - 480 × 295:480 × 295"],
+					["HTC myTouch 3G Slide - 480 × 295:480 × 295"],
+					["HTC myTouch 4G - 800 x 442:800 x 442"],
+					["HTC myTouch 4G Slide - 800 × 442:800 × 442"],
+					["HTC myTouch HD - 800 × 442:800 × 442"],
+					["HTC Panache - 800 x 442:800 x 442"],
+					["HTC Sensation - 960 × 502:960 × 502"],
+					["HTC ThunderBolt - 800 x 455:800 x 455"],
+					["HTC Wildfire - 320 x 221:320 x 221"],
+					["HTC Wildfire S - 480 x 295:480 x 295"],
+					["Huawei S7 Slim - 800 x 461:800 x 461"],
+					["Motorola Atrix - 540 x 922:540 x 922"],
+					["Motorola Defy+ - 854 x 442:854 x 442"],
+					["Motorola Droid - 854 x 442:854 x 442"],
+					["Motorola Droid 2 - 854 x 442:854 x 442"],
+					["Motorola Droid 3 - 960 x 502:960 x 502"],
+					["Motorola Droid Pro - 480 × 295:480 × 295"],
+					["Motorola Droid X - 854 × 442:854 × 442"],
+					["Motorola XOOM - 1280 x 752:1280 x 752"],
+					["Motorola XT316 - 320 × 221:320 × 221"],
+					["Motorola XT531 - 480 x 295:480 x 295"],
+					["Samsung Captivate - 800 × 455:800 × 455"],
+					["Samsung Epic - 800 x 455:800 x 455"],
+					["Samsung Fascinate - 800 × 455:800 × 455"],
+					["Samsung Galaxy Ace - 480 x 295:480 x 295"],
+					["Samsung Galaxy Tab - 1024 x 575:1024 x 575"],
+					["Samsung Galaxy Tab 10.1 - 1280 x 752:1280 x 752"],
+					["Samsung Galaxy Tab Il (8.9) - 1280 x 752:1280 x 752"],
+					["Samsung Transform - 480 x 295:480 x 295"],
+					["Samsung vibrant - 800 x 455:800 x 455"],
+					["Samsung Galaxy S23 Ultra - 1440 x 3088:1440 x 3088"],
+					["Samsung Galaxy S23+ - 1080 x 2340:1080 x 2340"],
+					["Samsung Galaxy S23 - 1080 x 2340:1080 x 2340"],
+					["Google Pixel 8 Pro - 1344 x 2992:1344 x 2992"],
+					["Google Pixel 8 - 1080 x 2400:1080 x 2400"],
+					["OnePlus 11 - 1440 x 3216:1440 x 3216"],
+					["Xiaomi 13 Pro - 1440 x 3200:1440 x 3200"],
+					["Xiaomi 13 - 1080 x 2400:1080 x 2400"],
+					["Sony Xperia 1 V - 1644 x 3840:1644 x 3840"],
+					["Sony Xperia 5 V - 1080 x 2520:1080 x 2520"],
+					["Google Pixel 7 Pro - 1440 x 3120:1440 x 3120"],
+					["Google Pixel 7 - 1080 x 2400:1080 x 2400"],
+					["Samsung Galaxy Z Fold5 - 1812 x 2176:1812 x 2176"],
+					["Samsung Galaxy Z Flip5 - 1080 x 2640:1080 x 2640"],
+					["OnePlus Nord 3 - 1080 x 2412:1080 x 2412"],
+					["Xiaomi Redmi Note 12 Pro - 1080 x 2400:1080 x 2400"]
+				]
+			},
+			{
+				"key": "as3.task.deviceType",
+				"title": "Which type of device",
+				"description": "When launching \"On device\", which type of device to launch on",
+				"type": "enum",
+				"default": "usb",
+				"values": [
+					["usb","Debug via USB (recommened)"],
+					["network","Debug via network"]
+				]
+			},
+			{
+				"key": "as3.task.launchOnDevice",
+				"title": "Install the application on the device over USB",
+				"type": "boolean",
+				"default": true
+			},
+			{
+				"key": "as3.task.clear",
+				"title": "Clear application data on each launch",
+				"type": "boolean",
+				"default": false
+			}
+		]
+	},
+	{
+		"title": "Additional Options",
+		"description": "Some additional options that are used for generating the release build. Right now, they are used, but may end up being programmatically set.",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.commandLine",
+				"title": "Command line arguments",
+				"type": "string"
+			},
+			{
+				"key": "as3.task.mainApplicationPath",
+				"title": "Publisher ID",
+				"type": "string"
+			},
+			{
+				"key": "as3.task.profile",
+				"title": "Profile",
+				"type": "enum",
+				"default": "default",
+				"values": [
+					["default", "Default (first in app.xml)"],
+					["mobileDevice", "Mobile Device"],
+					["extendedMobileDevice", "Extended Mobile Device"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Export",
+		"type": "section",
+		"description": "Options for exporting a release build of this application",
+		"children": [
+			{
+				"key": "as3.export.folder",
+				"title": "Export to folder",
+				"type": "path",
+				"relative": true,
+				"allowFolders": true,
+				"allowFiles": false,
+				"default": "bin-release",
+				"description": "The location of folder containing the output, relative to your project's folder"
+			},
+			{
+				"key": "as3.export.basename",
+				"title": "Base filename",
+				"type": "string",
+				"placeholder": "Your project's main file minus `.extension`"
+			},
+			{
+				"key": "as3.packaging.type",
+				"title": "Export as",
+				"default": "signed-air",
+				"type":  "enum",
+				"values": [
+					["signed-air","Signed AIR package"],
+					["signed-captive","Signed application with captive runtime"],
+					["intermediate","Intermediate AIRI package that must be manually signed later"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Deployment",
+		"type": "section",
+		"children": [
+			{
+				"title": "Install and launch application on any connected devices",
+				"key": "as3.deployment.launchConnected",
+				"type": "boolean",
+				"default": true
+			},
+			{
+				"title": "Export Options:",
+				"key": "as3.deployment.options",
+				"type": "enum",
+				"default": "captive",
+				"values": [
+					["captive", "Export application with captive runtime"],
+					["shared", "Export application that uses a shared AIR runtime"]
+				]
+			},
+			{
+				"title": "AIR download URL:",
+				"key": "as3.deployment.url",
+				"description": "The URL specified for an application must point to a download location on the store where the application will be hosted. You can also enter your own url.",
+				"type": "enum",
+				"radio": false,
+				"allowsCustom": true,
+				"default": "https://market.android.com/details?id=com.adobe.air",
+				"enabled": false,
+				"values": [
+					["https://market.android.com/details?id=com.adobe.air"],
+					["http://www.amazon.com/gp/mas/dl/android?p=com.adobe.air"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Digital Signature",
+		"description": "Certificate and password options for building",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.certificate",
+				"title": "Certificate",
+				"type": "path",
+				"allowFolders": false,
+				"allowFiles": true,
+				"description": "Select the .p12 to sign this build with"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"description": "@TODO Need to see how to implement a UI for this...",
+				"key": "as3.packaging.certificateCreate",
+				"resolve": "as3.packaging.certificateCreate",
+				"title": "Create Certificate",
+				"type": "command"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"key": "actionscipt.clearExportPassword",
+				"title": "Store Password",
+				"description": "@TODO Stores the password for this certificate in your Keychain",
+				"type": "command"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"key": "actionscipt.clearExportPassword",
+				"title": "Clear Password",
+				"description": "@TODO Clears the password for this certificate from your Keychain if stored",
+				"type": "command"
+			}
+		]
+	},
+	{
+		"title": "Package Contents",
+		"description": "When preparing the export package, these file will be excluded from the build.",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.excludedFiles",
+				"title": "Files to exclude when packaging",
+				"type": "pathArray",
+				"allowFolders": true,
+				"allowFiles": true
+			}
+		]
+	},
+	{
+		"title": "Native Extensions",
+		"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.anes",
+				"title": "Native extensions",
+				"type": "pathArray",
+				"relative": true,
+				"allowFolders": false,
+				"allowFiles": true,
+				"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package. May need to look into the \"resolve\" options to see if that's possible"
+			},
+			{
+					"key": "as3.ane.ignoreError",
+					"title": "Ignore Error",
+					"type": "boolean",
+					"default": "false"
+			},
+			{
+					"key": "as3.ane.refresh",
+					"title": "Refresh",
+					"type": "command"
+			}
+		]
+	}
+]

@@ -1,0 +1,60 @@
+[
+	{
+		"title": "Type of ActionScript",
+		"description": "Used to determine if the project is based on Flex or AIR",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.isFlex",
+				"title": "Is Flex Based",
+				"type": "boolean",
+				"default": false
+			},
+			{
+				"key": "as3.task.useRuffle",
+				"title": "Use Ruffle for the HTML Template",
+				"type": "boolean",
+				"default": false
+			}
+		]
+	},
+	{
+		"title": "View Source",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.export.flash.includeSource",
+				"title": "Enable view source",
+				"link": "https://help.adobe.com/archive/en_US/flex/mobileapps/developing_mobile_apps_flex_4.6.pdf",
+				"description": "Inlcude the source files in your exported folder. Learn how to add \"View Source\" menu item",
+				"type": "bool",
+				"default": false
+			},
+			{
+				"key": "as3.packaging.excludedSourceFiles",
+				"title": "Source Files to exclude when packaging",
+				"description": "These source files will not be included when  preparing the export package, these file will be excluded from the build.",
+				"type": "pathArray",
+				"allowFolders": true,
+				"allowFiles": true
+			}
+		]
+	},
+	{
+		"title": "Export",
+		"type": "section",
+		"description": "Options for exporting a release build of this application",
+		"children": [
+			{
+				"key": "as3.export.folder",
+				"title": "Export to folder",
+				"type": "path",
+				"relative": true,
+				"allowFolders": true,
+				"allowFiles": false,
+				"default": "bin-release",
+				"description": "The location of folder containing the output, relative to your project's folder"
+			}
+		]
+	}
+]

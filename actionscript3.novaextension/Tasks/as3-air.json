@@ -1,0 +1,152 @@
+[
+	{
+		"title": "Additional Options",
+		"description": "Some additional options that are used for generating the release build. Right now, they are used, but may end up being programmatically set.",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.commandLine",
+				"title": "Command line arguments",
+				"type": "string"
+			},
+			{
+				"key": "as3.task.mainApplicationPath",
+				"title": "Publisher ID",
+				"type": "string"
+			},
+			{
+				"key": "as3.task.profile",
+				"title": "Profile",
+				"type": "enum",
+				"default": "desktop",
+				"values": [
+					["default", "Default (first in app.xml)"],
+					["desktop", "Desktop"],
+					["extendedDesktop", "Extended Desktop"],
+					["mobileDevice", "Mobile Device"],
+					["extendedMobileDevice", "Extended Mobile Device"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Export",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.export.folder",
+				"title": "Export to folder",
+				"type": "path",
+				"relative": true,
+				"allowFolders": true,
+				"allowFiles": false,
+				"default": "bin-release",
+				"description": "The location of folder containing the output, relative to your project's folder"
+			},
+			{
+				"key": "as3.export.basename",
+				"title": "Base filename",
+				"type": "string",
+				"placeholder": "Your project's main file minus .extension"
+			},
+			{
+				"key": "as3.packaging.type",
+				"title": "Export as",
+				"type":  "enum",
+				"values": [
+					["signed-air","Signed AIR package"],
+					["signed-native","Signed native installer"],
+					["signed-captive","Signed application with captive runtime"],
+					["intermediate","Intermediate AIRI package that must be manually signed later"]
+				],
+				"default": "signed-air"
+			}
+		]
+	},
+	{
+		"title": "Digital Signature",
+		"description": "Certificate and password options for building",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.certificate",
+				"title": "Certificate",
+				"type": "path",
+				"allowFolders": false,
+				"allowFiles": true,
+				"description": "Select the .p12 to sign this build with"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"description": "@TODO Need to see how to implement a UI for this...",
+				"key": "as3.packaging.certificateCreate",
+				"resolve": "as3.packaging.certificateCreate",
+				"title": "Create Certificate",
+				"type": "command"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"key": "actionscipt.clearExportPassword",
+				"title": "Store Password",
+				"description": "@TODO Stores the password for this certificate in your Keychain",
+				"type": "command"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"key": "actionscipt.clearExportPassword",
+				"title": "Clear Password",
+				"description": "@TODO Clears the password for this certificate from your Keychain if stored",
+				"type": "command"
+			},
+			{
+				"key": "as3.packaging.timestamp",
+				"title": "Timestamp",
+				"type": "bool",
+				"default": true
+			}
+		]
+	},
+	{
+		"title": "Package Contents",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.excludedFiles",
+				"title": "Files to exclude when packaging",
+				"type": "pathArray",
+				"allowFolders": true,
+				"allowFiles": true
+			}
+		]
+	},
+	{
+		"title": "Native Extensions",
+		"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.anes",
+				"title": "Native extensions",
+				"type": "pathArray",
+				"relative": true,
+				"allowFolders": false,
+				"allowFiles": true,
+				"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package. May need to look into the \"resolve\" options to see if that's possible"
+			},
+			{
+					"key": "as3.ane.ignoreError",
+					"title": "Ignore Error",
+					"type": "boolean",
+					"default": "false"
+			},
+			{
+					"key": "as3.ane.refresh",
+					"title": "Refresh",
+					"type": "command"
+			}
+		]
+	}
+]

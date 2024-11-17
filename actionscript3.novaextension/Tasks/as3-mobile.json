@@ -1,0 +1,242 @@
+[
+	{
+		"title": "Type of ActionScript",
+		"description": "Used to determine if the project is based on Flex or AIR",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.isFlex",
+				"title": "Is Flex Based",
+				"type": "boolean",
+				"default": false
+			}
+		]
+	},
+	{
+		"title": "Run Options",
+		"description": "Used when running the project",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.applicationFile",
+				"title": "Application file",
+				"type": "path",
+				"placeholder": "If empty, default's to project's Application File",
+				"allowFolders": false,
+				"allowFiles": true,
+				"filetype": [ "as","mxml" ]
+			},
+			{
+				"key": "as3.task.launchMethod",
+				"title": "Launch method",
+				"description": "When running, how should this be launched?",
+				"type": "enum",
+				"link": "http://www.adobe.com/go/fb_device_help",
+				"default": "desktop",
+				"values": [
+					["desktop", "On desktop"],
+					["device", "On device"]
+				]
+			},
+			{
+				"key": "as3.task.device",
+				"title": "Desktop Device",
+				"description": "When launching \"On desktop\", which device display should we simulate",
+				"type": "enum",
+				"values": [
+					["480 - 720 x 480:720 x 480"],
+					["720 - 1280 x 720:1280 x 720"],
+					["1080 - 1920 x 1080:1920 x 1080"],
+					["Android: Droid - 480 x 816:480 x 854"],
+					["Android: FWQVGA - 240 x 432:240 x 432"],
+					["Android: FWΩVGA - 480 x 854:480 x 854"],
+					["Android: HVGA - 320 x 480:320 x 480"],
+					["Android: NexusOne - 480 x 762:480 x 800"],
+					["Android: QVGA - 240 x 320:240 x 320"],
+					["Android: SamsungGalaxyS - 480 x 762:480 x 800"],
+					["Android: SamsungGalaxyTab - 600 x 986:600 x 1024"],
+					["Android: WQVGA - 240 x 400:240 x 400"],
+					["Android: WVGA - 480 x 800:480 x 800"],
+					["iOS: iPad - 768 x 1004:768 x 1024"],
+					["iOS: iPadRetina - 1536 x 2008:1536 x 2048"],
+					["iOS: iPhone - 320 x 460:320 x 480"],
+					["iOS: iPhoneRetina - 640 x 920:640 x 960"],
+					["iOS: iPhone5Retina - 640 x 1096:640 x 1136"],
+					["iOS: iPhone6 - 750 x 1294:750 x 1334"],
+					["iOS: iPhone6Plus - 1242 x 2148:1242 x 2208"],
+					["iOS: iPod - 320 x 460:320 x 480"],
+					["iOS: iPodRetina - 640 x 920:640 x 960"],
+					["iOS: iPod5Retina - 640 x1096:640 x 1136"]
+				]
+			},
+			{
+				"key": "as3.task.deviceType",
+				"title": "Which type of device",
+				"description": "When launching \"On device\", which type of device to launch on",
+				"type": "enum",
+				"default": "usb",
+				"values": [
+					["usb","Debug via USB (recommened)"],
+					["network","Debug via network"]
+				]
+			},
+			{
+				"key": "as3.task.launchOnDevice",
+				"title": "Install the application on the device over USB",
+				"type": "boolean",
+				"default": true
+			},
+			{
+				"key": "as3.task.clear",
+				"title": "Clear application data on each launch",
+				"type": "boolean",
+				"default": false
+			}
+		]
+	},
+	{
+		"title": "Additional Options",
+		"description": "Some additional options that are used for generating the release build",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.commandLine",
+				"title": "Command line arguments",
+				"type": "string"
+			},
+			{
+				"key": "as3.task.mainApplicationPath",
+				"title": "Publisher ID",
+				"type": "string"
+			},
+			{
+				"key": "as3.task.profile",
+				"title": "Profile",
+				"type": "enum",
+				"default": "desktop",
+				"values": [
+					["default", "Default (first in app.xml)"],
+					["desktop", "Desktop"],
+					["extendedDesktop", "Extended Desktop"],
+					["mobileDevice", "Mobile Device"],
+					["extendedMobileDevice", "Extended Mobile Device"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Export",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.export.folder",
+				"title": "Export to folder",
+				"type": "path",
+				"relative": true,
+				"allowFolders": true,
+				"allowFiles": false,
+				"default": "bin-release",
+				"description": "The location of folder containing the output, relative to your project's folder"
+			},
+			{
+				"key": "as3.export.basename",
+				"title": "Base filename",
+				"type": "string",
+				"placeholder": "Your project's main file minus .extension"
+			},
+			{
+				"key": "as3.packaging.type",
+				"title": "Export as",
+				"type":  "enum",
+				"values": [
+					["Signed AIR package"],
+					["Signed native installer"],
+					["Signed application with captive runtime"],
+					["Intermediate AIRI package that must be manually signed later"]
+				],
+				"default": "Signed AIR package"
+			}
+		]
+	},
+	{
+		"title": "Digital Signature",
+		"description": "Certificate and password options for building",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.certificate",
+				"title": "Certificate",
+				"type": "path",
+				"allowFolders": false,
+				"allowFiles": true,
+				"description": "Select the .p12 to sign this build with"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"description": "@TODO Need to see how to implement a UI for this...",
+				"key": "as3.packaging.certificateCreate",
+				"resolve": "as3.packaging.certificateCreate",
+				"title": "Create Certificate",
+				"type": "command"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"key": "actionscipt.clearExportPassword",
+				"title": "Store Password",
+				"description": "@TODO Stores the password for this certificate in your Keychain",
+				"type": "command"
+			},
+			{
+				"comment": "@TODO Implementing Commands from Prefs",
+
+				"key": "actionscipt.clearExportPassword",
+				"title": "Clear Password",
+				"description": "@TODO Clears the password for this certificate from your Keychain if stored",
+				"type": "command"
+			}
+		]
+	},
+	{
+		"title": "Package Contents",
+		"description": "When preparing the export package, these file will be excluded from the build.",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.excludedFiles",
+				"title": "Files to exclude when packaging",
+				"type": "pathArray",
+				"allowFolders": true,
+				"allowFiles": true
+			}
+		]
+	},
+	{
+		"title": "Native Extensions",
+		"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.anes",
+				"title": "Native extensions",
+				"type": "pathArray",
+				"relative": true,
+				"allowFolders": false,
+				"allowFiles": true,
+				"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package. May need to look into the \"resolve\" options to see if that's possible"
+			},
+			{
+					"key": "as3.ane.ignoreError",
+					"title": "Ignore Error",
+					"type": "boolean",
+					"default": "false"
+			},
+			{
+					"key": "as3.ane.refresh",
+					"title": "Refresh",
+					"type": "command"
+			}
+		]
+	}
+]

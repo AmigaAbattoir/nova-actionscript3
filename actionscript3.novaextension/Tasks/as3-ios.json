@@ -1,0 +1,272 @@
+[
+	{
+		"title": "Type of ActionScript",
+		"description": "Used to determine if the project is based on Flex or AIR",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.isFlex",
+				"title": "Is Flex Based",
+				"type": "boolean",
+				"default": false
+			}
+		]
+	},
+	{
+		"title": "Run Options",
+		"description": "Used when running the project",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.applicationFile",
+				"title": "Application file",
+				"type": "path",
+				"placeholder": "If empty, default's to project's Application File",
+				"allowFolders": false,
+				"allowFiles": true,
+				"filetype": [ "as","mxml" ]
+			},
+			{
+				"key": "as3.task.launchMethod",
+				"title": "Launch method",
+				"description": "When running, how should this be launched?",
+				"type": "enum",
+				"link": "http://www.adobe.com/go/fb_device_help",
+				"default": "desktop",
+				"values": [
+					["desktop", "On desktop"],
+					["device", "On device"]
+				]
+			},
+			{
+				"key": "as3.task.device",
+				"title": "Desktop Device",
+				"description": "When launching \"On desktop\", which device display should we simulate",
+				"type": "enum",
+				"values": [
+					["Apple iPad - 1024 x 748:1024 x 748"],
+					["Apple iPhone 3GS - 480 x 300:480 x 300"],
+					["Apple iPhone 4 - 960 x 600:960 x 600"],
+					["iPhone 15 Pro Max - 1290 x 2796:1290 x 2796"],
+					["iPhone 15 Pro - 1179 x 2556:1179 x 2556"],
+					["iPhone 15 - 1170 x 2532:1170 x 2532"],
+					["iPhone 15 Plus - 1284 x 2778:1284 x 2778"],
+					["iPhone 14 Pro Max - 1290 x 2796:1290 x 2796"],
+					["iPhone 14 Pro - 1179 x 2556:1179 x 2556"],
+					["iPhone 14 - 1170 x 2532:1170 x 2532"],
+					["iPhone 14 Plus - 1284 x 2778:1284 x 2778"],
+					["iPhone SE (3rd Gen) - 750 x 1334:750 x 1334"],
+					["iPhone 13 Pro Max - 1284 x 2778:1284 x 2778"],
+					["iPhone 13 Pro - 1170 x 2532:1170 x 2532"],
+					["iPhone 13 - 1170 x 2532:1170 x 2532"],
+					["iPhone 13 Mini - 1080 x 2340:1080 x 2340"],
+					["iPad Pro 12.9\" (6th Gen) - 2048 x 2732:2048 x 2732"],
+					["iPad Pro 11\" (4th Gen) - 1668 x 2388:1668 x 2388"],
+					["iPad Air (5th Gen) - 1640 x 2360:1640 x 2360"],
+					["iPad Mini (6th Gen) - 1488 x 2266:1488 x 2266"],
+					["iPad 10th Gen - 1640 x 2360:1640 x 2360"]
+				]
+			},
+			{
+				"key": "as3.task.deviceType",
+				"title": "Which type of device",
+				"description": "When launching \"On device\", which type of device to launch on",
+				"type": "enum",
+				"default": "usb",
+				"values": [
+					["usb","Debug via USB (recommened)"],
+					["network","Debug via network"]
+				]
+			},
+			{
+				"key": "as3.task.packagingMethod",
+				"title": "Packaging method",
+				"description": "On Apple iOS, you will need to manually install and launch the application.\n\nYou will also need to configure the Digital Signature, Package Contents, and Native Extensions below!",
+				"link": "http://www.adobe.com/go/fb_ios",
+				"type": "enum",
+				"default": "standard",
+				"values": [
+					["standard","Standard (packaging takes several minutes, application performance is similar to a release build)"],
+					["fast","Fast (packaging takes several seconds, application runs significantly slower than a release build)"]
+				]
+			},
+			{
+				"key": "as3.task.launchOnDevice",
+				"title": "Install the application on the device over USB",
+				"type": "boolean",
+				"default": true
+			},
+			{
+				"key": "as3.task.clear",
+				"title": "Clear application data on each launch",
+				"type": "boolean",
+				"default": false
+			}
+		]
+	},
+	{
+		"title": "Additional Options",
+		"description": "Some additional options that are used for generating the release build. Right now, they are used, but may end up being programmatically set.",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.task.commandLine",
+				"title": "Command line arguments",
+				"type": "string"
+			},
+			{
+				"key": "as3.task.mainApplicationPath",
+				"title": "Publisher ID",
+				"type": "string"
+			},
+			{
+				"key": "as3.task.profile",
+				"title": "Profile",
+				"type": "enum",
+				"default": "default",
+				"values": [
+					["default", "Default (first in app.xml)"],
+					["mobileDevice", "Mobile Device"],
+					["extendedMobileDevice", "Extended Mobile Device"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Export",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.export.folder",
+				"title": "Export to folder",
+				"type": "path",
+				"relative": true,
+				"allowFolders": true,
+				"allowFiles": false,
+				"default": "bin-release",
+				"description": "The location of folder containing the output, relative to your project's folder"
+			},
+			{
+				"key": "as3.export.basename",
+				"title": "Base filename",
+				"type": "string",
+				"placeholder": "Your project's main file minus .extension"
+			},
+			{
+				"key": "as3.packaging.type",
+				"title": "Export as",
+				"default": "signed-air",
+				"type":  "enum",
+				"values": [
+					["signed-air","Signed AIR package"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Deployment",
+		"type": "section",
+		"children": [
+			{
+				"title": "Install and launch application on any connected devices",
+				"key": "as3.deployment.launchConnected",
+				"type": "boolean",
+				"default": true
+			},
+			{
+				"title": "Export Options:",
+				"key": "as3.deployment.options",
+				"type": "enum",
+				"default": "captive",
+				"values": [
+					["captive", "Export application with captive runtime"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Digital Signature",
+		"description": "Certificate and password options for building",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.certificate",
+				"title": "Certificate",
+				"type": "path",
+				"allowFolders": false,
+				"allowFiles": true,
+				"description": "You will need to convert your Apple iOS developer certificate into P12 format",
+				"link": "http://www.adobe.com/go/fb_ios_cert"
+			},
+			{
+				"key": "as3.packaging.provisioningFile",
+				"title": "Provisioning file",
+				"type": "path",
+				"allowFolders": false,
+				"allowFiles": true
+			},
+			{
+				"key": "as3.packaging.ios",
+				"title": "Export as",
+				"description": "Learn more about Apple iOS development",
+				"link": "http://www.adobe.com/go/fb_ios",
+				"default": "final-release",
+				"type": "enum",
+				"values": [
+					["final-release", "Final release package for Apple App Store (requires distribution provisiong profile"],
+					["ad-hoc", "Ad hoc package for limited distribution"]
+				]
+			}
+		]
+	},
+	{
+		"title": "Package Contents",
+		"description": "When preparing the export package, these file will be excluded from the build.",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.excludedFiles",
+				"title": "Files to exclude when packaging",
+				"type": "pathArray",
+				"allowFolders": true,
+				"allowFiles": true
+			}
+		]
+	},
+	{
+		"title": "Native Extensions",
+		"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.packaging.anes",
+				"title": "Native extensions",
+				"type": "pathArray",
+				"relative": true,
+				"allowFolders": false,
+				"allowFiles": true,
+				"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package. May need to look into the \"resolve\" options to see if that's possible"
+			},
+			{
+					"key": "as3.ane.ignoreError",
+					"title": "Ignore Error",
+					"type": "boolean",
+					"default": "false"
+			},
+			{
+					"key": "as3.ane.refresh",
+					"title": "Refresh",
+					"type": "command"
+			},
+			{
+				"key": "as3.ane.iosSdk",
+				"title": "Apple iOS SDK",
+				"type": "path",
+				"allowFolders": false,
+				"allowFiles": true,
+				"description": "Certain native extensions for Apple iOS require additional information from the Apple iOS SDK",
+				"link": "http://www.adobe.com/go/packaging_iOS5"
+			}
+		]
+	}
+]
