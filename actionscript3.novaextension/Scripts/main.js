@@ -415,6 +415,9 @@ class AS3MXMLLanguageServer {
 				});
 				// ------------------------------------------------------------------------
 
+
+				// @TODO, need to watch a bunch of settings to auto-generate an .asconfig file. :-(
+
 				// @TODO Can I check with initialized?
 				setTimeout(function() {
 					if(as3mxmlCodeIntelligenceReady==false) {
@@ -424,6 +427,29 @@ class AS3MXMLLanguageServer {
 
 				nova.subscriptions.add(client);
 				this.languageClient = client;
+
+				// Check if we should ask to import Flash Builder project.
+				if(nova.config.get("as3.project.importFB")) {
+					if(nova.fs.stat(nova.workspace.path + "/.project")!=undefined || nova.fs.stat(nova.workspace.path + "/.actionScriptProperties")!=undefined) {
+						let imported = nova.workspace.config.get("as3.project.importedFB");
+						if(imported!="done") {
+							nova.workspace.showActionPanel("We detected this may be a Flash Builder project. Would you like to import it to Nova? The original Flash Builder files will not be altered.", { buttons: [ "Yes","Never","Cancel"] },
+								(something) => {
+									switch(something) {
+										case 0: {
+											taskprovider.importFlashBuilderSettings();
+											break;
+										}
+										case 1: {
+											// Just mark it done
+											nova.workspace.config.set("as3.project.importedFB","done");
+										}
+									}
+								}
+							);
+						}
+					}
+				}
 			}
 			catch (err) {
 				if (nova.inDevMode()) {

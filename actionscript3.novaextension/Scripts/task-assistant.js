@@ -662,7 +662,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 		if(buildType=="airmobile") {
 			args.push("-screensize");
-			args.push(config.get("as3.task.device"));
+			args.push(config.get("as3.task.deviceToSimulate"));
 		}
 
 		console.log("CONFIG: " + profile);
@@ -986,6 +986,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				taskFile.close();
 			}
 		});
+
+		nova.workspace.config.set("as3.project.importedFB","done");
 	}
 
 	/**
@@ -1054,6 +1056,9 @@ console.log("data.type: " + data.type);
 		} else if(action==Task.Run) { //} && data.type=="actionscript") {
 			// @TODO Check if the output files are there, otherwise prompt to build
 			var profile = config.get("as3.task.profile");
+			if(profile=="default") {
+				// @TODO Find it in the XML
+			}
 
 			if(whatKind=="debug") {
 				return this.debugRun(buildType, flexSDKBase, profile, destDir, appXMLName, config);

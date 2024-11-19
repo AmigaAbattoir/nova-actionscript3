@@ -39,7 +39,7 @@
 				]
 			},
 			{
-				"key": "as3.task.device",
+				"key": "as3.task.deviceToSimulate",
 				"title": "Desktop Device",
 				"description": "When launching \"On desktop\", which device display should we simulate",
 				"type": "enum",

@@ -290,11 +290,11 @@
 			"type": "section",
 			"children": [
 				{
-					"key": "as3mxml.projectImport.prompt",
-					"title": "Automatically import Flash Builder projects",
+					"key": "as3.project.importFB",
+					"title": "Prompt to import Flash Builder projects",
 					"type": "boolean",
 					"default": true,
-					"description": "(TODO) Specifies whether to automatically import a project folder from Flash Builder when present. If disabled, you can still do this manually form the menu."
+					"description": "When specificed, this will ask if you want to import Flash Builder projects when opening a project. If disabled, or you cancel it, you can still do this manually form the menu."
 				}
 			]
 		}

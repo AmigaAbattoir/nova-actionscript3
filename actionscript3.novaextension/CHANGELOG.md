@@ -5,6 +5,7 @@
 * More work on getting AS3MXML integrated
 * Started added clips and completions
 * Make Exporting Release rely more on values in Tasks, making them different tasks per device
+* Prompts to import Flash Builder projects when opening
 
 ## Version 0.7.2
 
