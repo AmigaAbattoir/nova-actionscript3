@@ -277,7 +277,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 		let textContent = '';
 
 		while (this.currentIndex < this.xmlString.length) {
-			this.skipWhitespace();
+			//this.skipWhitespace();
 			if (this.xmlString[this.currentIndex] === '<') {
 				var lineStart = this.lineNumber;
 				if (this.xmlString[this.currentIndex + 1] === '/') {
