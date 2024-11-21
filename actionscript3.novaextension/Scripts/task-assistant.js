@@ -27,6 +27,19 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	];
 
 	/**
+	 * This is boilerplate for a task that is made by the extension
+	 * @type {Object}
+	 */
+	baseTaskJson = {
+		"extension" : {
+			"identifier" : "com.abattoirsoftware.actionscript3",
+			"name" : "ActionScript 3"
+		},
+		"extensionTemplate" : "",
+		"extensionValues": { }
+	};
+
+	/**
 	 * Clean the build directory. Basically, delete the dir then make it again.
 	 * @param {string} outputPath - Where the build folder is located.
 	 */
@@ -79,7 +92,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				if(file.indexOf(".json")!=-1) {
 					// Try to get the file as JSON
 					try {
-						taskJson = JSON.parse(this.getStringOfWorkspaceFile("/.nova/Tasks/" + file,false));
+						taskJson = JSON.parse(this.getStringOfWorkspaceFile("/.nova/Tasks/" + file));
 						// Only add thos that have an extension identifier of our extension!
 						if(taskJson["extension"]["identifier"]=="com.abattoirsoftware.actionscript3") {
 							tasks.push(file);
@@ -133,7 +146,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					// Since we have a name, let's set the last task
 					nova.workspace.config.set("as3.packaging.lastReleaseBuilt",taskFileName);
 
-					taskJson = JSON.parse(this.getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName,false));
+					taskJson = JSON.parse(this.getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName));
 					try {
 						if(taskJson["extensionTemplate"].startsWith("actionscript-air")==false) {
 							nova.workspace.showErrorMessage("Sorry, Export Release Build does not yet handle " + taskJson["extensionTemplate"] + "!");
@@ -751,10 +764,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	/**
 	 * Opens a file and dumps it into a string.
 	 * @param {string} filename - The name of the file to open, relative to the workspace
-	 * @param {boolean} trimAll - Default: true. Trims each line, and removes extra spacing (useful for pjxml and our XML files!)
 	 */
-	getStringOfWorkspaceFile(filename, trimAll = true) {
+	getStringOfWorkspaceFile(filename) {
 		var line, contents;
+		var trimAll = false; // @NOTE There once was an option because the old XML readers needed this.
 		try {
 			contents = "";
 			//console.log("Trying to open: " + nova.path.join(nova.workspace.path, filename));
@@ -781,11 +794,33 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return contents;
 	}
 
+
+	TEST_FlashOrAir() {
+		// Check ".actionScriptProperties"
+		var actionscriptPropertiesXml =new xmlToJson.ns3x2j(this.getStringOfWorkspaceFile(".actionScriptProperties"));
+
+		var buildTargets = actionscriptPropertiesXml.findNodesByName("buildTarget");
+
+		if(buildTargets.length>0) {
+			console.log("We got build targets. This is probably AIR!");
+			// Packaging, make separate tasks for it
+			buildTargets.forEach((buildTarget) => {
+				console.log("We got " + buildTarget["@"]["buildTargetName"] + "  for " + buildTarget["@"]["platformId"]);
+			});
+		} else {
+			console.log("There are no build targets. So this is probably Flash!!");
+		}
+	}
+
 	/**
 	 * Imports setting from a Flash Builder project files and adjust the workspace's settings
 	 */
 	importFlashBuilderSettings() {
-		var projectXml =  new xmlToJson.ns3x2j(this.getStringOfWorkspaceFile(".project"),false);
+		var projectXml =  new xmlToJson.ns3x2j(this.getStringOfWorkspaceFile(".project"));
+
+		console.log("Project ");
+		consoleLogObject(projectXml);
+		console.log("Project NAME? "+projectXml.getNodeChildrenByName("projectDescription","name"));
 
 		// Change project name to the Flash Builder project name:
 		nova.workspace.config.set("workspace.name",projectXml.getNodeChildrenByName("projectDescription","name").textContent);
@@ -871,123 +906,158 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// @NOTE Modules and Workers. Never used them, not sure how they get setup here.
 
-		// Packaging, make separate tasks for it
-		actionscriptPropertiesXml.findNodesByName("buildTarget").forEach((buildTarget) => {
-			var taskName = "";
-			var taskJson = {
-								"extension" : {
-									"identifier" : "com.abattoirsoftware.actionscript3",
-									"name" : "ActionScript 3"
-								},
-								"extensionTemplate" : "",
-								"extensionValues": { }
-							};
+		var buildTargets = actionscriptPropertiesXml.findNodesByName("buildTarget");
+		// If there are build targets, then we are dealing with AIR, otherwise it's Flash
+		if(buildTargets.length>0) {
+			// Packaging, make separate tasks for it
+			buildTargets.forEach((buildTarget) => {
+				var taskName = "";
+				var taskJson = this.baseTaskJson;
 
-			switch(buildTarget["@"]["buildTargetName"]) {
-				case "default": {
-					taskName = "AS3 - Default";
-					taskJson["extensionTemplate"] = "actionscript-air";
-					taskJson.extensionValues["as3.target"] = "default";
-					break;
-				}
-				case "com.adobe.flexide.multiplatform.ios.platform": {
-					taskName = "AS3 - Apple iOS";
-					taskJson["extensionTemplate"] = "actionscript-airmobile";
-					taskJson.extensionValues["as3.target"] = "ios";
-					break;
-				}
-				case "com.qnx.flexide.multiplatform.qnx.platform": {
-					taskName = "AS3 - BlackBerry Table OS";
-					taskJson["extensionTemplate"] = "actionscript-airmobile";
-					taskJson.extensionValues["as3.target"] = "blackberry";
-					console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
-					break;
-				}
-				case "com.adobe.flexide.multiplatform.android.platform": {
-					taskName = "AS3 - Google Android";
-					taskJson["extensionTemplate"] = "actionscript-airmobile";
-					taskJson.extensionValues["as3.target"] = "android";
-					break;
-				}
-				case "device": {
-					if(buildTarget["@"]["platformId"]) {
-						taskJson["extensionTemplate"] = "actionscript-airmobile";
-						switch (buildTarget["@"]["platformId"]) {
-							case "com.adobe.flexide.multiplatform.ios.platform": {
-								taskName = "AS3 - iOS Device";
-								break;
-							}
-							case "com.adobe.flexide.multiplatform.android.platform": {
-								taskName = "AS3 - Android Device";
-								break;
-							}
-							default: {
-								console.log("Uknown device type of " + buildTarget["@"]["platformId"]);
-								taskName = "AS3 - " + buildTarget["@"]["platformId"];
-								break;
-							}
-						}
-					} else {
-						taskName = "AS3 - AIR";
+				switch(buildTarget["@"]["buildTargetName"]) {
+					case "default": {
+						taskName = "AIR";
+						taskJson["extensionTemplate"] = "actionscript-air";
+						taskJson.extensionValues["as3.target"] = "default";
+						break;
 					}
-					break;
-				}
-			}
-
-			if(taskJson!={}) {
-				var airSettings = actionscriptPropertiesXml.findChildNodeByName(buildTarget["children"], "airSettings");
-			//	consoleLogObject(airSettings);
-				//console.log("airCertificatePath: " + airSettings["@"]["airCertificatePath"]);
-				if(airSettings["@"]["airCertificatePath"]!="") {
-					taskJson.extensionValues["as3.packaging.certificate"] = airSettings["@"]["airCertificatePath"];
-				}
-				//console.log("airTimestamp: " + airSettings["@"]["airTimestamp"]);
-				if(airSettings["@"]["airTimestamp"]!="") {
-					taskJson.extensionValues["as3.packaging.timestamp"] = airSettings["@"]["airTimestamp"];
-				}
-
-				// @NOTE Not sure what to do here...
-				//console.log("newLaunchParams: " + airSettings["@"]["newLaunchParams"]);
-				//console.log("modifiedLaunchParams: " + airSettings["@"]["modifiedLaunchParams"]);
-				//console.log("newPackagingParams: " + airSettings["@"]["newPackagingParams"]);
-				//console.log("modifiedPackagingParams: " + airSettings["@"]["modifiedPackagingParams"]);
-
-				var airExcludes = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "airExcludes");
-				var excludedInPackage = []
-
-				airExcludes["children"].forEach((excludes) => {
-					//console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
-					excludedInPackage.push(excludes["@"]["path"]);
-				});
-				if(excludedInPackage.length>0) {
-					taskJson.extensionValues["as3.packaging.excludedFiles"] = excludedInPackage;
-				}
-
-				var anePaths = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "anePaths");
-				var anePathsInPackage = [];
-
-			//	consoleLogObject(anePaths);
-				anePaths["children"].forEach((anePath) => {
-			//		consoleLogObject(anePath);
-					//console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
-					anePathsInPackage.push(anePath["@"]["path"]);
-				});
-				if(anePathsInPackage.length>0) {
-					taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
+					case "com.adobe.flexide.multiplatform.ios.platform": {
+						taskName = "AIR - iOS";
+						taskJson["extensionTemplate"] = "actionscript-ios";
+						taskJson.extensionValues["as3.target"] = "ios";
+						break;
+					}
+					case "com.qnx.flexide.multiplatform.qnx.platform": {
+						taskName = "AIR - BlackBerry Tablet OS";
+						taskJson["extensionTemplate"] = "actionscript-mobile";
+						taskJson.extensionValues["as3.target"] = "blackberry";
+						console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
+						break;
+					}
+					case "com.adobe.flexide.multiplatform.android.platform": {
+						taskName = "AIR - Android";
+						taskJson["extensionTemplate"] = "actionscript-android";
+						taskJson.extensionValues["as3.target"] = "android";
+						break;
+					}
+					case "device": {
+						if(buildTarget["@"]["platformId"]) {
+							taskJson["extensionTemplate"] = "actionscript-airmobile";
+							switch (buildTarget["@"]["platformId"]) {
+								case "com.adobe.flexide.multiplatform.ios.platform": {
+									taskName = "AIR - iOS";
+									break;
+								}
+								case "com.adobe.flexide.multiplatform.android.platform": {
+									taskName = "AIR - Android";
+									break;
+								}
+								default: {
+									console.log("Uknown device type of " + buildTarget["@"]["platformId"]);
+									taskName = "AIR";
+									break;
+								}
+							}
+						} else {
+							taskName = "AS3 - AIR";
+						}
+						break;
+					}
 				}
 
-				// Ensure Tasks folder is available!
-				if(nova.fs.access(nova.workspace.path + "/.nova/Tasks", nova.fs.F_OK | nova.fs.X_OK)===false) {
-					nova.fs.mkdir(nova.workspace.path + "/.nova/Tasks/");
+				if(taskJson!={}) {
+					var airSettings = actionscriptPropertiesXml.findChildNodeByName(buildTarget["children"], "airSettings");
+				//	consoleLogObject(airSettings);
+					//console.log("airCertificatePath: " + airSettings["@"]["airCertificatePath"]);
+					if(airSettings["@"]["airCertificatePath"]!="") {
+						taskJson.extensionValues["as3.packaging.certificate"] = airSettings["@"]["airCertificatePath"];
+					}
+					//console.log("airTimestamp: " + airSettings["@"]["airTimestamp"]);
+					if(airSettings["@"]["airTimestamp"]!="") {
+						taskJson.extensionValues["as3.packaging.timestamp"] = airSettings["@"]["airTimestamp"];
+					}
+
+					// @NOTE Not sure what to do here...
+					//console.log("newLaunchParams: " + airSettings["@"]["newLaunchParams"]);
+					//console.log("modifiedLaunchParams: " + airSettings["@"]["modifiedLaunchParams"]);
+					//console.log("newPackagingParams: " + airSettings["@"]["newPackagingParams"]);
+					//console.log("modifiedPackagingParams: " + airSettings["@"]["modifiedPackagingParams"]);
+
+					var airExcludes = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "airExcludes");
+					var excludedInPackage = []
+
+					airExcludes["children"].forEach((excludes) => {
+						//console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
+						excludedInPackage.push(excludes["@"]["path"]);
+					});
+					if(excludedInPackage.length>0) {
+						taskJson.extensionValues["as3.packaging.excludedFiles"] = excludedInPackage;
+					}
+
+					var anePaths = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "anePaths");
+					var anePathsInPackage = [];
+
+				//	consoleLogObject(anePaths);
+					anePaths["children"].forEach((anePath) => {
+				//		consoleLogObject(anePath);
+						//console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
+						anePathsInPackage.push(anePath["@"]["path"]);
+					});
+					if(anePathsInPackage.length>0) {
+						taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
+					}
+
+					// Ensure Tasks folder is available and then write this Task!
+					this.ensureTaskFolderIsAvailable();
+					this.writeTaskFile(taskName, taskJson);
+
 				}
+			});
+		} else {
+			// Grab boilerplate for a Task
+			var flashTaskJson = this.baseTaskJson;
+			// Change the template to the Flash one
+			flashTaskJson["extensionTemplate"] = "actionscript-flash";
 
-				var taskFile = nova.fs.open(nova.workspace.path + "/.nova/Tasks/"+taskName+".json","w");
-				taskFile.write(JSON.stringify(taskJson,null,2));
-				taskFile.close();
-			}
-		});
+			// See if there are any source file to exclude
+			var sourceExcludes = [];
+			actionscriptPropertiesXml.findNodesByName("exclude").forEach((excludeFile) => {
+				sourceExcludes.push(excludeFile["@"]["path"]);
+			});
 
+			flashTaskJson.extensionValues["as3.packaging.excludedSourceFiles"] = sourceExcludes;
+
+			// @TODO ? Do we tell the user there are source excludes. I can't figure how FB determines if it should include source or not
+			//flashTaskJson.extensionValues["as3.packaging.includeSource"] = true;
+
+			// Ensure Tasks folder is available and then write this Task!
+			this.ensureTaskFolderIsAvailable();
+			this.writeTaskFile("Flash", flashTaskJson);
+		}
+
+		// Add a value to keep track that we imported the project, so it doesn't keep asking everytime the project is opened
 		nova.workspace.config.set("as3.project.importedFB","done");
+	}
+
+	/**
+	 * Makes sure that we have  a Task folder so we can generate new tasks
+	 */
+	ensureTaskFolderIsAvailable() {
+		if(nova.fs.access(nova.workspace.path + "/.nova/Tasks", nova.fs.F_OK | nova.fs.X_OK)===false) {
+			nova.fs.mkdir(nova.workspace.path + "/.nova/Tasks/");
+		}
+	}
+
+	/**
+	 * Writes JSON for a new Task
+	 *
+	 * @param {string} taskName - The name of the Task
+	 * @param {Object} taskJson - The JSON object for the Task
+	 */
+	writeTaskFile(taskName, taskJson) {
+		var taskFile = nova.fs.open(nova.workspace.path + "/.nova/Tasks/"+taskName+".json","w");
+		taskFile.write(JSON.stringify(taskJson,null,2));
+		taskFile.close();
 	}
 
 	/**

@@ -1,29 +1,10 @@
 [
 	{
-		"title": "Type of ActionScript",
-		"description": "Used to determine if the project is based on Flex or AIR",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.task.isFlex",
-				"title": "Is Flex Based",
-				"type": "boolean",
-				"default": false
-			},
-			{
-				"key": "as3.task.useRuffle",
-				"title": "Use Ruffle for the HTML Template",
-				"type": "boolean",
-				"default": false
-			}
-		]
-	},
-	{
 		"title": "View Source",
 		"type": "section",
 		"children": [
 			{
-				"key": "as3.export.flash.includeSource",
+				"key": "as3.packaging.includeSource",
 				"title": "Enable view source",
 				"link": "https://help.adobe.com/archive/en_US/flex/mobileapps/developing_mobile_apps_flex_4.6.pdf",
 				"description": "Inlcude the source files in your exported folder. Learn how to add \"View Source\" menu item",
@@ -33,7 +14,7 @@
 			{
 				"key": "as3.packaging.excludedSourceFiles",
 				"title": "Source Files to exclude when packaging",
-				"description": "These source files will not be included when  preparing the export package, these file will be excluded from the build.",
+				"description": "These source files will *not* be included in the \"View Source\" when preparing the export the release package.",
 				"type": "pathArray",
 				"allowFolders": true,
 				"allowFiles": true

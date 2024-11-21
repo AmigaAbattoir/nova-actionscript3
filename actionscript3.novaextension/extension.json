@@ -4,7 +4,7 @@
 	"organization": "",
 	"description": "ActionScript & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
 	"version": "0.7.3",
-	"keywords": ["actionscript 3","flash","adobe air","mxml" ],
+	"keywords": ["actionscript 3","flash","air","adobe air","mxml" ],
 	"categories": [
 		"issues",
 		"languages",
@@ -62,7 +62,7 @@
 
 	"taskTemplates": {
 		"actionscript-flash": {
-			"name": "AS3 - Flash",
+			"name": "Flash",
 			"image": "Adobe_Flash_Player_SVG.svg.png",
 			"description": "Build and run a Flash or Flex project.",
 			"persistent": true,
@@ -83,7 +83,7 @@
 			"config": "Tasks/as3-flash.json"
 		},
 		"actionscript-air": {
-			"name": "AS3 - AIR",
+			"name": "AIR",
 			"image": "Adobe_AIR_logo.svg.png",
 			"description": "Build and run AS3 or MXML project with AIR for desktops.",
 			"persistent": true,
@@ -104,7 +104,7 @@
 			"config": "Tasks/as3-air.json"
 		},
 		"actionscript-android": {
-			"name": "AS3 - Android Mobile",
+			"name": "AIR - Android",
 			"image": "Android-Adobe_AIR_logo.svg.png",
 			"description": "Build and run AS3 or MXML project with AIR for Android devices.",
 			"persistent": true,
@@ -124,7 +124,7 @@
 			"config": "Tasks/as3-android.json"
 		},
 		"actionscript-ios": {
-			"name": "AS3 - iOS",
+			"name": "AIR - iOS",
 			"image": "iOS-Adobe_AIR_logo.svg.png",
 			"description": "Build and run AS3 or MXML project with AIR for iOS devices.",
 			"persistent": true,
@@ -147,7 +147,7 @@
 		"actionscript-airmobile": {
 			"COMMENT": "Probably not needed now since we're using separate iOS and Android files.",
 			"deprecated": "Please select either the \"AS3 - iOS\" or \"AS3 - Android\" task!",
-			"name": "AS3 - Mobile",
+			"name": "AIR - Mobile",
 			"image": "Adobe Device Central.png",
 			"description": "Build and run AS3 or MXML project with AIR for mobile.",
 			"persistent": true,
@@ -758,7 +758,9 @@
 			{"separator": true},
 			{
 				"title": "Import FlashBuilder settings",
-				"command": "actionscipt.importFBSettings"
+				"command": "actionscipt.importFBSettings",
+				"when": "hasProjectAndASProperties"
+
 			},
 			{"separator": true},
 			{
@@ -773,6 +775,10 @@
 			{
 				"title": "AAA",
 				"command": "actionscipt.clearExportPassword"
+			},
+			{
+				"title": "Test Flash or AIR",
+				"command": "as3.testflashorair"
 			}
 		]
 	}

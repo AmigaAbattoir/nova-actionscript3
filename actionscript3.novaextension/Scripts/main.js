@@ -5,29 +5,39 @@ const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-u
 var langserver = null;
 var taskprovider = null;
 
+/**
+ * Extension context variables.
+ * Remmember to  us `nova.workspace.context.set()` when changing them so we can update the menu options.
+ */
+
+// Keeps track if the as3mxml is ready to do code intelligence.
 var as3mxmlCodeIntelligenceReady = false;
 
+// Keeps track if we have a .project file and .actionScriptProperties file. If so, Import Flash Builder can happen.
+var hasProjectAndASProperties = false;
 
+/**
+ * WHen the Extension is activated
+ */
 exports.activate = function() {
-
-
-
-nova.commands.register("as3.packaging.certificateCreate", (workspace) => {
-	return new Promise((resolve) => {
-		console.log("Called... as3.packaging.certificateCreate");
-		showNotification("Create Certificate", "Still need to do...");
-		nova.workspace.showErrorMessage("Create Certificate", "Still need to do...");
+	nova.commands.register("as3.packaging.certificateCreate", (workspace) => {
+		return new Promise((resolve) => {
+			console.log("Called... as3.packaging.certificateCreate");
+			showNotification("Create Certificate", "Still need to do...");
+			nova.workspace.showErrorMessage("Create Certificate", "Still need to do...");
+		});
 	});
-});
 
-nova.commands.register("actionscipt.clearExportPassword", (workspace) => {
-	return new Promise((resolve) => {
-		nova.workspace.showErrorMessage("Clear Password", "Still need to do...");
-		showNotification("Clear Password", "Still need to do...");
+	nova.commands.register("actionscipt.clearExportPassword", (workspace) => {
+		return new Promise((resolve) => {
+			nova.workspace.showErrorMessage("Clear Password", "Still need to do...");
+			showNotification("Clear Password", "Still need to do...");
+		});
 	});
-});
 
-
+	nova.commands.register("as3.testflashorair", (workspace) => {
+		taskprovider.TEST_FlashOrAir();
+	});
 
 	taskprovider = new ActionScript3TaskAssistant();
 
@@ -43,7 +53,23 @@ nova.commands.register("actionscipt.clearExportPassword", (workspace) => {
 	});
 
 	nova.commands.register("actionscipt.importFBSettings",() => {
-		taskprovider.importFlashBuilderSettings();
+		if(hasProjectAndASProperties) {
+			let imported = nova.workspace.config.get("as3.project.importedFB");
+			if(imported=="done") {
+				nova.workspace.showActionPanel("It looks like Flash Builder project settings were already imported. Click yes if you want to overwrite the existing import.", { buttons: [ "Yes","Cancel"] },
+					(result) => {
+						switch(result) {
+							case 0: {
+								taskprovider.importFlashBuilderSettings();
+								break;
+							}
+						}
+					}
+				);
+			} else {
+				taskprovider.importFlashBuilderSettings();
+			}
+		}
 	});
 
 	nova.commands.register("actionscipt.clearExportPassword",() => {
@@ -102,12 +128,15 @@ nova.commands.register("actionscipt.clearExportPassword", (workspace) => {
 
 	nova.commands.register("as3mxml.restart", (editor) => {
 		langserver.stop();
+
+		// Extension context varaible reset
 		as3mxmlCodeIntelligenceReady = false;
 		nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
+		hasProjectAndASProperties = false;
+		nova.workspace.context.set("hasProjectAndASProperties", hasProjectAndASProperties);
+
 		langserver = new AS3MXMLLanguageServer();
 	});
-
-
 
 /*
 	if (nova.inDevMode()) {
@@ -431,6 +460,8 @@ class AS3MXMLLanguageServer {
 				// Check if we should ask to import Flash Builder project.
 				if(nova.config.get("as3.project.importFB")) {
 					if(nova.fs.stat(nova.workspace.path + "/.project")!=undefined || nova.fs.stat(nova.workspace.path + "/.actionScriptProperties")!=undefined) {
+						hasProjectAndASProperties = true;
+						nova.workspace.context.set("hasProjectAndASProperties", hasProjectAndASProperties);
 						let imported = nova.workspace.config.get("as3.project.importedFB");
 						if(imported!="done") {
 							nova.workspace.showActionPanel("We detected this may be a Flash Builder project. Would you like to import it to Nova? The original Flash Builder files will not be altered.", { buttons: [ "Yes","Never","Cancel"] },
@@ -450,8 +481,7 @@ class AS3MXMLLanguageServer {
 						}
 					}
 				}
-			}
-			catch (err) {
+			} catch (err) {
 				if (nova.inDevMode()) {
 					console.error(" *** CAUGHT AN ERROR!!!" + err + " .... " + JSON.stringify(err) + " ***");
 				}
