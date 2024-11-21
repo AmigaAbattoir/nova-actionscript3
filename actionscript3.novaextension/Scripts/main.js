@@ -28,7 +28,7 @@ exports.activate = function() {
 		});
 	});
 
-	nova.commands.register("actionscipt.clearExportPassword", (workspace) => {
+	nova.commands.register("as3.clearExportPassword", (workspace) => {
 		return new Promise((resolve) => {
 			nova.workspace.showErrorMessage("Clear Password", "Still need to do...");
 			showNotification("Clear Password", "Still need to do...");
@@ -47,12 +47,12 @@ exports.activate = function() {
 	langserver = new AS3MXMLLanguageServer();
 
 	//                                          [ Nova stuff...                     ][ Our params to pass]
-	nova.commands.register("actionscript.clean",(workspace, workspacePath, sourcePath, outputPath) => {
+	nova.commands.register("as3.clean",(workspace, workspacePath, sourcePath, outputPath) => {
 		//                [ Nova stuff ..           ][ Our params]
 		taskprovider.clean(workspacePath, sourcePath, outputPath);
 	});
 
-	nova.commands.register("actionscipt.importFBSettings",() => {
+	nova.commands.register("as3.importFlashBuilderSettings",() => {
 		if(hasProjectAndASProperties) {
 			let imported = nova.workspace.config.get("as3.project.importedFB");
 			if(imported=="done") {
@@ -72,7 +72,7 @@ exports.activate = function() {
 		}
 	});
 
-	nova.commands.register("actionscipt.clearExportPassword",() => {
+	nova.commands.register("as3.clearExportPassword",() => {
 		var projectUUID =  nova.workspace.config.get("as3.application.projectUUID");
 		try {
 			nova.credentials.removePassword(projectUUID,"release-build");
@@ -82,12 +82,12 @@ exports.activate = function() {
 		}
 	});
 
-	nova.commands.register("actionscipt.exportRelease",() => {
+	nova.commands.register("as3.exportRelease",() => {
 		taskprovider.packageBuild();
 	});
 
-	nova.commands.register("actionscript3.paneltest", (editor) => {
-		if (nova.inDevMode()) { console.log("Called... actionscript3.paneltest"); }
+	nova.commands.register("as3.paneltest", (editor) => {
+		if (nova.inDevMode()) { console.log("Called... as3.paneltest"); }
 
 		/*
 		// Lookie at https://docs.nova.app/api-reference/workspace/#showinputpalettemessage-options-callback
@@ -124,9 +124,9 @@ exports.activate = function() {
 		*/
 	});
 
-	nova.commands.register("actionscipt.as3reference",() => { nova.openURL("https://airsdk.dev/reference"); });
+	nova.commands.register("as3.as3reference",() => { nova.openURL("https://airsdk.dev/reference"); });
 
-	nova.commands.register("as3mxml.restart", (editor) => {
+	nova.commands.register("as3.restart", (editor) => {
 		langserver.stop();
 
 		// Extension context varaible reset
@@ -164,7 +164,7 @@ class AS3MXMLLanguageServer {
 	constructor() {
 		// Observe the configuration setting for the server's location, and restart the server on change
 		/*
-		nova.config.observe('as3mxml.language-server-path', function(path) {
+		nova.config.observe('as3.languageServer.path', function(path) {
 			this.start(path);
 		}, this);
 		*/
@@ -221,8 +221,8 @@ class AS3MXMLLanguageServer {
 			args.push("-Dapple.awt.UIElement=true");
 
 			// If different JVMArgs...
-			if(getWorkspaceOrGlobalConfig("as3mxml.languageServer.jvmargs")!=null) {
-				var jvmArgs = getWorkspaceOrGlobalConfig("as3mxml.languageServer.jvmargs").split(" ");
+			if(getWorkspaceOrGlobalConfig("as3.languageServer.jvmargs")!=null) {
+				var jvmArgs = getWorkspaceOrGlobalConfig("as3.languageServer.jvmargs").split(" ");
 				jvmArgs.forEach((jvmArg) => {
 					args.push(jvmArg);
 				});
@@ -258,8 +258,8 @@ class AS3MXMLLanguageServer {
 			// Launch the server
 			// First, use the default Mac Java path, or if there is a config setting for it:
 			var javaPath = "/usr/bin/java";
-			if(getWorkspaceOrGlobalConfig("as3mxml.java.path")!=null) {
-				javaPath = getWorkspaceOrGlobalConfig("as3mxml.java.path");
+			if(getWorkspaceOrGlobalConfig("as3.java.path")!=null) {
+				javaPath = getWorkspaceOrGlobalConfig("as3.java.path");
 			}
 
 			// Prepare server options (Executable in VSCode talk...)
@@ -427,20 +427,20 @@ class AS3MXMLLanguageServer {
 
 				// ------------------------------------------------------------------------
 				// Configuration Change Handlers
-				nova.config.onDidChange("as3mxml.languageServer.jvmargs", (editor) => {
+				nova.config.onDidChange("as3.languageServer.jvmargs", (editor) => {
 					if (nova.inDevMode()) {
 						console.log("Configuration changed... Restart LSP with new JVMArgs");
 					}
 					showNotification("Config Change", "JVM Args changed. Restarting Server!");
-					nova.commands.invoke("as3mxml.restart");
+					nova.commands.invoke("as3.restart");
 				});
 
-				nova.config.onDidChange("as3mxml.sdk.framework", (editor) => {
+				nova.config.onDidChange("as3.sdk.framework", (editor) => {
 					if (nova.inDevMode()) {
 						console.log("Configuration changed... Different SDK for project");
 					}
 					showNotification("Config Change", "SDK Changed. Restarting Server!");
-					nova.commands.invoke("as3mxml.restart");
+					nova.commands.invoke("as3.restart");
 				});
 				// ------------------------------------------------------------------------
 

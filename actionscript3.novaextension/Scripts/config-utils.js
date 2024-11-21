@@ -34,14 +34,14 @@ exports.isWorkspace = function() {
 
 exports.determineFlexSDKBase = function() {
 	// Check if user setup the location of the SDK for this project
-	var flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3mxml.sdk.framework");
+	var flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3.sdk.framework");
 	if(flexSDKBase!=null && flexSDKBase.charAt(0)=="~") {
 		flexSDKBase = nova.path.expanduser(flexSDKBase);
 	}
 
 	// Since we can't use user's SDK location, try default
 	if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
-		flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3mxml.sdk.default");
+		flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3.sdk.default");
 		if(flexSDKBase.charAt(0)=="~") {
 			flexSDKBase = nova.path.expanduser(flexSDKBase);
 		}
@@ -62,8 +62,8 @@ exports.determineFlexSDKBase = function() {
 		}
 	}
 
-	//console.log("Setting as3mxml.sdk.framework:    " + exports.getWorkspaceOrGlobalConfig("as3mxml.sdk.framework"));
-	//console.log("Setting as3mxml.sdk.default:      " + exports.getWorkspaceOrGlobalConfig("as3mxml.sdk.default"));
+	//console.log("Setting as3.sdk.framework:    " + exports.getWorkspaceOrGlobalConfig("as3.sdk.framework"));
+	//console.log("Setting as3.sdk.default:      " + exports.getWorkspaceOrGlobalConfig("as3.sdk.default"));
 	//console.log("Setting as3.compiler.useDefault:  " + exports.getWorkspaceOrGlobalConfig("as3.compiler.useDefault"));
 	//console.log("Setting as3.compiler.specificSdk: " + exports.getWorkspaceOrGlobalConfig("as3.compiler.specificSdk"));
 	//console.log("Using flexSDKBase: " + flexSDKBase);

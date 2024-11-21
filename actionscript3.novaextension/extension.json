@@ -38,13 +38,8 @@
 		"onCommand:as3mxml.sortImportsInUri",
 		"onCommand:as3mxml.saveSessionPassword",
 		"onCommand:as3mxml.selectWorkspaceSDK",
-		"onCommand:as3mxml.restartServer",
-		"onCommand:as3mxml.importFlashBuilderProject",
-		"onCommand:as3mxml.importFlashDevelopProject",
-		"onCommand:as3mxml.quickCompile",
-		"onCommand:as3mxml.quickCompileAndDebug",
-		"onCommand:as3mxml.quickCompileAndRun",
 		"onCommand:as3mxml.getActiveProjectURIs",
+
 		"onCommand:as3.packaging.certificateCreate"
 	],
 
@@ -175,7 +170,7 @@
 			"type": "section",
 			"children": [
 				{
-					"key": "as3mxml.java.path",
+					"key": "as3.java.path",
 					"title": "Java Path",
 					"type": "path",
 					"placeholder": "/usr/bin/java",
@@ -188,7 +183,7 @@
 			"type": "section",
 			"children": [
 				{
-					"key": "as3mxml.sdk.default",
+					"key": "as3.sdk.default",
 					"title": "Default AIR SDK path",
 					"allowFolders": true,
 					"allowFiles": false,
@@ -196,7 +191,7 @@
 					"default": "~/Applications/AIRSDK/"
 				},
 				{
-					"key": "as3mxml.sdk.searchPaths",
+					"key": "as3.sdk.searchPaths",
 					"title": "SDK Search Paths",
 					"allowFolders": true,
 					"allowFiles": false,
@@ -206,20 +201,29 @@
 
 				},
 				{
-					"key": "as3mxml.sdk.animate",
+					"key": "as3.sdk.animate",
 					"title": "Adobe Animate executable",
 					"type": "path",
 					"placeholder": "",
 					"description": "Specifies the absolute path of the Adobe Animate executable"
 				},
 				{
-					"key": "as3mxml.sdk.editor",
+					"key": "as3.sdk.editor",
 					"title": "Editor SDK path",
 					"type": "path",
 					"allowFolders": true,
 					"allowFiles": false,
 					"default": "~/Applications/AIRSDK/",
-					"description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set as3mxml.sdk.framework instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the as3mxml.sdk.editor setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
+					"description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set `as3.sdk.framework` instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the `as3.sdk.editor` setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
+				},
+				{
+					"key": "as3.sdk.ios",
+					"title": "iOS SDK path",
+					"type": "path",
+					"allowFolders": true,
+					"allowFiles": false,
+					"placeholder": "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS##.#.sdk",
+					"description": "For some ANEs in iOS, you will need to specify the iOS SDK to compile them. You can run from terminal `xcrun --sdk iphoneos --show-sdk-path` to get the paths. Or maybe someday I can make this \"resolve\" that as a drop down."
 				}
 			]
 		},
@@ -228,7 +232,7 @@
 			"type": "section",
 			"children": [
 				{
-					"key": "as3mxml.language-server-path",
+					"key": "as3.languageServer.path",
 					"title": "Language Server Path",
 					"type": "path",
 					"allowFolders": true,
@@ -237,14 +241,14 @@
 					"description": "Path to the AS3MXML LSP, if blank, it will used the bundled LSP."
 				},
 				{
-					"key": "as3mxml.languageServer.jvmargs",
+					"key": "as3.languageServer.jvmargs",
 					"title": "JVM Args",
 					"type": "string",
 					"placeholder": "-Xms512m -Xmx1024m",
 					"description": "(Advanced) Specifies extra arguments that asconfigc will pass to the Java virtual machine when launching the language server (code intelligence).\n\nThe following example customizes the Java memory heap size for the code intelligence: \"-Xms512m -Xmx1024m\""
 				},
 				{
-					"key": "as3mxml.languageServer.concurrentRequests",
+					"key": "as3.languageServer.concurrentRequests",
 					"title": "Concurrent Requests",
 					"type": "bool",
 					"default": true,
@@ -336,7 +340,7 @@
 							"type": "command"
 						},
 						{
-							"key": "actionscipt.clearExportPassword",
+							"key": "as3.clearExportPassword",
 							"title": "Clear",
 							"type": "command"
 						}
@@ -739,33 +743,33 @@
 		"extensions": [
 			{
 				"title": "Restart AS3MXML LSP",
-				"command": "as3mxml.restart"
+				"command": "as3.restart"
 			},
 			{"separator": true},
 			{
 				"title": "Export Release Build...",
-				"command": "actionscipt.exportRelease"
+				"command": "as3.exportRelease"
 			},
 			{
 				"title": "Clear Certifcate Password",
-				"command": "actionscipt.clearExportPassword"
+				"command": "as3.clearExportPassword"
 			},
 			{"separator": true},
 			{
 				"title": "Test UI",
-				"command": "actionscript3.paneltest"
+				"command": "as3.paneltest"
 			},
 			{"separator": true},
 			{
 				"title": "Import FlashBuilder settings",
-				"command": "actionscipt.importFBSettings",
+				"command": "as3.importFlashBuilderSettings",
 				"when": "hasProjectAndASProperties"
 
 			},
 			{"separator": true},
 			{
 				"title": "AIR / ActionScript 3 Reference",
-				"command": "actionscipt.as3reference"
+				"command": "as3.as3reference"
 			},
 			{"separator": true},
 			{
@@ -774,7 +778,7 @@
 			},
 			{
 				"title": "AAA",
-				"command": "actionscipt.clearExportPassword"
+				"command": "as3.clearExportPassword"
 			},
 			{
 				"title": "Test Flash or AIR",

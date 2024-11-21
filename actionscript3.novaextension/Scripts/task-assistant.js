@@ -1136,7 +1136,7 @@ console.log("data.type: " + data.type);
 				return this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 			}
 		} else if(action==Task.Clean) {
-			return new TaskCommandAction("actionscript.clean", { args: [destDir] });
+			return new TaskCommandAction("as3.clean", { args: [destDir] });
 		}
 	}
 }
