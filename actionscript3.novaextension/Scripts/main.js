@@ -320,6 +320,34 @@ class AS3MXMLLanguageServer {
 					showNotification("ActionScript 3", "LSP Initialized! What now...");
 				});
 
+				// Get the search paths for as3mxml
+				var sdkSearchPath = [];
+				if(getWorkspaceOrGlobalConfig("as3.sdk.searchPaths")!=null) {
+					sdkSearchPath = getWorkspaceOrGlobalConfig("as3.sdk.searchPaths");
+				}
+
+				// get the editor sdk path for as3mxml if set
+				var editorSdk = null;
+				if(getWorkspaceOrGlobalConfig("as3.sdk.editor")!=null) {
+					editorSdk = getWorkspaceOrGlobalConfig("as3.sdk.editor");
+				}
+
+				// get the animate sdk path for as3mxml if set
+				var animateSdk = null;
+				if(getWorkspaceOrGlobalConfig("as3.sdk.animate")!=null) {
+					animateSdk = getWorkspaceOrGlobalConfig("as3.sdk.animate");
+					if(animateSdk.trim()=="") {
+						animateSdk = null;
+					}
+				}
+
+				var langServerJVArgs = null;
+				if(getWorkspaceOrGlobalConfig("as3.languageServer.jvmargs")!=null) {
+					langServerJVArgs = getWorkspaceOrGlobalConfig("as3.languageServer.jvmargs");
+				}
+
+				var concurrentRequest = getWorkspaceOrGlobalConfig("as3.languageServer.concurrentRequests");
+
 				// Send Change workspace config slightly after startup
 				// Ideally, it should be onNotification("initialized")...
 				setTimeout(function() {
@@ -328,41 +356,31 @@ class AS3MXMLLanguageServer {
 						settings: {
 							as3mxml: {
 								sdk: {
-									framework: "/Applications/Apache Flex/SDKs/4.16.1-AIR32",
-									searchPaths: [
-										"/Applications/Apache Flex/SDKs/4.16.1-AIR32/bin/",
-										"/Applications/Apache Flex/SDKs/4.16.1-AIR32/bin",
-										"/Applications/Apache Flex/SDKs"
-									],
-									editor: null,
-									animate: null
+									framework: flexSDKBase,
+									searchPaths: sdkSearchPath,
+									editor: editorSdk,
+									animate: animateSdk
 								},
 								problems: {
 									realTime: true,
 									showFileOutsideSourcePath: true
 								},
-								projectImport: {
-									prompt: true
-								},
+								projectImport: { prompt: false },
 								asconfigc: {
 									useBundled: true,
 									verboseOutput: true,
 									jvmargs: null
 								},
-								quickCompile: {
-									enabled: true
-								},
+								quickCompile: { enabled: false },
 								languageServer: {
-									jvmargs: null,
-									concurrentRequests: false
+									jvmargs: langServerJVArgs,
+									concurrentRequests: concurrentRequest
 								},
-								java: {
-									path: "/usr/bin/"
-								},
+								java: { path: javaPath.slice(0, -5) },
 								codeGeneration: {
 									getterSetter: {
 										forcePublicFunctions: false,
-										fforcePrivateVariable: true
+										forcePrivateVariable: true
 									}
 								},
 								sources: {
@@ -388,9 +406,7 @@ class AS3MXMLLanguageServer {
 									placeOpenBraceOnNewLine: null,
 									semicolons: null
 								},
-								lint: {
-									enabled: false
-								}
+								lint: { enabled: false }
 							}
 						}
 					};
@@ -424,26 +440,6 @@ class AS3MXMLLanguageServer {
 					as3mxmlCodeIntelligenceReady = true;
 					nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
 				});
-
-				// ------------------------------------------------------------------------
-				// Configuration Change Handlers
-				nova.config.onDidChange("as3.languageServer.jvmargs", (editor) => {
-					if (nova.inDevMode()) {
-						console.log("Configuration changed... Restart LSP with new JVMArgs");
-					}
-					showNotification("Config Change", "JVM Args changed. Restarting Server!");
-					nova.commands.invoke("as3.restart");
-				});
-
-				nova.config.onDidChange("as3.sdk.framework", (editor) => {
-					if (nova.inDevMode()) {
-						console.log("Configuration changed... Different SDK for project");
-					}
-					showNotification("Config Change", "SDK Changed. Restarting Server!");
-					nova.commands.invoke("as3.restart");
-				});
-				// ------------------------------------------------------------------------
-
 
 				// @TODO, need to watch a bunch of settings to auto-generate an .asconfig file. :-(
 
@@ -481,6 +477,29 @@ class AS3MXMLLanguageServer {
 						}
 					}
 				}
+
+				// ------------------------------------------------------------------------
+				// Configuration Change Handlers
+				var configsThatTriggersRestart = [
+					"as3.java.path", "as3.sdk.default", "as3.sdk.searchPaths", "as3.sdk.animate", "as3.sdk.editor",
+					"as3.languageServer.path", "as3.languageServer.jvmargs", "as3.languageServer.concurrentRequests"
+				]
+
+				/* // @NOTE, Once it's changed, this is called over and over again... oops
+				configsThatTriggersRestart.forEach((config) => {
+					nova.config.onDidChange(config, (editor) => {
+						if (nova.inDevMode()) {
+							console.log("Configuration " + config + " changed... Restart LSP with new args " + getWorkspaceOrGlobalConfig(config));
+						}
+
+						nova.config.onDidChange(config, (editor) => null );
+
+						showNotification("Config Change", "The config " + config + " changed. Restarting Server!");
+						nova.commands.invoke("as3.restart");
+					});
+				});
+				*/
+				// ------------------------------------------------------------------------
 			} catch (err) {
 				if (nova.inDevMode()) {
 					console.error(" *** CAUGHT AN ERROR!!!" + err + " .... " + JSON.stringify(err) + " ***");
