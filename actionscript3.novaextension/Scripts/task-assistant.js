@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange } = require("./nova-utils.js");
+const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange, getStringOfWorkspaceFile } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT } = require("./as3-utils.js");
 
@@ -92,7 +92,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				if(file.indexOf(".json")!=-1) {
 					// Try to get the file as JSON
 					try {
-						taskJson = JSON.parse(this.getStringOfWorkspaceFile("/.nova/Tasks/" + file));
+						taskJson = JSON.parse(getStringOfWorkspaceFile("/.nova/Tasks/" + file));
 						// Only add thos that have an extension identifier of our extension!
 						if(taskJson["extension"]["identifier"]=="com.abattoirsoftware.actionscript3") {
 							tasks.push(file);
@@ -146,7 +146,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					// Since we have a name, let's set the last task
 					nova.workspace.config.set("as3.packaging.lastReleaseBuilt",taskFileName);
 
-					taskJson = JSON.parse(this.getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName));
+					taskJson = JSON.parse(getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName));
 					try {
 						if(taskJson["extensionTemplate"].startsWith("actionscript-air")==false) {
 							nova.workspace.showErrorMessage("Sorry, Export Release Build does not yet handle " + taskJson["extensionTemplate"] + "!");
@@ -761,43 +761,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		});
 	}
 
-	/**
-	 * Opens a file and dumps it into a string.
-	 * @param {string} filename - The name of the file to open, relative to the workspace
-	 */
-	getStringOfWorkspaceFile(filename) {
-		var line, contents;
-		var trimAll = false; // @NOTE There once was an option because the old XML readers needed this.
-		try {
-			contents = "";
-			//console.log("Trying to open: " + nova.path.join(nova.workspace.path, filename));
-			var file = nova.fs.open(nova.path.join(nova.workspace.path, filename));
-			if(file) {
-				do {
-					line = file.readline();
-					if(line!=null) {
-						if(trimAll) {
-							line = line.trim();
-						}
-						contents += line;
-					}
-				} while(line && line.length>0);
-			}
-
-			if(trimAll) {
-				contents = contents.replace((/  |\r\n|\n|\r/gm),"");  // contents.replace(/(\r\n|\n|\r)/gm,"")
-			}
-		} catch(error) {
-			console.log("*** ERROR: Could not open file " + nova.path.join(nova.workspace.path, filename) + " for reading. ***");
-			return null;
-		}
-		return contents;
-	}
-
-
 	TEST_FlashOrAir() {
 		// Check ".actionScriptProperties"
-		var actionscriptPropertiesXml =new xmlToJson.ns3x2j(this.getStringOfWorkspaceFile(".actionScriptProperties"));
+		var actionscriptPropertiesXml = new xmlToJson.ns3x2j(getStringOfWorkspaceFile(".actionScriptProperties"));
 
 		var buildTargets = actionscriptPropertiesXml.findNodesByName("buildTarget");
 
@@ -816,7 +782,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * Imports setting from a Flash Builder project files and adjust the workspace's settings
 	 */
 	importFlashBuilderSettings() {
-		var projectXml =  new xmlToJson.ns3x2j(this.getStringOfWorkspaceFile(".project"));
+		var projectXml =  new xmlToJson.ns3x2j(getStringOfWorkspaceFile(".project"));
 
 		console.log("Project ");
 		consoleLogObject(projectXml);
@@ -832,7 +798,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// Check if there is a ".flexProperties"
 		// @NOTE Not sure what else we would need from this file
 		var isFlex = false;
-		var flexProperties = this.getStringOfWorkspaceFile(".flexProperties");
+		var flexProperties = getStringOfWorkspaceFile(".flexProperties");
 		if(flexProperties!=null) {
 //			var flexPropertiesXml = pjXML.parse(flexProperties);
 			/** @NOTE Not sure we need to check any values, but if it's there, it's MXML vs AS3 project! */
@@ -848,7 +814,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		}
 
 		// Check ".actionScriptProperties"
-		var actionscriptPropertiesXml =new xmlToJson.ns3x2j(this.getStringOfWorkspaceFile(".actionScriptProperties"));
+		var actionscriptPropertiesXml = new xmlToJson.ns3x2j(getStringOfWorkspaceFile(".actionScriptProperties"));
 
 		var mainApplicationPath = actionscriptPropertiesXml.getAttributeFromNodeByName("actionScriptProperties","mainApplicationPath");
 		nova.workspace.config.set("as3.application.mainApp",mainApplicationPath);

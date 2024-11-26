@@ -1,5 +1,6 @@
+const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant } = require("./task-assistant.js");
-const { showNotification, consoleLogObject, rangeToLspRange } = require("./nova-utils.js");
+const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
 
 var langserver = null;
@@ -16,8 +17,15 @@ var as3mxmlCodeIntelligenceReady = false;
 // Keeps track if we have a .project file and .actionScriptProperties file. If so, Import Flash Builder can happen.
 var hasProjectAndASProperties = false;
 
+// Keeps track of the version of the AIRSDK
+var currentAIRSDKVersion = 0;
+
+// @TODO Use later to validate SWF version for Flash builds and for ANEs
+var currentAIRAppVersions = [];
+var currentAIRExtensionNamespaces = [];
+
 /**
- * WHen the Extension is activated
+ * When the Extension is activated
  */
 exports.activate = function() {
 	nova.commands.register("as3.packaging.certificateCreate", (workspace) => {
@@ -185,6 +193,42 @@ class AS3MXMLLanguageServer {
 		this.stop();
 	}
 
+
+	getAIRSDKInfo(flexSDKBase) {
+		currentAIRSDKVersion = 0;
+		currentAIRAppVersions = [];
+		currentAIRExtensionNamespaces = [];
+
+		// Grab the airsdk.xml to check for version nymbers
+		var airSDKInfo = getStringOfFile(nova.path.join(flexSDKBase,"airsdk.xml"));
+		// If it's not empty, let's parse it from XML and convert it to JSON for easier reference
+		if(airSDKInfo!="") {
+			var airSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
+
+			var currentNS = airSDKXML.getAttributeFromNodeByName("airSdk","xmlns");
+			// break into chunks on "/" and then get the last item for the version number
+			currentAIRSDKVersion = parseFloat(currentNS.split("/").pop());
+
+			// Used to keep track of what the minimun SWF version is for each descriptor namespace
+			var appVersions = airSDKXML.getNodeChildrenByName("applicationNamespaces", "versionMap");
+			appVersions.forEach((appVersion) => {
+				currentAIRAppVersions.push({
+					"descriptorNamespace": airSDKXML.findChildNodeByName(appVersion["children"], "descriptorNamespace")["textContent"],
+					"swfVersion": parseInt(airSDKXML.findChildNodeByName(appVersion["children"], "swfVersion")["textContent"])
+				});
+			});
+
+			// Used to keep track of what the minimun SWF version is for ANEs
+			var extensionNamespaces = airSDKXML.getNodeChildrenByName("extensionNamespaces", "versionMap");
+			extensionNamespaces.forEach((extensionNamespaces) => {
+				currentAIRExtensionNamespaces.push({
+					"descriptorNamespace": airSDKXML.findChildNodeByName(extensionNamespaces["children"], "descriptorNamespace")["textContent"],
+					"swfVersion": parseInt(airSDKXML.findChildNodeByName(extensionNamespaces["children"], "swfVersion")["textContent"])
+				});
+			});
+		}
+	}
+
 	start(path) {
 		if (nova.inDevMode()) {
 			console.log("--- AS3MXML Start(path)-----------------------------------------------------");
@@ -214,6 +258,9 @@ class AS3MXMLLanguageServer {
 			console.log("flexSDKBase accessable? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
 			nova.workspace.showErrorMessage("Configure AIR SDK!\n\nIn order to use this extension you will need to have installed a FlexSDK. Please set the location of \"Default AIR SDK\" in the extension preferences!")
 		} else {
+			// Keep track of what AIRSDK we're using
+			this.getAIRSDKInfo(flexSDKBase);
+
 			// Create the client
 			var args = new Array;
 
