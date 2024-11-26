@@ -397,7 +397,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	 * @param {string} nodeName - The name of the node to find
 	 * @returns {Array} - Returns an array with a line and column where that node appear.
 	 */
-	 getNodePositionsByName(nodeName) {
+	getNodePositionsByName(nodeName) {
 		const nodes = this.findNodesByName(nodeName);
 		if (nodes.length > 0) {
 			return nodes.map(node => ({
@@ -434,11 +434,14 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	 * @returns {Object|Array|null} - The matching node, an array of matching nodes, or null if no match is found.
 	 */
 	findChildNodeByName(children, childName) {
-		const matchingChildren = children.filter(child => child.name === childName);
-		if (matchingChildren.length === 0) {
-			return null;
+		if(children!=null) {
+			const matchingChildren = children.filter(child => child.name === childName);
+			if (matchingChildren.length === 0) {
+				return null;
+			}
+			return matchingChildren.length === 1 ? matchingChildren[0] : matchingChildren;
 		}
-		return matchingChildren.length === 1 ? matchingChildren[0] : matchingChildren;
+		return null;
 	}
 
 	/**
