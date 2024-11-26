@@ -1,18 +1,5 @@
 [
 	{
-		"title": "Type of ActionScript",
-		"description": "Used to determine if the project is based on Flex or AIR",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.task.isFlex",
-				"title": "Is Flex Based",
-				"type": "boolean",
-				"default": false
-			}
-		]
-	},
-	{
 		"title": "Run Options",
 		"description": "Used when running the project",
 		"type": "section",

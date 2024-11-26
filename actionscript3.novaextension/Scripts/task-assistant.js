@@ -880,53 +880,34 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				var taskName = "";
 				var taskJson = this.baseTaskJson;
 
-				switch(buildTarget["@"]["buildTargetName"]) {
+				switch(buildTarget["@"]["platformId"]) {
 					case "default": {
+console.log(" {{{ Setting to AIR");
 						taskName = "AIR";
 						taskJson["extensionTemplate"] = "actionscript-air";
 						taskJson.extensionValues["as3.target"] = "default";
 						break;
 					}
 					case "com.adobe.flexide.multiplatform.ios.platform": {
+console.log(" {{{ Setting to AIR - iOS 1");
 						taskName = "AIR - iOS";
 						taskJson["extensionTemplate"] = "actionscript-ios";
 						taskJson.extensionValues["as3.target"] = "ios";
 						break;
 					}
 					case "com.qnx.flexide.multiplatform.qnx.platform": {
+console.log(" {{{ Setting to AIR - BlackBerry 1");
 						taskName = "AIR - BlackBerry Tablet OS";
-						taskJson["extensionTemplate"] = "actionscript-mobile";
+						taskJson["extensionTemplate"] = "actionscript-airmobile";
 						taskJson.extensionValues["as3.target"] = "blackberry";
 						console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
 						break;
 					}
 					case "com.adobe.flexide.multiplatform.android.platform": {
+console.log(" {{{ Setting to AIR - Android 1");
 						taskName = "AIR - Android";
 						taskJson["extensionTemplate"] = "actionscript-android";
 						taskJson.extensionValues["as3.target"] = "android";
-						break;
-					}
-					case "device": {
-						if(buildTarget["@"]["platformId"]) {
-							taskJson["extensionTemplate"] = "actionscript-airmobile";
-							switch (buildTarget["@"]["platformId"]) {
-								case "com.adobe.flexide.multiplatform.ios.platform": {
-									taskName = "AIR - iOS";
-									break;
-								}
-								case "com.adobe.flexide.multiplatform.android.platform": {
-									taskName = "AIR - Android";
-									break;
-								}
-								default: {
-									console.log("Uknown device type of " + buildTarget["@"]["platformId"]);
-									taskName = "AIR";
-									break;
-								}
-							}
-						} else {
-							taskName = "AS3 - AIR";
-						}
 						break;
 					}
 				}
