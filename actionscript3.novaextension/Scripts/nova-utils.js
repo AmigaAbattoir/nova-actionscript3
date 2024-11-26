@@ -117,4 +117,60 @@ exports.rangeToLspRange = function(document, range) {
 	return null;
 };
 
+/**
+ * Opens a file and dumps it into a string.
+ * @param {string} filename - The name of the file to open, relative to the workspace
+ */
+exports.getStringOfWorkspaceFile = function(filename) {
+	var line, contents;
+	var trimAll = false; // @NOTE There once was an option because the old XML readers needed this.
+	try {
+		contents = "";
+		//console.log("Trying to open: " + nova.path.join(nova.workspace.path, filename));
+		var file = nova.fs.open(nova.path.join(nova.workspace.path, filename));
+		if(file) {
+			do {
+				line = file.readline();
+				if(line!=null) {
+					if(trimAll) {
+						line = line.trim();
+					}
+					contents += line;
+				}
+			} while(line && line.length>0);
+		}
 
+		if(trimAll) {
+			contents = contents.replace((/  |\r\n|\n|\r/gm),"");  // contents.replace(/(\r\n|\n|\r)/gm,"")
+		}
+	} catch(error) {
+		console.log("*** ERROR: Could not open file " + nova.path.join(nova.workspace.path, filename) + " for reading. ***");
+		return null;
+	}
+	return contents;
+};
+
+/**
+ * Opens a file and dumps it into a string.
+ * @param {string} filename - The name of the file to open, relative to the workspace
+ */
+exports.getStringOfFile = function(filename) {
+	var line, contents;
+	try {
+		contents = "";
+		console.log("Trying to open: " + filename);
+		var file = nova.fs.open(filename);
+		if(file) {
+			do {
+				line = file.readline();
+				if(line!=null) {
+					contents += line;
+				}
+			} while(line && line.length>0);
+		}
+	} catch(error) {
+		console.log("*** ERROR: Could not open file " + filename + " for reading. " + error + " ***");
+		return null;
+	}
+	return contents;
+};
