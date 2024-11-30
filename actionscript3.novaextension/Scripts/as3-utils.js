@@ -122,6 +122,7 @@ exports.resolveStatusCodeFromADT = function(status) {
 		case 10: {
 			title =   "Could not create time stamp";
 			message = "ADT could not establish a connection to the timestamp server. If you connect to the internet through a proxy server, you may need to configure the JRE proxy settings.";
+			message += "\n\nThe timestamp server might also be down. For mroe information check the project's preferences in Build Packaging -> Timestamp";
 			break;
 		}
 		case 11: {
