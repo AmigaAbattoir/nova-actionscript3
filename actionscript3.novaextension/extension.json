@@ -362,7 +362,14 @@
 					"key": "as3.packaging.timestamp",
 					"title": "Timestamp",
 					"type": "bool",
+					"description": "If you want to timestamp the packaging of your project, enable this. By unchecking it, it is the same as specifing \"none\" below for the Timestamp URL",
 					"default": true
+				},
+				{
+					"key": "as3.packaging.timestampUrl",
+					"title": "Alternate Timestamp URL",
+					"description": "You can specify \"none\" or a specific URL of an RFC3161-compliant timestamp server to time-stamp the digital signature. If no URL is specified, a default time-stamp server provided by Geotrust (https://timestamp.geotrust.com/tsa) is used. When the signature of an AIR application is time-stamped, the application can still be installed after the signing certificate expires, because the timestamp verifies that the certificate was valid at the time of signing.\n\nIf ADT cannot connect to the time-stamp server, then signing is canceled and no package is produced. Specify -tsa none to disable time-stamping. However, an AIR application packaged without a timestamp ceases to be installable after the signing certificate expires.",
+					"type": "string"
 				},
 				{
 					"key": "as3.packaging.excludedFiles",
