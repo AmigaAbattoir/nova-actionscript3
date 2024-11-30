@@ -43,60 +43,8 @@ exports.activate = function() {
 		});
 	});
 
-	nova.commands.register("as3.testflashorair", (workspace) => {
-
-		function listFilesRecursively(folderPath, relativePath = "") {
-			let fileList = [];
-			try {
-				nova.fs.listdir(folderPath).forEach(filename => {
-					let fullPath = nova.path.join(folderPath, filename);
-					let currentRelativePath = nova.path.join(relativePath, filename);
-
-					if (nova.fs.stat(fullPath).isDirectory()) {
-						// Recurse into subdirectory and add the returned files to the list
-						fileList = fileList.concat(listFilesRecursively(fullPath, currentRelativePath));
-					} else {
-						// Add the relative file path to the list
-						fileList.push(currentRelativePath);
-					}
-				});
-			} catch (error) {
-				console.error(`Error reading folder ${folderPath}: ${error}`);
-			}
-			return fileList;
-		}
-
-		// Usage
-		let baseFolderPath = nova.path.join(nova.workspace.path, "bin-release-temp");
-		let files = listFilesRecursively(baseFolderPath);
-
-		var appXMLName = "BlankWords-app.xml";
-		var file = listFilesRecursively(nova.workspace.path + "/" + "bin-release-temp");
-
-		files.forEach((file) => {
-			if(file!=appXMLName) {
-				console.log("SHOULD INCLUDE: " + file);
-			} else {
-				console.log("Skip: " + file);
-			}
-		});
-		//
-		// 	nova.fs.listdir(nova.workspace.path + "/" + "bin-release-temp").forEach(filename => {
-		// 		if(filename!=appXMLName) {
-		//
-		// 			// @TODO
-		//
-		// 			/// Also, if it's a folder, then recurse into it and include the folder name when building the list!!
-		//
-		// 			// args.push("-C");
-		// 			//args.push(releasePath);
-		// 			// args.push(filename);
-		// 			console.log("FILENAME: " + filename);
-		// 		}
-		// 	});
-
-
-		//taskprovider.TEST_FlashOrAir();
+	nova.commands.register("as3.tester", (workspace) => {
+		// Placeholder for testing things out without going through an entire process
 	});
 
 	taskprovider = new ActionScript3TaskAssistant();

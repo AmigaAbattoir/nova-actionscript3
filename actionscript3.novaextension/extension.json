@@ -788,8 +788,8 @@
 				"command": "as3.clearExportPassword"
 			},
 			{
-				"title": "Test Flash or AIR",
-				"command": "as3.testflashorair"
+				"title": "Tester",
+				"command": "as3.tester"
 			}
 		]
 	}

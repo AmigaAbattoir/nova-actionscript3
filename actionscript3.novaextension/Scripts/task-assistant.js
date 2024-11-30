@@ -8,14 +8,11 @@ var fileNamesToExclude = [];
 
 function shouldIgnoreFileName(fileName) {
 	if(fileNamesToExclude.includes(fileName)) {
-		// console.log("Should ignore: TRUE!  for " + fileName);
 		return true;
 	}
 	if(fileExtensionsToExclude.some(ext => fileName.endsWith(ext))) {
-		// console.log("Should ignore: TRUE!  for " + fileName);
 		return true;
 	}
-	// console.log("Should ignore: false!  for " + fileName);
 	return false;
 }
 
@@ -401,9 +398,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								if(file!=appXMLName) {
 									//args.push("-C");
 									args.push(file);
-									console.log("SHOULD INCLUDE: " + file);
+									// console.log("SHOULD INCLUDE: " + file);
 								} else {
-									console.log("Skip: " + file);
+									// console.log("Skip: " + file);
 								}
 							});
 
@@ -931,45 +928,65 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	copyAssetsOf(src, dest, packageAfterBuild = false) {
 		return new Promise((resolve, reject) => {
 			try {
-				const entries = nova.fs.listdir(src); // Synchronous method to list directory contents
+				// Get all the entries in this folder
+				const entries = nova.fs.listdir(src);
 				const copyPromises = entries.map(filename => {
+					// Check if it's a file that doesn't need to be included when packaging in general. (We also remove user specifics later)
 					if(shouldIgnoreFileName(filename)==false) {
 						const currPath = nova.path.join(src, filename);
-
-						const destPath = nova.path.join(dest, filename);
-
 						const stats = nova.fs.stat(currPath);
 						if (!stats) {
 							return Promise.reject(new Error(`Unable to stat path: ${currPath}`));
 						}
 
+						const destPath = nova.path.join(dest, filename);
+
 						if (stats.isSymbolicLink()) {
+							// If it's a symbolic link, we need to get the real path
 							return this.resolveSymLink(currPath)
 								.then(resolvedPath => {
 									if (!nova.fs.stat(resolvedPath).isDirectory()) {
-										throw new Error(`Symbolic link does not point to a directory: ${resolvedPath}`);
+										try {
+											// If the file exists, then remove since nova.fs.copy with throw an error.
+											// Could possibly use stats.ctime/stats.size to compare, but my end up taking more time with lots of little files
+											if (nova.fs.access(destPath, nova.fs.constants.F_OK)) {
+												// console.log(" Removing existing [" + destPath + "]");
+												nova.fs.remove(destPath);
+											}
+											nova.fs.copy(resolvedPath, destPath);
+										} catch (error) {
+											console.error(`Error copying symbolic linked file ${resolvedPath} to ${destPath}:`, error);
+											return Promise.reject(error);
+										}
+										return Promise.resolve();
+									} else {
+										// If it's a symbolic link to a folder, let's copy the real files to our destination path!
+										this.ensureFolderIsAvailable(destPath);
+										return this.copyAssetsOf(resolvedPath, destPath, packageAfterBuild);
 									}
-									console.log("MKDIR from Symbolic Link: this.ensureFolderIsAvailable(" + dest + "/" + filename + ")!!!");
-									this.ensureFolderIsAvailable(dest+"/"+filename);
-									return this.copyAssetsOf(resolvedPath, destPath, packageAfterBuild);
 								});
 						} else if (stats.isFile()) {
+							// Copy a file
 							try {
+								// If the file exists, then remove since nova.fs.copy with throw an error.
+								// Could possibly use stats.ctime/stats.size to compare, but my end up taking more time with lots of little files
 								if (nova.fs.access(destPath, nova.fs.constants.F_OK)) {
-									console.log(" Removing [" + destPath + "]");
-									nova.fs.remove(destPath); // Remove existing file
+									// console.log(" Removing existing [" + destPath + "]");
+									nova.fs.remove(destPath);
 								}
-								nova.fs.copy(currPath, destPath); // Copy file
+								nova.fs.copy(currPath, destPath);
 							} catch (error) {
 								console.error(`Error copying file ${currPath} to ${destPath}:`, error);
 								return Promise.reject(error);
 							}
-							return Promise.resolve(); // Return resolved promise for a file
+							return Promise.resolve();
 						} else if (stats.isDirectory()) {
-							console.log("MKDIR:  this.ensureFolderIsAvailable(" + dest + "/" + filename + ")!!!");
-							this.ensureFolderIsAvailable(dest+"/"+filename);
+							// Make a folder, if it doesn't already exist.
+							this.ensureFolderIsAvailable(destPath);
+							// Go and copy this directory of stuff
 							return this.copyAssetsOf(currPath, destPath, packageAfterBuild);
 						} else {
+							// Don't know what else would come up here. But just to be safe
 							console.log(`Skipping unsupported file type: ${currPath}`);
 							return Promise.resolve(); // No operation
 						}
@@ -988,23 +1005,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				reject(error); // Catch synchronous errors
 			}
 		});
-	}
-
-	TEST_FlashOrAir() {
-		// Check ".actionScriptProperties"
-		var actionscriptPropertiesXml = new xmlToJson.ns3x2j(getStringOfWorkspaceFile(".actionScriptProperties"));
-
-		var buildTargets = actionscriptPropertiesXml.findNodesByName("buildTarget");
-
-		if(buildTargets.length>0) {
-			console.log("We got build targets. This is probably AIR!");
-			// Packaging, make separate tasks for it
-			buildTargets.forEach((buildTarget) => {
-				console.log("We got " + buildTarget["@"]["buildTargetName"] + "  for " + buildTarget["@"]["platformId"]);
-			});
-		} else {
-			console.log("There are no build targets. So this is probably Flash!!");
-		}
 	}
 
 	/**
@@ -1228,7 +1228,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 */
 	ensureFolderIsAvailable(folder) {
 		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
-			console.log(" Making folder at " + folder + "!!!");
+			// console.log(" Making folder at " + folder + "!!!");
 			nova.fs.mkdir(folder+"/");
 		}
 	}
