@@ -10,18 +10,18 @@ It currently provides:
 
  * **Symbols** - *Note:* MXML is still not correct in the hierarchy.
 
- * **Issues** - *Note:* needs an `asconfig.json` file to work)
+ * **Issues** - (*Note:* needs an `asconfig.json` file to work)
 
- * **Language intelligence** - *Note:* needs an `asconfig.json` file to work)
+ * **Language intelligence** - (*Note:* needs an `asconfig.json` file to work)
 
  * **Completions** for the following:
-   * **ActionScript 3** - *Note:* needs an `asconfig.json` file to work
+   * **ActionScript 3** - (*Note:* needs an `asconfig.json` file to work)
    * **MXML** - *Note:* Still wonky and also needs an `asconfig.json` file to work for
    * **AIR Descriptor XML**
 
  * **Clips** - *Note:* Still way early in progress.
 
- * **Tasks** -  *Note:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile apps. Also, handles ANEs. Still looking into mobile, and web (maybe with Ruffle too at some point)
+ * **Tasks** - *Note:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile apps. Also, handles ANEs. Still looking into mobile, and web (maybe with Ruffle too at some point)
 
  * **Exporting AIR Packages** - *Note:* Currently, limited to desktop/extendedDesktop AIR builds.
 

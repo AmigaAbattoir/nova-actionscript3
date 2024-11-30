@@ -355,7 +355,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								args.push("none");
 							} else {
 								var customTimestamp = nova.workspace.config.get("as3.packaging.timestampUrl");
-								if(customTimestampUrl!="") {
+								if(customTimestamp!=null && customTimestamp!="") {
 									args.push("-tsa");
 									args.push(customTimestamp);
 								}
@@ -417,7 +417,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							}
 
 							args.unshift(command);
-
 							var process = new Process("/usr/bin/env", {
 								args: args,
 								cwd: baseFolderPath,
@@ -430,19 +429,17 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								consoleLogObject(args);
 							}
 
-// console.log("About to ADT!!")
 							var stdout = "";
 							var stderr = "";
 							process.onStdout(function(line) {
-								//console.log("STDOUT: " + line);
+								console.log("STDOUT: " + line);
 								stdout += line;
 							});
 							process.onStderr(function(line) {
-								//console.log("STDERR: " + line);
+								console.log("STDERR: " + line);
 								stderr += line;
 							});
 							process.start();
-// console.log("ADT started...");
 							process.onDidExit((status) => {
 								consoleLogObject(status);
 								var title = "Export Package";
@@ -453,12 +450,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									//nova.fs.rmdir(nova.path.join(nova.workspace.path, "bin-release-temp"));
 								} else {
 									var result = resolveStatusCodeFromADT(status);
-									// console.log("RESULT: ");
-									// consoleLogObject(result);
-									title = result.title;
-									message = result.message;
+									console.log("RESULT: ");
 									// console.log("STDOUT: " + stdout);
 									// console.log("STDERR: " + stderr);
+									message = result.message;
+									console.log("STDOUT: " + stdout);
+									console.log("STDERR: " + stderr);
 									nova.workspace.showErrorMessage("*** ERROR - " + title + " ***\n\n" + message);
 								}
 							})
@@ -801,30 +798,49 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {string} appXMLName - The name of the app.xml file
 	 */
 	run(buildType, flexSDKBase, profile, destDir, appXMLName, config) {
+		var runningOnDevice = false;
 		// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
 		// To launch ADL, we need to point it to the "-app.xml" file
 		var command = flexSDKBase + "/bin/adl";
 		var args = [];
 
-		// console.log("buildType = "+buildType)
-		/** @TODO Get preferences for what screen size */
-		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-		var screenSize = config.get("as3.task.deviceToSimulate");
-		screenSize = "Fake - 800 x 600 : 800 x 600";
+		var launchMethod = config.get("as3.task.launchMethod");
+		if(launchMethod=="on-device") {
+			// Find if there are any devices
+			var weFoundDevices = false;
 
-		if(screenSize==null || screenSize=="none") {
-			nova.workspace.showErrorMessage("ERROR!!!\n\n Please edit the Task to select a screen size to use in the simulator!");
-			return false;
-		} else {
-			screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
-		}
+			// @TODO Find devices
+			if(taskConfig["as3.target"]=="android") {
+
+			}
+
+			if(weFoundDevices) {
+				// Then we'll package it using bin-debug
+				// Then install on the device? At least for Android
+				// Then launch on device
+
+				runningOnDevice = true;
+
+			}
+
+			// @TODO If we don't find devices, ask if they want to continue on desktop or try again?
+		} // else if(launchMethod=="desktop") { }
 
 		if(buildType=="airmobile") {
+			var screenSize = config.get("as3.task.deviceToSimulate");
+			if(screenSize==null || screenSize=="none") {
+				nova.workspace.showErrorMessage("ERROR!!!\n\n Please edit the Task to select a screen size to use in the simulator!");
+				return false;
+			} else {
+				screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
+			}
+
 			args.push("-screensize");
 			args.push(screenSize);
 		}
 
 		console.log("CONFIG: " + profile);
+		// @TODO If default, we should check the -app.xml to see if there is a profile specified
 		if(profile!="default") {
 			args.push("-profile");
 			args.push(profile);
@@ -853,7 +869,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// Root directory goes next
 		// "--" then args go now...
-
 		if (nova.inDevMode()) {
 			console.log(" *** Attempting to Run ADL with [[" + command + "]] ARG: \n");
 			consoleLogObject(args);
@@ -1254,12 +1269,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var config = context.config;
 		var action = context.action;
 
-// console.log("CONTEXT:");
-// consoleLogObject(context);
-// console.log("CONFIG: ");
-// consoleLogObject(config);
-// console.log("data.type: " + data.type);
-
 		var buildType = "air";
 		if(data.type=="mobile") {
 			buildType = "airmobile";
@@ -1302,10 +1311,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			var libPaths = nova.workspace.config.get("as3.build.library.additional");
 
 			var anePaths = nova.workspace.config.get("as3.build.anes");
-			/*
-			console.log("ANES: ");
-			consoleLogObject(anePaths);
-			*/
 
 			return this.build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, false, anePaths, config);
 		} else if(action==Task.Run) { //} && data.type=="actionscript") {
