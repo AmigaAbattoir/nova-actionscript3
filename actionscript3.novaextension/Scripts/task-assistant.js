@@ -6,13 +6,16 @@ const { determineProjectUUID, resolveStatusCodeFromADT } = require("./as3-utils.
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
 
-function shouldIgnoreFileName(fileName, ignorePatterns) {
+function shouldIgnoreFileName(fileName) {
 	if(fileNamesToExclude.includes(fileName)) {
+		// console.log("Should ignore: TRUE!  for " + fileName);
 		return true;
 	}
 	if(fileExtensionsToExclude.some(ext => fileName.endsWith(ext))) {
+		// console.log("Should ignore: TRUE!  for " + fileName);
 		return true;
 	}
+	// console.log("Should ignore: false!  for " + fileName);
 	return false;
 }
 
@@ -148,12 +151,17 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 					taskJson = JSON.parse(getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName));
 					try {
-						if(taskJson["extensionTemplate"].startsWith("actionscript-air")==false) {
+				// console.log("-= TASK JSON: " + taskFileName + " =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+				// consoleLogObject(taskJson);
+				// console.log("-= --------- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+						if(taskJson["extensionTemplate"].startsWith("actionscript-")==false) {
 							nova.workspace.showErrorMessage("Sorry, Export Release Build does not yet handle " + taskJson["extensionTemplate"] + "!");
 							return;
 						}
 						taskConfig = taskJson["extensionValues"];
 						switch(taskJson["extensionTemplate"]) {
+							case "actionscript-ios":
+							case "actionscript-android":
 							case "actionscript-airmobile": {
 								buildType="airmobile";
 								break;
@@ -168,15 +176,23 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					}
 				}
 
+				// console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+				// consoleLogObject(taskConfig);
+				// console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+
 				// We need a project UUID which we use to save the certificate password in a later step, but let's check
 				// first. It should generate one if possible, but on the unlikely event, we should abort.
 				var projectUUID = determineProjectUUID();
 				projectUUID.then((resolve) => { // Now that we have the UUID, let's try to make a build
+					var isFlex = nova.workspace.config.get("as3.application.isFlex");
+
 					var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
-					//console.log("MAIN APP: [[" + mainApplicationPath + "]]");
+					// console.log("MAIN APP: [[" + mainApplicationPath + "]]");
 					if(mainApplicationPath==null) {
 					}
+					// console.log("IS FLEX: " + isFlex);
 					var appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
+					// console.log("packageBuild() say appXMLName:" + appXMLName);
 
 					// Use this to get setting from the extension or the workspace!
 					var flexSDKBase = determineFlexSDKBase();
@@ -189,7 +205,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						mainSrcDir = "src";
 					}
 
-					var isFlex = nova.workspace.config.get("as3.application.isFlex");
 					var exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
 					var packageName = (isFlex ? mainApplicationPath.replace(".mxml",".air") : mainApplicationPath.replace(".as",".air"));
 
@@ -205,8 +220,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 					/** @TODO Figure out what type of build... */
 					this.build(buildType, true, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, "release", nova.path.join(nova.workspace.path, releasePath), exportName, true, anePaths).then((resolve) => {
-						console.log("this.build() resolve:");
-						consoleLogObject(resolve);
+						// console.log(" # # # # # # # # # # # # # # # # # # # # # # # #")
+						// console.log(" # # # # # # # # # # # # # # # # # # # # # # # #")
+						// console.log("appXMLName:" + appXMLName);
+						// console.log("this.build() resolve:");
+						// consoleLogObject(resolve);
 						// @TODO - If there is warnings, ask if you want to continue, or abort.
 
 						// Loop through the output, and copy things unless specified to exclude like the .actionScriptProperties
@@ -284,9 +302,45 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 							var command = flexSDKBase + "/bin/adt";
 							var args = [];
+							var env = {};
 
 							args.push("-package");
 
+							// Only for Android building
+							if(taskConfig["as3.target"]=="android") {
+								// Check if we want to disable AIR Flair. I know I do!
+								var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];								if(noAndroidAirFlair!=undefined) {
+									// console.log("AIR FLAIR: " + noAndroidAirFlair);								} else {
+									noAndroidAirFlair = false;
+									// console.log("AIR FLAIR undefined, so now it'll be false!");								}
+
+								if(noAndroidAirFlair) {
+									env = { AIR_NOANDROIDFLAIR: "true" };
+								}
+
+								args.push("-target");
+								var targetType = taskConfig["as3.deployment.target"];
+								if(targetType==null) {
+									targetType = "apk"
+								}
+								args.push(targetType);
+								if(targetType.indexOf("aab")!=-1) {
+									packageName = packageName.replace(/\.air$/, ".aab");
+								} else {
+									// @NOTE Not sure what the android-studio packages should be...
+									packageName = packageName.replace(/\.air$/, ".apk");
+								}
+
+								args.push("-arch");
+								// console.log("taskConfig: ");
+								// consoleLogObject(taskConfig);
+								// console.log("taskConfig[as3.deployment.arch]: " + taskConfig["as3.deployment.arch"]);
+								var archType = taskConfig["as3.deployment.arch"];
+								if(archType==null) {
+									archType = "armv7";
+								}
+								args.push(archType);
+							}
 							args.push("-storetype");
 							args.push("pkcs12");
 
@@ -298,39 +352,88 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							args.push(password);
 
 							/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-							var doTimestamp = taskConfig["as3.packaging.timestamp"];
+							var doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
 							if(doTimestamp==false) {
 								args.push("-tsa");
 								args.push("none");
+							} else {
+								var customTimestamp = nova.workspace.config.get("as3.packaging.timestampUrl");
+								if(customTimestampUrl!="") {
+									args.push("-tsa");
+									args.push(customTimestamp);
+								}
 							}
 
-							// AIR Package name
-							args.push(packageName);
+							// AIR (or APK, AAB, IPA) Package name
+							// @TODO Export location being set somewhere? maybe?
+							args.push(nova.path.join(nova.workspace.path, packageName));
 
 							// Descriptor
-							args.push(releasePath + "/" + appXMLName);
+							args.push(appXMLName);
 
 							// Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
-							nova.fs.listdir(nova.workspace.path + "/" + releasePath).forEach(filename => {
-								if(filename!=appXMLName) {
-									args.push("-C");
-									args.push(releasePath);
-									args.push(filename);
+							function listFilesRecursively(folderPath, relativePath = "") {
+								let fileList = [];
+								try {
+									nova.fs.listdir(folderPath).forEach(filename => {
+										let fullPath = nova.path.join(folderPath, filename);
+										let currentRelativePath = nova.path.join(relativePath, filename);
+
+										if (nova.fs.stat(fullPath).isDirectory()) {
+											// Recurse into subdirectory and add the returned files to the list
+											fileList = fileList.concat(listFilesRecursively(fullPath, currentRelativePath));
+										} else {
+											// Add the relative file path to the list
+											fileList.push(currentRelativePath);
+										}
+									});
+								} catch (error) {
+									console.error(`Error reading folder ${folderPath}: ${error}`);
+								}
+								return fileList;
+							}
+
+							// Usage
+							let baseFolderPath = nova.path.join(nova.workspace.path, releasePath);
+							let files = listFilesRecursively(baseFolderPath);
+
+							files.forEach((file) => {
+								if(file!=appXMLName) {
+									//args.push("-C");
+									args.push(file);
+									console.log("SHOULD INCLUDE: " + file);
+								} else {
+									console.log("Skip: " + file);
 								}
 							});
 
+							if(taskConfig["as3.target"]=="android") {
+								args.push("-platformsdk");
+								var platformSdk = taskConfig["as3.deployment.platfromsdk"];
+								if(platformSdk==null) {
+									platformSdk = "~/Library/Android/sdk"
+								}
+								if (platformSdk.charAt(0) == "~") {
+									platformSdk = nova.path.expanduser(platformSdk);
+								}
+								args.push(platformSdk);
+							}
+
 							args.unshift(command);
+
 							var process = new Process("/usr/bin/env", {
 								args: args,
-								cwd: nova.workspace.path
+								cwd: baseFolderPath,
+								env: env
 							});
 
-							consoleLogObject(process);
+							// consoleLogObject(process);
 							if (nova.inDevMode()) {
 								console.log(" *** COMMAND [[" + command + "]] ARG: \n");
 								consoleLogObject(args);
 							}
 
+// console.log("About to ADT!!")
 							var stdout = "";
 							var stderr = "";
 							process.onStdout(function(line) {
@@ -342,19 +445,23 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								stderr += line;
 							});
 							process.start();
+// console.log("ADT started...");
 							process.onDidExit((status) => {
 								consoleLogObject(status);
 								var title = "Export Package";
 								var message = "Okay?!!!";
 								if(status==0) {
 									showNotification("Export Package Successful!", "Congrats!");
-
 									// @TODO, add button to reveal path
 									//nova.fs.rmdir(nova.path.join(nova.workspace.path, "bin-release-temp"));
 								} else {
 									var result = resolveStatusCodeFromADT(status);
+									// console.log("RESULT: ");
+									// consoleLogObject(result);
 									title = result.title;
 									message = result.message;
+									// console.log("STDOUT: " + stdout);
+									// console.log("STDERR: " + stderr);
 									nova.workspace.showErrorMessage("*** ERROR - " + title + " ***\n\n" + message);
 								}
 							})
@@ -393,43 +500,74 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
 	 * as a Promise, otherwise a standard Nova Task that it can handle
 	 */
-	build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths = "") {
+	build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths = []) {
 		if(copyAssets) { // Copy each source dir to the output folder
-			console.log("copyAssets Begins!");
+			// console.log("copyAssets Begins!");
 			fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
 			fileNamesToExclude.push(appXMLName);
 			fileExtensionsToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.extensions");
-			console.log("Src DIR: [[" + sourceDirs + "]]")
-			console.log("Main Src DIR: [[" + mainSrcDir + "]]")
+
+			// console.log("Copy DIR: [[" + copyDirs + "]]")
+			// consoleLogObject("Copy DIR: " + copyDirs)
+
 			var copyDirs = sourceDirs.concat(mainSrcDir);
-			console.log("Copy DIR: [[" + copyDirs + "]]")
-			consoleLogObject("Copy DIR: " + copyDirs)
+			// console.log("Copy DIR: [[" + copyDirs + "]]")
+			// consoleLogObject("Copy DIR: " + copyDirs)
+
 			if(copyDirs!=null) {
+
+				const copyPromises = copyDirs.map(copyDirRaw => {
+					let copyDir = copyDirRaw;
+					if (copyDir.charAt(0) == "~") {
+						copyDir = nova.path.expanduser(copyDir);
+					} else if (copyDir.charAt(0) != "/") {
+						copyDir = nova.path.join(nova.workspace.path, copyDir);
+					}
+					// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
+					this.ensureFolderIsAvailable(destDir);
+					return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
+				});
+
+				Promise.all(copyPromises)
+					.then(() => {
+						console.log("All assets copied successfully.");
+					})
+					.catch(error => {
+						console.error("Error during asset copying:", error);
+					});
+
+// console.log(" # # # # # # # %%%%%%%%%%$%%% DONE COPYING FILES!!!");
+// console.log(" # # # # # # # %%%%%%%%%%$%%% DONE COPYING FILES!!!");
+// console.log(" # # # # # # # %%%%%%%%%%$%%% DONE COPYING FILES!!!");
+				/*
 				copyDirs.forEach((copyDir) => {
 					if(copyDir.charAt(0)=="~") { // If a user shortcut, resolve
 						copyDir = nova.path.expanduser(copyDir);
 					} else if(copyDir.charAt(0)!="/") { // If it's not a slash, it's relative to the workspace path
 						copyDir = nova.path.join(nova.workspace.path, copyDir);
-				   }
-				   console.log("  >][[[] Starting to copy assets of [[" + copyDir + "]] to [[" + destDir + "]]")
-				   this.copyAssetsOf(copyDir, destDir, packageAfterBuild);
+					}
+					console.log("  >][[[] Starting to copy assets of [[" + copyDir + "]] to [[" + destDir + "]]")
+					this.ensureFolderIsAvailable(destDir);
+					this.copyAssetsOf(copyDir, destDir, packageAfterBuild);
 				});
+				*/
 			}
 		}
 
+// console.log(" # # # # # # # # # # # # # # # # # # # # # Moving on....");
 		// FlashBuilder would modify the -app.xml with updated variables, so we will make a copy of the file, changing what FB would
 		// Otherwise, this will write a copy.
 		var appXML;
-		console.log("AppXML location: " + appXMLName);
+		// console.log("AppXML location: " + appXMLName);
 		try{
 			appXML = nova.fs.open(nova.path.join(mainSrcDir, appXMLName))
 		} catch(error) {
-			console.log("Error opening APP XML! ",error);
+			// console.log("Error opening APP XML! ",error);
 			return null;
 		}
 
 		var newAppXML = nova.fs.open(destDir + "/" + appXMLName, "w");
-		console.log("newAppXML location: " + destDir + "/" + appXMLName);
+		// console.log("newAppXML location: " + destDir + "/" + appXMLName);
 		if(appXML) {
 			var line;
 			var lineCount = 0;
@@ -452,7 +590,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 			}
 		}
-		//console.log("DONE!!");
+		// console.log("DONE!!");
 
 		// Let's compile this thing!!
 		var command = flexSDKBase + "/bin/mxmlc";
@@ -466,20 +604,20 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		args.push("--warnings=true");
 
-		console.log("buildType: " + buildType);
+		// console.log("buildType: " + buildType);
 		if(buildType=="airmobile") {
 			args.push("+configname=airmobile");
 		} else {
 			args.push("+configname=air");
 		}
-/*
+
 		// If air, we need to add the configname=air, I'm assuming flex would be different?!
+/*
 		var isFlex = nova.workspace.config.get("as3.application.isFlex");
 		if(isFlex) {
 			args.push("+configname=flex");
 		}
 */
-
 		// Push where the final SWF will be outputted
 		args.push("--output=" + destDir + "/" + exportName);
 
@@ -561,7 +699,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						nova.fs.mkdir(extdir + aneDest);
 						var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
 						unzip.then((resolve) => {
-							console.log("Unzip successful?!");
+							// console.log("Unzip successful?!");
 						},(reject) => {
 							console.log("Unzip failed?!?!");
 						});
@@ -610,6 +748,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			console.log(" #### Okay, ready to do Promise!");
 			return getProcessResults(command, args, nova.workspace.path);
 		} else {
+			console.log(" #### Okay, should be playing according to Nova!");
 			return new TaskProcessAction(command, { args: args });
 		}
 	}
@@ -670,12 +809,22 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var command = flexSDKBase + "/bin/adl";
 		var args = [];
 
-		console.log("buildType = "+buildType)
+		// console.log("buildType = "+buildType)
 		/** @TODO Get preferences for what screen size */
 		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
+		var screenSize = config.get("as3.task.deviceToSimulate");
+		screenSize = "Fake - 800 x 600 : 800 x 600";
+
+		if(screenSize==null || screenSize=="none") {
+			nova.workspace.showErrorMessage("ERROR!!!\n\n Please edit the Task to select a screen size to use in the simulator!");
+			return false;
+		} else {
+			screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
+		}
+
 		if(buildType=="airmobile") {
 			args.push("-screensize");
-			args.push(config.get("as3.task.deviceToSimulate"));
+			args.push(screenSize);
 		}
 
 		console.log("CONFIG: " + profile);
@@ -692,11 +841,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// ADL wants the directory with the ANEs
 		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-		var anes = config.get("as3.packaging.anePaths"); //nova.workspace.config.get("as3.packaging.anes");
+		//var anes = config.get("as3.packaging.anePaths"); //nova.workspace.config.get("as3.packaging.anes");
+		var anes = nova.workspace.config.get("as3.packaging.anes");
 		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 		// ones that to the destination dir.
 		console.log("anes: " + JSON.stringify(anes));
-		if(anes) {
+		if(anes && anes.length>0) {
 			args.push("-extdir");
 			args.push(destDir + "/ane");
 		}
@@ -728,35 +878,114 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	}
 
 	/**
-	 * Copies all files from the "src" directory to the "dest" directory, avoiding the `ignoreCopy` assets
-	 * @param {string} src - The source directory to copy
-	 * @param {string} dest - The location to copy the files to
+	 * Resolved symbolic links to their real location
+	 *
+	 * @param {string} folder - The location that is a symbolic link
+	 * @returns {Promise} The resolved path, or a reject error.
+	 */
+	resolveSymLink(folder) {
+		return new Promise((resolve, reject) => {
+			try {
+				const process = new Process("/usr/bin/readlink", {
+					args: [folder]
+				});
+
+				let output = "";
+				let errorOutput = "";
+
+				process.onStdout(line => {
+					output += line.trim();
+				});
+
+				process.onStderr(line => {
+					errorOutput += line.trim();
+				});
+
+				process.onDidExit(status => {
+					if (status === 0) {
+						// Successfully resolved the symbolic link
+						const lastSlashIndex = folder.lastIndexOf('/');
+						const basePath = folder.substring(0, lastSlashIndex);
+						const resolvedPath = nova.path.normalize(nova.path.join(basePath, output));
+						resolve(resolvedPath);
+					} else {
+						reject(new Error(`Failed to resolve symlink for ${folder}: ${errorOutput}`));
+					}
+				});
+
+				process.start();
+			} catch (error) {
+				reject(error);
+			}
+		});
+	}
+
+	/**
+	 * Copies the files from one place to another.
+	 *
+	 * @param {string} src - The source of the files to copy
+	 * @param {string} dest - The destination folder location
+	 * @param {boolean} packageAfterBuild - If we want to package the files after building
+	 * @returns {Promise} - A resolve if everything copies, otherwise a reject with an error message
 	 */
 	copyAssetsOf(src, dest, packageAfterBuild = false) {
-		nova.fs.listdir(src).forEach(filename => {
-			let currPath = src + '/' + filename;
-			console.log(" >][[] " + currPath);
-			///if(this.ignoreCopy.includes(filename)==false) {
-			if(shouldIgnoreFileName(filename)==false) {
-				console.log(" >][[] Copy FILE" + currPath);
-				if (nova.fs.stat(currPath).isFile() || nova.fs.stat(currPath).isSymbolicLink()) {
-					try{
-						// We have to remove it before coping, or @TODO chack if we should replace or skip copying
-						if(nova.fs.access(dest+"/"+filename,nova.fs.constants.F_OK)) {
-							nova.fs.remove(dest+"/"+filename);
+		return new Promise((resolve, reject) => {
+			try {
+				const entries = nova.fs.listdir(src); // Synchronous method to list directory contents
+				const copyPromises = entries.map(filename => {
+					if(shouldIgnoreFileName(filename)==false) {
+						const currPath = nova.path.join(src, filename);
+
+						const destPath = nova.path.join(dest, filename);
+
+						const stats = nova.fs.stat(currPath);
+						if (!stats) {
+							return Promise.reject(new Error(`Unable to stat path: ${currPath}`));
 						}
-						nova.fs.copy(currPath,dest+"/"+filename);
-					} catch(error) {
-						console.log(" *** ERROR copyAssetsOf(): ",error);
+
+						if (stats.isSymbolicLink()) {
+							return this.resolveSymLink(currPath)
+								.then(resolvedPath => {
+									if (!nova.fs.stat(resolvedPath).isDirectory()) {
+										throw new Error(`Symbolic link does not point to a directory: ${resolvedPath}`);
+									}
+									console.log("MKDIR from Symbolic Link: this.ensureFolderIsAvailable(" + dest + "/" + filename + ")!!!");
+									this.ensureFolderIsAvailable(dest+"/"+filename);
+									return this.copyAssetsOf(resolvedPath, destPath, packageAfterBuild);
+								});
+						} else if (stats.isFile()) {
+							try {
+								if (nova.fs.access(destPath, nova.fs.constants.F_OK)) {
+									console.log(" Removing [" + destPath + "]");
+									nova.fs.remove(destPath); // Remove existing file
+								}
+								nova.fs.copy(currPath, destPath); // Copy file
+							} catch (error) {
+								console.error(`Error copying file ${currPath} to ${destPath}:`, error);
+								return Promise.reject(error);
+							}
+							return Promise.resolve(); // Return resolved promise for a file
+						} else if (stats.isDirectory()) {
+							console.log("MKDIR:  this.ensureFolderIsAvailable(" + dest + "/" + filename + ")!!!");
+							this.ensureFolderIsAvailable(dest+"/"+filename);
+							return this.copyAssetsOf(currPath, destPath, packageAfterBuild);
+						} else {
+							console.log(`Skipping unsupported file type: ${currPath}`);
+							return Promise.resolve(); // No operation
+						}
 					}
-				} else if (nova.fs.stat(currPath).isDirectory()) {
-				console.log(" >][[] Copy DIRECTORY" + currPath);
-					nova.fs.mkdir(dest + "/" + filename);
-					// Let's also copy this directory too...
-					this.copyAssetsOf(currPath, dest + "/" + filename);
-				//} else if (nova.fs.stat(currPath).isSymbolicLink()) {
-				//	this.copyAssetsOf(currPath,dest + "/" + filename);
-				}
+				});
+
+				// Wait for all copy operations to complete
+				Promise.all(copyPromises)
+					.then(() => {
+						resolve(); // Resolve when all copies are done
+					})
+					.catch(error => {
+						reject(error); // Reject if any copy fails
+					});
+			} catch (error) {
+				reject(error); // Catch synchronous errors
 			}
 		});
 	}
@@ -784,9 +1013,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	importFlashBuilderSettings() {
 		var projectXml =  new xmlToJson.ns3x2j(getStringOfWorkspaceFile(".project"));
 
-		console.log("Project ");
-		consoleLogObject(projectXml);
-		console.log("Project NAME? "+projectXml.getNodeChildrenByName("projectDescription","name"));
+		// console.log("Project ");
+		// consoleLogObject(projectXml);
+		// console.log("Project NAME? "+projectXml.getNodeChildrenByName("projectDescription","name"));
 
 		// Change project name to the Flash Builder project name:
 		nova.workspace.config.set("workspace.name",projectXml.getNodeChildrenByName("projectDescription","name").textContent);
@@ -880,23 +1109,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				var taskName = "";
 				var taskJson = this.baseTaskJson;
 
+// console.log("buildTarget[@][platformId]: " + buildTarget["@"]["platformId"]);
+
 				switch(buildTarget["@"]["platformId"]) {
-					case "default": {
-console.log(" {{{ Setting to AIR");
-						taskName = "AIR";
-						taskJson["extensionTemplate"] = "actionscript-air";
-						taskJson.extensionValues["as3.target"] = "default";
-						break;
-					}
 					case "com.adobe.flexide.multiplatform.ios.platform": {
-console.log(" {{{ Setting to AIR - iOS 1");
 						taskName = "AIR - iOS";
 						taskJson["extensionTemplate"] = "actionscript-ios";
 						taskJson.extensionValues["as3.target"] = "ios";
 						break;
 					}
 					case "com.qnx.flexide.multiplatform.qnx.platform": {
-console.log(" {{{ Setting to AIR - BlackBerry 1");
 						taskName = "AIR - BlackBerry Tablet OS";
 						taskJson["extensionTemplate"] = "actionscript-airmobile";
 						taskJson.extensionValues["as3.target"] = "blackberry";
@@ -904,10 +1126,16 @@ console.log(" {{{ Setting to AIR - BlackBerry 1");
 						break;
 					}
 					case "com.adobe.flexide.multiplatform.android.platform": {
-console.log(" {{{ Setting to AIR - Android 1");
 						taskName = "AIR - Android";
 						taskJson["extensionTemplate"] = "actionscript-android";
 						taskJson.extensionValues["as3.target"] = "android";
+						break;
+					}
+					case "default":
+					default: {
+						taskName = "AIR";
+						taskJson["extensionTemplate"] = "actionscript-air";
+						taskJson.extensionValues["as3.target"] = "default";
 						break;
 					}
 				}
@@ -996,6 +1224,16 @@ console.log(" {{{ Setting to AIR - Android 1");
 	}
 
 	/**
+	 * Makes sure that we have  a Task folder so we can generate new tasks
+	 */
+	ensureFolderIsAvailable(folder) {
+		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
+			console.log(" Making folder at " + folder + "!!!");
+			nova.fs.mkdir(folder+"/");
+		}
+	}
+
+	/**
 	 * Writes JSON for a new Task
 	 *
 	 * @param {string} taskName - The name of the Task
@@ -1016,18 +1254,18 @@ console.log(" {{{ Setting to AIR - Android 1");
 		var config = context.config;
 		var action = context.action;
 
-console.log("CONTEXT:");
-consoleLogObject(context);
-console.log("CONFIG: ");
-consoleLogObject(config);
-console.log("data.type: " + data.type);
+// console.log("CONTEXT:");
+// consoleLogObject(context);
+// console.log("CONFIG: ");
+// consoleLogObject(config);
+// console.log("data.type: " + data.type);
 
 		var buildType = "air";
 		if(data.type=="mobile") {
 			buildType = "airmobile";
 		}
 
-		console.log("as3.packaging.excludedFiles: " + config.get("as3.packaging.excludedFiles"));
+		// console.log("as3.packaging.excludedFiles: " + config.get("as3.packaging.excludedFiles"));
 
 		// Get the context.config so we can get the Task settings!
 		var whatKind = config.get("actionscript3.request");
@@ -1080,6 +1318,7 @@ console.log("data.type: " + data.type);
 			if(whatKind=="debug") {
 				return this.debugRun(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 			} else {
+			// consoleLogObject(config);
 				return this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 			}
 		} else if(action==Task.Clean) {
