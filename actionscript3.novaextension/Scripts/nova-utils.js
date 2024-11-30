@@ -24,15 +24,16 @@ exports.showNotification = function(title, body, closeButtonName = "") {
  * @param {string} command - The command to use
  * @param {Array} args - An array with the arguments for the command (optional)
  * @param {string} cwd - The working directory (defaults to current, extension's directory)
+ * @param {Object} env - Additional envs to set for the process (optional)
  * @retruns {Promise} - If the status is 0, then it `resolves` otherwise `rejects`. Both will
  * return back an object containing status, stdout and stderr.
  */
-exports.getProcessResults = function(command, args = [], cwd = "") {
+exports.getProcessResults = function(command, args = [], cwd = "", env = {}) {
 	var proc = new Promise((resolve, reject) => {
 		var stdout = "";
 		var stderr = "";
 
-		var process = new Process(command, { args: args, cwd: cwd });
+		var process = new Process(command, { args: args, cwd: cwd, env: env });
 		process.onStdout(line => stdout += line);
 		process.onStderr(line => stderr += line);
 		process.onDidExit(status => {
