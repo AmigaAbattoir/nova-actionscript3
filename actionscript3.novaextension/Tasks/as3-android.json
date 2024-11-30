@@ -204,6 +204,7 @@
 				"title": "Export Options:",
 				"key": "as3.deployment.options",
 				"type": "enum",
+				"description": "(Deprecated) Use the Target options below",
 				"default": "captive",
 				"values": [
 					["captive", "Export application with captive runtime"],
@@ -213,16 +214,60 @@
 			{
 				"title": "AIR download URL:",
 				"key": "as3.deployment.url",
-				"description": "The URL specified for an application must point to a download location on the store where the application will be hosted. You can also enter your own url.",
+				"description": "(Deprecated) The URL specified for an application must point to a download location on the store where the application will be hosted. You can also enter your own url.",
 				"type": "enum",
 				"radio": false,
 				"allowsCustom": true,
 				"default": "https://market.android.com/details?id=com.adobe.air",
 				"enabled": false,
+				"deprecated": true,
 				"values": [
 					["https://market.android.com/details?id=com.adobe.air"],
 					["http://www.amazon.com/gp/mas/dl/android?p=com.adobe.air"]
 				]
+			},
+			{
+				"key": "as3.deployment.noFlair",				"title": "No Android Flair",				"description": "Remove the \"air\" prefixed to the Android package",				"type": "boolean",				"default": false			},			{
+				"key": "as3.deployment.target",
+				"title": "Target",
+				"type": "enum",
+				"description": "The type of package to create.",
+				"radio": false,
+				"default": "apk",
+				"values": [
+					["apk","APK"],
+					["apk-debug","APK with debugging support"],
+					["apk-emulator","APK for emulator"],
+					["apk-captive-runtime","APK with Captive Runtime"],
+					["apk-profile","APK that support profiling"],
+					["aab","AAB"],
+					["aab-debug","AAB with debugging support"],
+					["android-studio","Android Studio"],
+					["android-studio-debug","Android Studio with debugging support"]
+				]
+			},
+			{
+				"key": "as3.deployment.arch",
+				"title": "Architecture",
+				"type": "enum",
+				"radio": false,
+				"default": "armv7",
+				"values": [
+					["armv7"],
+					["armv8"],
+					["x86"],
+					["x64"],
+					["all"]
+				]
+			},
+			{
+				"key": "as3.deployment.platfromsdk",
+				"title": "Platform SDK",
+				"type": "path",
+				"allowFolders": true,
+				"allowFiles": false,
+				"placeholder": "~/Library/Android/sdk",
+				"description": "The path to the platform SDK for the target device. Only set this value to use a different version of the Android SDK."
 			}
 		]
 	},
