@@ -112,6 +112,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// If only one, then we're going to resolve the promise to the first file name
 				taskFileNamePromise = Promise.resolve(tasks[0]);
 			} else {
+				// If there are multiple tasks, ask which one to build
+				var placeholder = "Select which Task item to build? Select one from below";
+
 				// Sort the task names. But we need to strip the extension first so it matches the listing in the Task drop down
 				tasks.sort((a, b) => {
 					const strippedA = a.replace(".json", "");
@@ -119,12 +122,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return strippedA.localeCompare(strippedB, undefined, { numeric: true, sensitivity: 'base' });
 				});
 
-				// If there are multiple tasks, ask which one to build
-				var placeholder = "Select which Task item to build? Select one from below";
-
 				// Unless we've attempted to build before, then we will default to the last one selected as the placeholder
 				if(nova.workspace.config.get("as3.packaging.lastReleaseBuilt")!=null) {
 					placeholder = nova.workspace.config.get("as3.packaging.lastReleaseBuilt")
+
+					// Remove the placeholder from the array if it exists
+					tasks = tasks.filter(task => task !== placeholder);
+
+					// Add the placeholder to the top of the list
+					tasks.unshift(placeholder);
 				}
 
 				// Show the choice palette to get the name of the task file
@@ -133,7 +139,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			// Now that we have a task file name, let's try to get the config!
 			taskFileNamePromise.then((taskFileName) => {
-				//console.log("Task File Name: [[" + taskFileName + "]]");
+				console.log("Task File Name: [[" + taskFileName + "]]");
 				// If it's undefined, then the user escaped the palette
 				if(taskFileName==undefined) {
 					return;
