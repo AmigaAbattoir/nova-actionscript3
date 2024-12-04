@@ -41,10 +41,13 @@ exports.getProcessResults = function(command, args = [], cwd = "", env = {}) {
 			console.log("getProcessResults() status: " + status);
 			console.log("                    stdout: " + stdout);
 			console.log("                    stderr: " + stderr);
+			console.log("                    command: " + command);
 			console.log("                    args: ");
 			consoleLogObject(args);
+			console.log("                    cwd: " + cwd);
+			console.log("                    env: ");
+			consoleLogObject(env);
 			*/
-			console.log("                    command: " + command);
 			let results = { status: status, stdout: stdout, stderr: stderr };
 			/*
 			console.log("getProcessResults() results: ");

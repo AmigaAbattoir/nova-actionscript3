@@ -139,7 +139,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			// Now that we have a task file name, let's try to get the config!
 			taskFileNamePromise.then((taskFileName) => {
-				console.log("Task File Name: [[" + taskFileName + "]]");
+				//console.log("Task File Name: [[" + taskFileName + "]]");
 				// If it's undefined, then the user escaped the palette
 				if(taskFileName==undefined) {
 					return;
@@ -811,26 +811,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var args = [];
 
 		var launchMethod = config.get("as3.task.launchMethod");
-		if(launchMethod=="on-device") {
-			// Find if there are any devices
-			var weFoundDevices = false;
-
-			// @TODO Find devices
-			if(taskConfig["as3.target"]=="android") {
-
-			}
-
-			if(weFoundDevices) {
-				// Then we'll package it using bin-debug
-				// Then install on the device? At least for Android
-				// Then launch on device
-
-				runningOnDevice = true;
-
-			}
-
+		if(launchMethod=="device") {
 			// @TODO If we don't find devices, ask if they want to continue on desktop or try again?
-		} // else if(launchMethod=="desktop") { }
+		}
 
 		if(buildType=="airmobile") {
 			var screenSize = config.get("as3.task.deviceToSimulate");
@@ -1264,6 +1247,107 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var taskFile = nova.fs.open(nova.workspace.path + "/.nova/Tasks/"+taskName+".json","w");
 		taskFile.write(JSON.stringify(taskJson,null,2));
 		taskFile.close();
+	}
+
+	/**
+	 * Gets Android devices connected to the computer
+	 *
+	 * @returns {Promise} - With the resolve being an Array of devices
+	 */
+	getAndroidDevices() {
+		console.log("getAndroidDevices() : ");
+		return new Promise((resolve, reject) => {
+			let devices = [];
+
+			// Get the Android SDK and call ADB since it give more details about devices attached
+			let androidSDKBase = nova.workspace.config.get("as3.sdk.android");
+			if(!androidSDKBase) {
+				androidSDKBase = "~/Library/Android/sdk/";
+			}
+			if(androidSDKBase!=null) {
+				if(androidSDKBase.charAt(0)=="~") {
+					androidSDKBase = nova.path.expanduser(androidSDKBase);
+				}
+			}
+
+			// Call a process to get the output of `adb devices -l`
+			getProcessResults(androidSDKBase + "/platform-tools/adb",["devices","-l"]).then((result) => {
+				const results = result.stdout.split("\n");
+				results.forEach((line) => {
+					// Regex our output, data will come like:
+					// 0123456789ABYX         device usb:#-1 product:panther model:Device_Name_Here device:panther transport_id:#
+					// 0123456789CDWX         device usb:#-1 product:husky model:Other_Device_Name device:husky transport_id:#
+					const match = line.match(/^(\S+).*model:([\w_]+).*transport_id:(\d+)/);
+					if (match) {
+						const [_, uuid, model, transportID] = match;
+						devices.push({ uuid, model, transportID });
+					}
+				});
+				/*
+				// Debug output
+				if(!devices.length) {
+					console.log("getAndroidDevices No DEVICES!");
+				} else {
+					console.log("getAndroidDevices DEVICES! " + devices.length);
+					devices.forEach((device) => console.log("device: " + device.uuid + " is a " + device.model));
+				}
+				*/
+				resolve(devices);
+			}).catch((error) => {
+				console.error("getAndroidDevices: Error fetching Android devices", error);
+				reject([]); // Reject the promise with the error
+			});
+		});
+	}
+
+	/**
+	 * Gets iOS devices connected to the computer
+	 *
+	 * @returns {Promise} - With the resolve being an Array of devices
+	 */
+	getIOSDevices() {
+		return new Promise((resolve, reject) => {
+			let devices = [];
+
+			// Get the Flex SDK base, since ADT will give details about the iOS devices attached
+			const flexSDKBase = determineFlexSDKBase();
+			if(flexSDKBase==null) {
+				console.error("FlexSDK not set, cannot poll for devices without it!");
+				reject([]);
+			}
+
+			// Call a process to get the output of `adt -devices -platform ios`
+			getProcessResults(flexSDKBase + "/bin/adt", ["-devices","-platform","ios"]).then((result) => {
+				if(result!=undefined) {
+					const results = result.stdout.split("\n");
+					results.forEach((line) => {
+						// Regex our match, data will come like:
+						// Handle	DeviceClass	DeviceUUID					DeviceName
+						//   #	iPad    	12345678-0123456789ABCDEF	Actual Device Name
+						const match = line.match(/^\s*(\d+)\s+(\S+)\s+([A-Fa-f0-9\-]+)\s+(.+)$/);
+						if (match) {
+							const [_, transportID, model, uuid, deviceName] = match;
+							devices.push({ transportID, model, uuid, deviceName });
+						}
+					});
+					/*
+					// Debug output
+					if(!devices.length) {
+						console.log("getIOSDevices No DEVICES!");
+					} else {
+						console.log("getIOSDevices DEVICES! " + devices.length);
+						devices.forEach((device) => console.log("device: " + device.uuid + " is an " + device.model));
+					}
+					*/
+					resolve(devices);
+				} else {
+					reject([]);
+				}
+			}).catch((error) => {
+				console.error("getIOSDevices: Error fetching iOS devices",error);
+				reject([]);
+			});
+		});
 	}
 
 	/**

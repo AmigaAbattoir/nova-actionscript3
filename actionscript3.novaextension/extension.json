@@ -224,6 +224,15 @@
 					"allowFiles": false,
 					"placeholder": "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS##.#.sdk",
 					"description": "For some ANEs in iOS, you will need to specify the iOS SDK to compile them. You can run from terminal `xcrun --sdk iphoneos --show-sdk-path` to get the paths. Or maybe someday I can make this \"resolve\" that as a drop down."
+				},
+				{
+					"key": "as3.sdk.android",
+					"title": "Android SDK path",
+					"type": "path",
+					"allowFolders": true,
+					"allowFiles": false,
+					"placeholder": "~/Library/Android/sdk/",
+					"description": "Location of the Android SDK, default is `~/Library/Android/sdk/`"
 				}
 			]
 		},
@@ -786,6 +795,10 @@
 			{
 				"title": "AAA",
 				"command": "as3.clearExportPassword"
+			},
+			{
+				"title": "Deivce Tester",
+				"command": "as3.devicetester"
 			},
 			{
 				"title": "Tester",
