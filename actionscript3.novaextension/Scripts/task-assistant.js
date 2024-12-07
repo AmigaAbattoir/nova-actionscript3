@@ -763,35 +763,47 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {string} appXMLName - The name of the app.xml file
 	 */
 	debugRun(buildType, flexSDKBase, profile, destDir, appXMLName, config) {
-		/*
-		var base = nova.path.join(nova.extension.path, "debugger");
+/*		var base = nova.path.join(nova.extension.path, "debugger");
 
-		var args = new Array;
-
-		args.push("--server");
+		let args = [];
+		args.push("-server");
 		args.push("-Dflexlib=" + flexSDKBase);
 		if(isWorkspace()) {
 			args.push("-Dworkspace=" + nova.workspace.path);
 		}
+
 		//uncomment to debug the SWF debugger JAR
-		args.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
+		//args.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
 		args.push("-cp");
 		args.push("" + base + "/bundled-debugger/*:" + base + "/bin/*");
 		args.push("com.as3mxml.vscode.SWFDebug");
 
 		// @NOTE From Icarus extension
-		var action = new TaskDebugAdapterAction("actionscript");
+		var action = new TaskDebugAdapterAction("actionscript3");
 		action.command = "/usr/bin/java";
 		action.args = args;
-		action.transport = "socket";
-		action.port="4711";
+		// action.transport = "socket";
+		// action.port="4711";
 		action.adapterStart = "launch";
 
+		// Print out all the args so I know what's getting passed!
+		if(nova.inDevMode()) {
+			var argsOut = "";
+			args.forEach(a => argsOut += a + "\n")
+			console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
+		}
 		console.log("DEBUG!");
-		consoleLogObject(args);
-		// Haven't figured how to hook up debugger...
-		*/
 
+		new Promise((resolve) => {
+			console.log("Going to try running...");
+			this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config);
+			console.log("Run should have happened..");
+			resolve();
+		}).then(() => {
+			console.log("now the action should goTried running!");
+			return action;
+		});
+*/
 		return this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 	}
 
@@ -1413,8 +1425,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(whatKind=="debug") {
 				return this.debugRun(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 			} else {
-			// consoleLogObject(config);
-				return this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config);
+				return this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config)
 			}
 		} else if(action==Task.Clean) {
 			return new TaskCommandAction("as3.clean", { args: [destDir] });

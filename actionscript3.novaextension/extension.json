@@ -44,6 +44,8 @@
 	],
 
 	"breakpoints": [
+		{ "syntax": "actionscript3" },
+		{ "syntax": "actionscript" },
 		{ "syntax": "as" },
 		{ "syntax": "mxml" }
 	],

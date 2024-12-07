@@ -49,16 +49,11 @@ exports.activate = function() {
 
 	nova.commands.register("as3.devicetester", (workspace) => {
 		return new Promise((resolve) => {
-			console.log("HERE: 11 ");
 			var ad = taskprovider.getAndroidDevices().then((androidDevices) => {
-				console.log("!!!!222 AADADADADADADADADADDADADADDADADADADADDDD");
 				consoleLogObject(androidDevices);
-				console.log("!!!!333 AADADADADADADADADADDADADADDADADADADADDDD");
 
 				var dd = taskprovider.getIOSDevices().then((iosDevices) => {
-					console.log("444 AADADADADADADADADADDADADADDADADADADADDDD");
 					consoleLogObject(iosDevices);
-					console.log("555 AADADADADADADADADADDADADADDADADADADADDDD");
 				});
 			})
 		});
