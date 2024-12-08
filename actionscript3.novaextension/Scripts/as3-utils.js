@@ -1,4 +1,5 @@
-const { getProcessResults } = require("./nova-utils.js");
+const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
+const { getProcessResults, getStringOfFile } = require("./nova-utils.js");
 
 /**
  * Figures out a ProjectUUID for building releases and storing passwords.
@@ -24,6 +25,11 @@ exports.determineProjectUUID = function() {
 	return getUUID;
 }
 
+/**
+ * Converts the status code from ADL to text from Adobe AIR's help pages.
+ *
+ * @param {int} status - The status that ADL has returned
+ */
 exports.resolveStatusCodeFromADL = function(status) {
 	var title = "AIR ADL Error";
 	var message = "";
@@ -353,3 +359,49 @@ exports.resolveStatusCodeFromADT = function(status) {
 
 	return { title: title, message: message };
 }
+
+/**
+ * Looks for the `airsdk.xml` in the directory to check what versions of AIR we have
+ *
+ * @param {string} flexSDKBase - The location of the AIR/Flex SDK to check
+ * @returns {Object} - An object with a `float` containing the `version` of the SDK, as well as an array `appVersions` with the
+ * application namespaces (as a `descriptorNamespace` and `swfVersion`), and an array `extensionNamespaces` with the extension
+ * namespaces (also as a `descriptorNamespace` and `swfVersion`)
+ */
+exports.getAIRSDKInfo = function(flexSDKBase) {
+		version = 0;
+		appVersions = [];
+		extensionNamespaces = [];
+
+		// Grab the airsdk.xml to check for version nymbers
+		var airSDKInfo = getStringOfFile(nova.path.join(flexSDKBase,"airsdk.xml"));
+		// If it's not empty, let's parse it from XML and convert it to JSON for easier reference
+		if(airSDKInfo!="") {
+			var airSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
+
+			var currentNS = airSDKXML.getAttributeFromNodeByName("airSdk","xmlns");
+			// break into chunks on "/" and then get the last item for the version number
+			version = parseFloat(currentNS.split("/").pop());
+
+			// Used to keep track of what the minimun SWF version is for each descriptor namespace
+			var airAppVersions = airSDKXML.getNodeChildrenByName("applicationNamespaces", "versionMap");
+			airAppVersions.forEach((airAppVersion) => {
+				appVersions.push({
+					"descriptorNamespace": airSDKXML.findChildNodeByName(airAppVersion["children"], "descriptorNamespace")["textContent"],
+					"swfVersion": parseInt(airSDKXML.findChildNodeByName(airAppVersion["children"], "swfVersion")["textContent"])
+				});
+			});
+
+			// Used to keep track of what the minimun SWF version is for ANEs
+			var airExtensionNamespaces = airSDKXML.getNodeChildrenByName("extensionNamespaces", "versionMap");
+			airExtensionNamespaces.forEach((airExtensionNamespace) => {
+				extensionNamespaces.push({
+					"descriptorNamespace": airSDKXML.findChildNodeByName(airExtensionNamespace["children"], "descriptorNamespace")["textContent"],
+					"swfVersion": parseInt(airSDKXML.findChildNodeByName(airExtensionNamespace["children"], "swfVersion")["textContent"])
+				});
+			});
+		}
+
+	return { version: version, appVersions: appVersions, extensionNamespaces: extensionNamespaces }
+}
+
