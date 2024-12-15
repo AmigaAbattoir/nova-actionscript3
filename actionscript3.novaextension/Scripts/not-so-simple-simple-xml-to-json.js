@@ -79,6 +79,31 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 			return this.parseNode(); // Recursively call parseNode after skipping the declaration
 		}
 
+		if (this.xmlString.substr(this.currentIndex, 8) === "![CDATA[") {
+			this.moveCurrentIndex(9); // Skip "<![CDATA["
+			const start = this.currentIndex;
+
+			while (this.currentIndex < this.xmlString.length && this.xmlString.substr(this.currentIndex, 3) !== "]]>") {
+				this.nextCharCountingLine();
+			}
+
+			if (this.currentIndex >= this.xmlString.length) {
+				this.showErrorContext("Unterminated CDATA section at position " + this.getLineColumn());
+			}
+
+			const cdataContent = this.xmlString.substring(start, this.currentIndex);
+			this.moveCurrentIndex(3); // Skip "]]>"
+
+			return {
+				name: "#cdata",
+				"@": {},
+				children: [],
+				textContent: cdataContent,
+				line: this.lineNumber,
+				column: this.columnNumber
+			};
+		}
+
 		if (this.xmlString[this.currentIndex] === '!') {
 			this.skipComment();
 			return this.parseNode(); // Recursively call parseNode after skipping the comment
