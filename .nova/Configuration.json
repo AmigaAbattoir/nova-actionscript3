@@ -1,4 +1,6 @@
 {
+  "as3.project.asconfigMode" : "manual",
+  "as3.project.importedFB" : "done",
   "workspace.art_style" : 0,
   "workspace.color" : 0,
   "workspace.name" : "ActionScript 3 Extension",

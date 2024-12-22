@@ -25,6 +25,9 @@ var currentAIRSDKVersion = 0;
 var currentAIRAppVersions = [];
 var currentAIRExtensionNamespaces = [];
 
+var currentASConfigAutomatic = false;
+var currentASConfigText = "";
+
 /**
  * When the Extension is activated
  */
@@ -59,6 +62,12 @@ exports.activate = function() {
 			})
 		});
 	});
+
+	nova.commands.register("as3.update.asconfig", (workspace) => {
+		return new Promise((resolve) => {
+			langserver.updateASConfigFile();
+		});
+	})
 
 	taskprovider = new ActionScript3TaskAssistant();
 
@@ -147,6 +156,8 @@ exports.activate = function() {
 
 	nova.commands.register("as3.as3reference",() => { nova.openURL("https://airsdk.dev/reference"); });
 
+	nova.commands.register("as3.as3reference.old",() => { nova.openURL("https://help.adobe.com/en_US/air/build/index.html"); });
+
 	nova.commands.register("as3.restart", (editor) => {
 		langserver.stop();
 
@@ -183,13 +194,7 @@ class AS3MXMLLanguageServer {
 	languageClient = null;
 
 	constructor() {
-		// Observe the configuration setting for the server's location, and restart the server on change
-		/*
-		nova.config.observe('as3.languageServer.path', function(path) {
-			this.start(path);
-		}, this);
-		*/
-		var path = nova.extension.path;
+		const path = nova.extension.path;
 		if (nova.inDevMode()) {
 			console.log("--- AS3MXML Constructor -----------------------------------------------------");
 			console.log(" *** Constructing AS3MXML Extension with PATH: ",path);
@@ -207,6 +212,212 @@ class AS3MXMLLanguageServer {
 		this.stop();
 	}
 
+	makeASConfigFile() {
+		const configValues = this.gatherASConfigData();
+		// This make a minimal asconfig.json.
+		let asconfigContent = {
+			"config": configValues.config,
+			// @NOTE, haven't work on libs yet... "type": "lib",
+			"compilerOptions": {
+				"source-path": configValues.sourcePath,
+				"output": configValues.destDir + "/" + configValues.exportName
+			},
+			"mainClass": configValues.mainClass, // @NOTE Should be the main file without src/ and the .as/.mxml
+			"application": configValues.mainSrcDir + "/" + configValues.appXMLName,
+		};
+		nova.workspace.context.set("currentASConfigText",JSON.stringify(asconfigContent));
+		this.saveASConfigFile(asconfigContent);
+	}
+
+	gatherASConfigData() {
+		const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+		const mainClass = mainApplicationPath.replace(".mxml","").replace(".as","");
+
+		var mainSrcDir = nova.workspace.config.get("as3.build.source.main");
+		if(mainSrcDir=="") {
+			mainSrcDir = "src";
+		}
+
+		const sourceDirs = nova.workspace.config.get("as3.build.source.additional");
+
+		var sourcePath = [];
+		sourcePath.push(mainSrcDir);
+		if(sourceDirs) {
+			sourceDirs.forEach((sourceDir) => {
+				if(sourceDir.charAt(0)=="~") { // If a user shortcut, resolve
+					sourceDir = nova.path.expanduser(sourceDir);
+				}
+				if(sourceDir.includes("${PROJECT_FRAMEWORKS}")) {
+					sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
+				}
+				sourcePath.push(sourceDir);
+			});
+		}
+
+		var libraryPath = [];
+		const libPaths = nova.workspace.config.get("as3.build.library.additional");
+		if(libPaths) {
+			libPaths.forEach((libPath) => {
+				// @NOTE, not sure this is needed, but it may come in handy
+				if(libPath.includes("${PROJECT_FRAMEWORKS}")) {
+					libPath = libPath.replace("${PROJECT_FRAMEWORKS}",determineFlexSDKBase()+"/frameworks/");
+				}
+				if(libPath.includes("{locale}")) {
+					/** @TODO Need to figure out how to get locale... Maybe a setting in the extension or preferences */
+					libPath = libPath.replace("{locale}","en_US");
+				}
+				libraryPath.push(libPath);
+			});
+		}
+
+		var destDir = nova.workspace.config.get("as3.build.output");
+		if(destDir=="") {
+			destDir = "bin-debug";
+		}
+
+		const isFlex = nova.workspace.config.get("as3.application.isFlex");
+		const exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
+		const appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
+
+		const configData = {
+			"config": "airmobile",
+			"sourcePath":  sourcePath,
+			"destDir": destDir,
+			"exportName": exportName,
+			"mainClass": mainClass,
+			"mainSrcDir": mainSrcDir,
+			"appXMLName": appXMLName
+		};
+		consoleLogObject(configData);
+		return configData;
+	}
+
+	updateASConfigFile() {
+		let asconfig = {};
+		const asconfigText = nova.workspace.context.get("currentASConfigText");
+		if(asconfigText==null) {
+			return this.makeASConfigFile();
+		} else {
+			asconfig = JSON.parse(asconfigText);
+		}
+
+		const configValues = this.gatherASConfigData();
+
+		asconfig["config"] = configValues.config;
+		// @NOTE, haven't work on libs yet, but when I do, you need to set: `asconfig["type"] =  "lib"`. Maybe;
+		if(asconfig["compilerOptions"]==undefined) {
+			asconfig["compilerOptions"] = {};
+		}
+		asconfig["compilerOptions"]["source-path"] = configValues.sourcePath; ///[ "src" ];
+		asconfig["compilerOptions"]["output"] = [ configValues.destDir + "/" + configValues.exportName ]; ///[ "bin/HelloAIR.swf" ];
+		asconfig["compilerOptions"]["library-path"] = configValues.libraryPath///[ "libs" ];
+		asconfig["mainClass"] = configValues.mainClass; ////"HelloAIR", // @NOTE Should be the main file without src/ and the .as/.mxml
+		asconfig["application"] = configValues.mainSrcDir + "/" + configValues.appXMLName; /// "src/HelloAIR-app.xml"
+
+		nova.workspace.context.set("currentASConfigText",JSON.stringify(asconfig));
+		this.saveASConfigFile(asconfig);
+	}
+
+	loadASConfigFile() {
+		var asconfigFileText = getStringOfFile(nova.workspace.path + "/asconfig.json","r");
+		nova.workspace.context.set("currentASConfigText", asconfigFileText);
+	}
+
+	saveASConfigFile(content) {
+		var asconfigFile = nova.fs.open(nova.workspace.path + "/asconfig.json","w");
+		asconfigFile.write(JSON.stringify(content,null,2));
+		asconfigFile.close();
+	}
+
+	setupConfigurationWatchers() {
+		// Extension configs we need to watch
+		const watchedConfigs = [
+			"as3.java.path", "as3.sdk.searchPaths", "as3.sdk.default", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
+			"as3.languageServer.jvmargs", "as3.languageServer.concurrentRequests",
+		];
+
+		// Workspace configs we need to watch
+		const watchedWorkspaceConfigs = [
+			"as3.application.mainApp", "as3.build.source.main", "as3.build.output", "as3.build.source.additional",
+			"as3.build.library.additional", "as3.build.anes", "as3.packaging.anes", "as3.export.folder",
+			"as3.project.asconfigMode",
+		];
+
+		/** @TODO Figure a way to check the current selected Task what's there */
+		/*
+		// Task configs we need to watch
+		const watchedTaskConfigs = [
+			"as3.export.folder",
+		];
+		*/
+
+		// Keys that should trigger the LSP to restart
+		const configsThatTriggersRestart = [
+			"as3.java.path", "as3.sdk.searchPaths", "as3.sdk.default", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
+			"as3.languageServer.path", "as3.languageServer.jvmargs", "as3.languageServer.concurrentRequests"
+		];
+
+		// Keys that should trigger a rebuild of the `.asconfig` file
+		const configsThatTriggersASConfig = [
+			"as3.application.mainApp", "as3.build.source.main", "as3.build.output", "as3.build.source.additional",
+			"as3.build.library.additional", "as3.build.anes", "as3.project.asconfigMode"
+			// Probably some task things but we don't know how to get them...
+		];
+
+		/* @NOTE Not sure, but unless we do this "isThrottled" check, we end up getting like 7 calls to this function
+		 * which if we need to restart the LSP, would lock up Nova.
+		 */
+		for (const key of watchedConfigs) {
+			let isThrottled = false;
+			nova.config.onDidChange(key, function(newValue, oldValue) {
+				if(!isThrottled) {
+					console.log(` =-=-=-=-= Changed ${key} is now ${newValue} was ${oldValue}`);
+
+					if(configsThatTriggersRestart.includes(key)) {
+						console.log(" =-=-=-=-= Should trigger restart");
+					}
+
+					var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
+					if(needAutoASConfig=="automatic") {
+						if(configsThatTriggersASConfig.includes(key)) {
+							langserver.updateASConfigFile();
+						}
+					}
+
+					isThrottled = true;
+					setTimeout(() => (isThrottled = false), 100); // Throttle period
+				}
+			});
+		}
+
+		/* @NOTE Not sure, but unless we do this "isThrottled" check, we end up getting like 7 calls to this function
+		 * which if we need to restart the LSP, would lock up Nova.
+		 */
+		for (const key of watchedWorkspaceConfigs) {
+			let isThrottled = false;
+			nova.workspace.config.onDidChange(key, function(newValue, oldValue) {
+				if(!isThrottled) {
+
+					console.log(` =-=-=-=-= WORKSPACE Changed ${key} is now ${newValue} was ${oldValue}`);
+
+					if(configsThatTriggersRestart.includes(key)) {
+						console.log(" =-=-=-=-= WORKSPACE Should trigger restart");
+					}
+
+					var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
+					if(needAutoASConfig=="automatic") {
+						if(configsThatTriggersASConfig.includes(key)) {
+							langserver.updateASConfigFile();
+						}
+					}
+
+					isThrottled = true;
+					setTimeout(() => (isThrottled = false), 100); // Throttle period
+				}
+			});
+		}
+	}
+
 	start(path) {
 		if (nova.inDevMode()) {
 			console.log("--- AS3MXML Start(path)-----------------------------------------------------");
@@ -221,6 +432,10 @@ class AS3MXMLLanguageServer {
 			nova.subscriptions.remove(this.languageClient);
 		}
 
+		// Configuration Change Handlers
+		this.setupConfigurationWatchers();
+
+		// Start 'er up!
 		var base =  nova.path.join(nova.extension.path, "language-server");
 
 		var flexSDKBase = determineFlexSDKBase();
@@ -239,8 +454,11 @@ class AS3MXMLLanguageServer {
 			// Keep track of what AIRSDK we're using
 			let airSDKInfo = getAIRSDKInfo(flexSDKBase);
 			currentAIRSDKVersion = airSDKInfo.version;
+			nova.workspace.context.set("currentAIRSDKVersion",currentAIRSDKVersion);
 			currentAIRAppVersions = airSDKInfo.appVersions;
+			nova.workspace.context.set("currentAIRAppVersions",JSON.stringify(currentAIRAppVersions));
 			currentAIRExtensionNamespaces = airSDKInfo.extensionNamespaces;
+			nova.workspace.context.set("currentAIRExtensionNamespaces",JSON.stringify(currentAIRExtensionNamespaces));
 
 			// Create the client
 			var args = new Array;
@@ -266,9 +484,7 @@ class AS3MXMLLanguageServer {
 			// add the following option:
 			//args.push("-Xlog:all=warning:stderr");
 
-			/**
-			 *Commands to start server from: https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text
-			 */
+			// Commands to start server from: https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text
 			//args.push("-Dlog.level=DEBUG");
 			args.push("-Dfile.encoding=UTF8");
 			//args.push("-Droyalelib=" + flexSDKBase + "/frameworks"); /** @NOTE Don't forget the "Frameworks" after the SDK Base! */
@@ -298,19 +514,7 @@ class AS3MXMLLanguageServer {
 				cwd: nova.workspace.path
 			};
 
-/*
-			// From https://devforum.nova.app/t/lsp-doesnt-work-unless-re-activate-it/1798
-			if (nova.inDevMode()) {
-				serverOptions = {
-					path: '/bin/bash',
-					args: [
-					'-c',
-					`tee "${nova.extension.path}/logs/nova-client.log" | ${path} | tee "${nova.extension.path}/logs/lang-server.log"`,
-					],
-				};
-			}
-*/
-			// Client options
+			// Client options to pass to the LSP
 			var clientOptions = {
 				syntaxes: ["actionscript","mxml"],
 				debug: true,
@@ -325,7 +529,7 @@ class AS3MXMLLanguageServer {
 				initializationOptions: {
 					preferredRoyaleTarget: "SWF", // Should be SWF or JS for Royale, but for now let's just try this...
 					notifyActiveProject: true,
-				},
+				}
 			};
 
 			if (nova.inDevMode()) {
@@ -469,7 +673,6 @@ class AS3MXMLLanguageServer {
 					nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
 				});
 
-				// @TODO, need to watch a bunch of settings to auto-generate an .asconfig file. :-(
 
 				// @TODO Can I check with initialized?
 				setTimeout(function() {
@@ -506,28 +709,63 @@ class AS3MXMLLanguageServer {
 					}
 				}
 
-				// ------------------------------------------------------------------------
-				// Configuration Change Handlers
-				var configsThatTriggersRestart = [
-					"as3.java.path", "as3.sdk.default", "as3.sdk.searchPaths", "as3.sdk.animate", "as3.sdk.editor",
-					"as3.languageServer.path", "as3.languageServer.jvmargs", "as3.languageServer.concurrentRequests"
-				]
-
-				/* // @NOTE, Once it's changed, this is called over and over again... oops
-				configsThatTriggersRestart.forEach((config) => {
-					nova.config.onDidChange(config, (editor) => {
-						if (nova.inDevMode()) {
-							console.log("Configuration " + config + " changed... Restart LSP with new args " + getWorkspaceOrGlobalConfig(config));
-						}
-
-						nova.config.onDidChange(config, (editor) => null );
-
-						showNotification("Config Change", "The config " + config + " changed. Restarting Server!");
-						nova.commands.invoke("as3.restart");
-					});
-				});
+				// Check if there's an asconfig, ask if they want to update the file automatically or if they will handle it
+				/* // DEBUG to force prompting about asconfig!
+				nova.config.set("as3.project.asconfigMode",null);
+				nova.workspace.config.set("as3.project.asconfigMode",null);
 				*/
-				// ------------------------------------------------------------------------
+				var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
+				if(needAutoASConfig==null) {
+					var asConfigMessage = "This extension can attempt to automatically make one for you based upon the extensions settings, or you can choose to maintain one of your own. Which way would you prefer?";
+					var hasExistingASConfig = false;
+					// But... if there is already an asconfig.json, change the prompt text
+					if(nova.fs.stat(nova.workspace.path + "/asconfig.json")!=undefined) {
+						hasExistingASConfig = true;
+						asConfigMessage = "We noticed an existing \"asconfig.json\". However, this extension can attempt to automatically make one for you based upon the extensions settings, or you can choose to maintain one of your own. If you choose automatic, we will rename your existing file. Which way would you prefer?";
+					}
+
+					nova.workspace.showActionPanel(asConfigMessage, { buttons: [ "Automatic","I'll Maintain it","Cancel"] },
+						(something, other) => {
+							console.log("Something : "+ something + "   Ohter: " + other)
+							switch(something) {
+								case 0: {
+									if(hasExistingASConfig) {
+										// Back it up...
+										function doSortableDataFormat() {
+											const now = new Date();
+
+											const year = now.getFullYear();
+											const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+											const day = String(now.getDate()).padStart(2, '0');
+											const hours = String(now.getHours()).padStart(2, '0');
+											const minutes = String(now.getMinutes()).padStart(2, '0');
+											const seconds = String(now.getSeconds()).padStart(2, '0');
+
+											return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+										}
+
+										nova.fs.copy(nova.workspace.path + "/asconfig.json",nova.workspace.path + "/asconfig-" + doSortableDataFormat() + ".json");
+										this.loadASConfigFile();
+									} else {
+										nova.workspace.context.set("currentASConfigText",JSON.stringify({}));
+									}
+									this.updateASConfigFile();
+									// Fire it off!!!
+									nova.workspace.config.set("as3.project.asconfigMode","automatic");
+									break;
+								}
+								case 1: {
+									// Just mark it as manual
+									nova.workspace.config.set("as3.project.asconfigMode","manual");
+									break;
+								}
+							}
+						}
+					);
+				} else {
+					nova.workspace.context.set("currentASConfigAutomatic", (needAutoASConfig=="automatic" ? true : false));
+				}
+
 			} catch (err) {
 				if (nova.inDevMode()) {
 					console.error(" *** CAUGHT AN ERROR!!!" + err + " .... " + JSON.stringify(err) + " ***");

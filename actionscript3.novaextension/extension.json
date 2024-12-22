@@ -332,6 +332,22 @@
 			]
 		},
 		{
+			"title": "ASConfig File",
+			"type": "section",
+			"description": "For AS3MXML, you need to have an `asconfig.json` file for code intelligence. Select if you want to have this extension auto generate, or if you will manually maintain it.",
+			"children": [
+				{
+					"key": "as3.project.asconfigMode",
+					"title": "asconfig.json Mode",
+					"type": "enum",
+					"values": [
+						[ "automatic", "Automatically generate" ],
+						[ "manual", "Manually maintain" ]
+					]
+				}
+			]
+		},
+		{
 			"title": "Build Packaging",
 			"description": "Used for packaging AIR projects. Not used in Flash projects.",
 			"type": "section",
@@ -760,50 +776,58 @@
 		],
 		"extensions": [
 			{
-				"title": "Restart AS3MXML LSP",
+				"title": " ↺  Restart AS3MXML LSP",
 				"command": "as3.restart"
 			},
 			{"separator": true},
 			{
-				"title": "Export Release Build...",
+				"title": "📦 Export Release Build...",
 				"command": "as3.exportRelease"
 			},
-			{
-				"title": "Clear Certifcate Password",
-				"command": "as3.clearExportPassword"
-			},
 			{"separator": true},
 			{
-				"title": "Test UI",
-				"command": "as3.paneltest"
-			},
-			{"separator": true},
-			{
-				"title": "Import FlashBuilder settings",
+				"title": "⚙️ Import FlashBuilder settings",
 				"command": "as3.importFlashBuilderSettings",
 				"when": "hasProjectAndASProperties"
-
+			},
+			{
+				"title": "📝 Force update to asconfig.json file",
+				"command": "as3.update.asconfig"
 			},
 			{"separator": true},
 			{
-				"title": "AIR / ActionScript 3 Reference",
+				"title": "📕 AIR / ActionScript 3 Reference",
 				"command": "as3.as3reference"
 			},
+			{
+				"title": "📖 Adobe AIR - Help at Adobe",
+				"command": "as3.as3reference.old"
+			},
 			{"separator": true},
 			{
-				"title": "AAA",
-				"command": "as3.packaging.certificateCreate"
-			},
-			{
-				"title": "AAA",
+				"title": "🔒 Clear Certifcate Password",
 				"command": "as3.clearExportPassword"
 			},
 			{
-				"title": "Deivce Tester",
-				"command": "as3.devicetester"
+				"title": "🔐 Store Certifcate Password",
+				"command": "as3.storeExportPassword"
 			},
 			{
-				"title": "Tester",
+				"title": "🔏 Create new Certificate",
+				"command": "as3.packaging.certificateCreate"
+			},
+			{"separator": true},
+			{
+				"title": "📱 Device Tester",
+				"command": "as3.devicetester"
+			},
+			{"separator": true},
+			{
+				"title": "      Test UI",
+				"command": "as3.paneltest"
+			},
+			{
+				"title": "      Tester",
 				"command": "as3.tester"
 			}
 		]

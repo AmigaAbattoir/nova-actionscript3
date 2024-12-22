@@ -8,32 +8,28 @@ It currently provides:
 
  * **Code Folding**
 
- * **Symbols** - *Note:* MXML children nodes not alway correct in the hierarchy.
+ * **Symbols** - *Note:* MXML children nodes do not show up correctly in the hierarchy.
 
- * **Issues** - (*Note:* needs an `asconfig.json` file to work)
+ * **Issues**
 
- * **Language intelligence** - (*Note:* needs an `asconfig.json` file to work)
+ * **Language intelligence**
 
  * **Completions** for the following:
-   * **ActionScript 3** - (*Note:* needs an `asconfig.json` file to work)
-   * **MXML** - *Note:* Still wonky and also needs an `asconfig.json` file to work for
-   * **AIR Descriptor XML** - Include descriptions on some of the AIR Descriptors tags.
+   * **ActionScript 3**
+   * **MXML** - *Note:* Still wonky
+   * **AIR Descriptor XML** - Include descriptions on most of the AIR Descriptors tags.
 
  * **Clips** - *Note:* Still way early in progress.
 
- * **Tasks** - *Note:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile (through Desktop). Also, limitted support for ANEs. Still looking into some mobile, and web (maybe with Ruffle too at some point).
+ * **Tasks** - *Note:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile (through Desktop). Also, limited support for ANEs. Still looking into some mobile, and web (maybe with Ruffle too at some point).
 
- * **Exporting AIR Packages** - *Note:* Currently, limited to desktop/extendedDesktop AIR Bundle and Android .
+ * **Exporting AIR Packages** - *Note:* Currently, limited to desktop/extendedDesktop AIR Bundle and Android.
 
 ## Notes
 
 The LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.21.1 but Cleaning/Building/Running are done by the extension using `mxmlc` for compiling, packaging and running with `adt` from an (Harman) Adobe Air or Flex SDK.
 
-I started setting up LSP using the [How to use the ActionScript and MXML language server with Sublime Text](https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text) from the repo's Wiki.
-
-Also, took some stuff from [BowlerHatLLC/eclipse-as3mxml](https://github.com/BowlerHatLLC/eclipse-as3mxml/blob/master/language-configurations/actionscript.configuration.json)
-
-`.tmLanguage` files converted using the converter [Nova Mate](https://github.com/gredman/novamate). However, the syntax provided with the AS3MXML is not to Nova's liking and didn't really catch everything. I stared ended up using the Syntax XML from Panic's Javascript extensions and making modifications from that.
+For the Issues, language intelligence and completions to work, it requires an `asconfig.json` in the project folder. The extension will attempt to auto-generate one. If you have used the VSCode extension, you can disable the automatic generation in the configurations.
 
 ## Requirements
 
@@ -49,17 +45,19 @@ ActionScript 3 requires the following to be installed on your Mac:
 
 ## Usage
 
-Cross your fingers and hope it runs! :-)
+It should work if you open a files *.as, or *.mxml.
 
-It should work if you open a files *.as, or *.mxml. If you open a folder that contains a Flash Builder project, it will ask if you want to change your project's settings (unless you change the extensions settings).
+If you open a folder that contains a Flash Builder project (and has `.actionScriptProperties`, `.flexProperies`, and `.project`), it will ask if you want to import the Flash Builder project and change your project's settings. If you want, you can also change this setting in the **Extensions → Settings → Additional Options...**.
 
-Currently, it requires an `asconfig.json` in the directory of the project for much of the completion and issues to work. (Looking into making that happen automatically).
+Since AS3MXML requires requires an `asconfig.json` for most of the code intelligence and completions, the extension will ask if you want to have it generate one and automatically update it. If you select update, it should only change options that are needed in this extension. Building options are not changed and are handled internally by the extension.
 
-### Configuration
+## Configuration
 
 To configure global preferences, open **Extensions → Extension Library...** then select ActionScript 3's **Preferences** tab.
 
 You can also configure preferences on a per-project basis in **Project → Project Settings...**.
+
+Tasks also have a bunch of options too! Don't miss out on **Project → Tasks → Edit Task...**
 
 ## FlashBuilder migration
 
@@ -69,7 +67,7 @@ A lot of the settings from Flash Builder can be imported to the Nova project's w
 
 ### .flexProperties
 
-Only using this to set if the project's Default Syntax is either MXML or ActionScript 3.
+Only using this to set if the project's **Default Syntax** is either *MXML* or *ActionScript 3*.
 
 ### .actionScriptProperties
 
@@ -92,8 +90,17 @@ It will read this and rename the Nova project to the same name as the FlashBuild
 
 If there is a tag of `<linkedResources>` with a `<type>` of 2, then warn the user that these types of links are not supported in Nova. But you could probably just make a symlink (or maybe the extension could do that at some point).
 
-## Syntax Testing
+---
 
-For quick testing, I found [tszarzynski/ISampleInterface.as](https://gist.github.com/tszarzynski/3525530) which gives a fairly complete AS3 Class/Interface, which works nice for testing.
-I included the files in the Example Code from [SampleClass/Event/Interface](https://gist.github.com/
+## Developer Notes
+
+I started setting up LSP using the [How to use the ActionScript and MXML language server with Sublime Text](https://github.com/BowlerHatLLC/vscode-as3mxml/wiki/How-to-use-the-ActionScript-and-MXML-language-server-with-Sublime-Text) from the repo's Wiki.
+
+Also, took some stuff from [BowlerHatLLC/eclipse-as3mxml](https://github.com/BowlerHatLLC/eclipse-as3mxml/blob/master/language-configurations/actionscript.configuration.json)
+
+`.tmLanguage` files converted using the converter [Nova Mate](https://github.com/gredman/novamate). However, the syntax provided with the AS3MXML is not to Nova's liking and didn't really catch everything. I ended up using the Syntax XML from Panic's Javascript extensions and making modifications from that.
+
+### Syntax Testing
+
+For quick testing, I found [tszarzynski/ISampleInterface.as](https://gist.github.com/tszarzynski/3525530) which gives a fairly complete AS3 Class/Interface, which works nice for testing. I included the files in the Example Code from [SampleClass/Event/Interface](https://gist.github.com/
 https://codeload.github.com/gist/3525530/zip/94b4abd8d01b8eb2d5e4d55db66db16545f757e1)

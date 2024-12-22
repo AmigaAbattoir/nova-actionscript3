@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange, getStringOfWorkspaceFile } = require("./nova-utils.js");
+const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase } = require("./config-utils.js");
-const { determineProjectUUID, resolveStatusCodeFromADT } = require("./as3-utils.js");
+const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo } = require("./as3-utils.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
@@ -438,16 +438,18 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							var stdout = "";
 							var stderr = "";
 							process.onStdout(function(line) {
-								console.log("STDOUT: " + line);
+								if (nova.inDevMode()) { console.log("STDOUT: " + line); }
 								stdout += line;
 							});
 							process.onStderr(function(line) {
-								console.log("STDERR: " + line);
+								if (nova.inDevMode()) { console.log("STDERR: " + line); }
 								stderr += line;
 							});
 							process.start();
 							process.onDidExit((status) => {
-								consoleLogObject(status);
+								if (nova.inDevMode()) {
+									consoleLogObject(status);
+								}
 								var title = "Export Package";
 								var message = "Okay?!!!";
 								if(status==0) {
@@ -456,29 +458,31 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									//nova.fs.rmdir(nova.path.join(nova.workspace.path, "bin-release-temp"));
 								} else {
 									var result = resolveStatusCodeFromADT(status);
-									console.log("RESULT: ");
+									// console.log("RESULT: ");
 									// console.log("STDOUT: " + stdout);
 									// console.log("STDERR: " + stderr);
 									message = result.message;
-									console.log("STDOUT: " + stdout);
-									console.log("STDERR: " + stderr);
-									nova.workspace.showErrorMessage("*** ERROR - " + title + " ***\n\n" + message);
+									if (nova.inDevMode()) {
+										console.log("STDOUT: " + stdout);
+										console.log("STDERR: " + stderr);
+									}
+									nova.workspace.showErrorMessage(title + "\n\n" + message);
 								}
 							})
 						}, error => {
 							console.log("passwordGet.then((error): ");
-							nova.workspace.showErrorMessage("*** ERROR - Password failed! ***\n\nSomething happened when trying to use or save the pasword!");
+							nova.workspace.showErrorMessage("Password failed!\n\nSomething happened when trying to use or save the pasword!");
 						},(reject) => {
 							console.log("passwordGet.then((reject): ");
-							nova.workspace.showErrorMessage("*** Password failed! ***\n\n", "rej" + reject);
+							nova.workspace.showErrorMessage("Password failed!\n\n", "rej" + reject);
 						});
 					}, (reject) => {
 						// To make this a little neater, remove the workspace's path from the stderr messages
 						var message = reject.stderr.replaceAll(nova.workspace.path,"");
-						nova.workspace.showErrorMessage("*** ERROR - Export Release Build failed! ***\n\nOne or more errors were found while trying to build the release version. Unable to export.\n" + message);
+						nova.workspace.showErrorMessage("Export Release Build failed!\n\nOne or more errors were found while trying to build the release version. Unable to export.\n" + message);
 					});
 				}, (reject) => {
-					nova.workspace.showErrorMessage("*** ERROR - Project UUID Missing ***\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu, or ensure that `uuidgen` is on your system's path!");
+					nova.workspace.showErrorMessage("Project UUID Missing\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu, or ensure that `uuidgen` is on your system's path!");
 				});
 			});
 		}
@@ -515,7 +519,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			// consoleLogObject("Copy DIR: " + copyDirs)
 
 			if(copyDirs!=null) {
-
 				const copyPromises = copyDirs.map(copyDirRaw => {
 					let copyDir = copyDirRaw;
 					if (copyDir.charAt(0) == "~") {
@@ -528,69 +531,57 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
 				});
 
-				Promise.all(copyPromises)
-					.then(() => {
+				Promise.all(copyPromises).then(() => {
+					if (nova.inDevMode()) {
 						console.log("All assets copied successfully.");
-					})
-					.catch(error => {
-						console.error("Error during asset copying:", error);
-					});
-
-// console.log(" # # # # # # # %%%%%%%%%%$%%% DONE COPYING FILES!!!");
-// console.log(" # # # # # # # %%%%%%%%%%$%%% DONE COPYING FILES!!!");
-// console.log(" # # # # # # # %%%%%%%%%%$%%% DONE COPYING FILES!!!");
-				/*
-				copyDirs.forEach((copyDir) => {
-					if(copyDir.charAt(0)=="~") { // If a user shortcut, resolve
-						copyDir = nova.path.expanduser(copyDir);
-					} else if(copyDir.charAt(0)!="/") { // If it's not a slash, it's relative to the workspace path
-						copyDir = nova.path.join(nova.workspace.path, copyDir);
 					}
-					console.log("  >][[[] Starting to copy assets of [[" + copyDir + "]] to [[" + destDir + "]]")
-					this.ensureFolderIsAvailable(destDir);
-					this.copyAssetsOf(copyDir, destDir, packageAfterBuild);
+				})
+				.catch(error => {
+					nova.workspace.showErrorMessage("Error during asset copying: " + error);
+					if (nova.inDevMode()) {
+						console.error("Error during asset copying:", error);
+					}
+					return null;
 				});
-				*/
 			}
 		}
 
-// console.log(" # # # # # # # # # # # # # # # # # # # # # Moving on....");
-		// FlashBuilder would modify the -app.xml with updated variables, so we will make a copy of the file, changing what FB would
-		// Otherwise, this will write a copy.
-		var appXML;
-		// console.log("AppXML location: " + appXMLName);
-		try{
-			appXML = nova.fs.open(nova.path.join(mainSrcDir, appXMLName))
-		} catch(error) {
-			// console.log("Error opening APP XML! ",error);
+		// This loads the app descriptor file and check the version to match the AIR SDK.
+		// FlashBuilder would modify the -app.xml with updated variables, so we will make a copy of the file,
+		// changing what FB would have (and possible VSCode for AS3MXML).  Otherwise, this will write a copy.
+		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
+		let appXML = getStringOfFile(appXMLLocation);
+		if(appXML!=null) {
+			// Read the App XML and make sure the Namespace is the same version!
+			let appXMLNS =  new xmlToJson.ns3x2j(appXML).getAttributeFromNodeByName("application","xmlns");
+			let appVersion = parseFloat(appXMLNS.split("/").pop());
+			let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+
+			if(appVersion!=currentAIRSDKVersion) {
+				nova.workspace.showErrorMessage("You app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". Please correct the issue before you can run it.");
+				return null;
+			}
+		} else {
+			nova.workspace.showErrorMessage("Error opening app descriptor file at " + appXMLLocation);
 			return null;
 		}
 
-		var newAppXML = nova.fs.open(destDir + "/" + appXMLName, "w");
-		// console.log("newAppXML location: " + destDir + "/" + appXMLName);
-		if(appXML) {
-			var line;
-			var lineCount = 0;
-			try {
-				do {
-					line = appXML.readline();
-					//console.log(" READING LINE: " + line);
-					lineCount++;
-					if(line.indexOf("[This value will be overwritten by Flash Builder in the output app.xml]")!=-1) {
-						line = line.replace("[This value will be overwritten by Flash Builder in the output app.xml]",exportName);
-						//console.log(" REPLACING FB LINE: " + line);
-					}
-					newAppXML.write(line);
-				} while(line && line.length>0);
-				appXML.close();
-			} catch(error) {
-				if(lineCount==0) {
-					console.log("*** ERROR: No APP XML file! error: ",error);
-					consoleLogObject(error);
-				}
+		// Replace content that the IDEs were supposed to and then write the app.xml to the output folder
+		try {
+			var newAppXML = appXML;
+			var newAppXML = appXML.replace(/\[This value will be overwritten by .*? app.xml\]/,exportName);       // Change's Flashbuilder's text
+			newAppXML = newAppXML.replace(/[Path to content will be replaced by Visual Studio Code]/,exportName); // Just incase you used AS3MXML wiki
+			var newAppXMLFile = nova.fs.open(destDir + "/" + appXMLName, "w");
+			newAppXMLFile.write(newAppXML);
+			newAppXMLFile.close();
+		} catch(error) {
+			if(lineCount==0) {
+				nova.workspace.showErrorMessage("Error handling app descriptor at " + appXMLLocation + ". Please check it's content that it is valid.");
+				console.log("*** ERROR: APP XML file! error: ",error);
+				consoleLogObject(error);
+				return null;
 			}
 		}
-		// console.log("DONE!!");
 
 		// Let's compile this thing!!
 		var command = flexSDKBase + "/bin/mxmlc";
@@ -674,40 +665,47 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// ANEs so we can run on desktop. But, if it's building for packing, ADT will incorporate that into
 		// the package for us!
 		if(anePaths) {
- 			var extdir = destDir + "/ane";
-			if(packageAfterBuild==false) {
-				// If the destination "extdir" exists, delete it then make it!
-				try {
-					if(nova.fs.stat(extdir).isDirectory()) {
-						nova.fs.rmdir(extdir);
-					}
-					nova.fs.mkdir(extdir);
-				} catch(error) {
-					console.log("*** ERROR: Failed to make ANE temp folder *** ");
-				}
-			}
-			anePaths.forEach((anePath) => {
-				args.push("--external-library-path+=" + anePath);
-				// Needed?
-				//args.push("--library-path+=" + anePath);
+			if(anePaths.length>0) {
+				var extdir = destDir + "/ane";
 				if(packageAfterBuild==false) {
-					var aneDest = anePath.substring(anePath.lastIndexOf("/"),anePath.length);
-					//console.log("ANE DEST: [[" + aneDest + "]]");
-					//console.log("ANE PATH: [[" + anePath + "]]");
-					//console.log("/usr/bin/unzip" + " " + anePath + " " + "-d" + " " + extdir + aneDest);
+					// If the destination "extdir" exists, delete it then make it!
 					try {
-						nova.fs.mkdir(extdir + aneDest);
-						var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
-						unzip.then((resolve) => {
-							// console.log("Unzip successful?!");
-						},(reject) => {
-							console.log("Unzip failed?!?!");
-						});
+						if(nova.fs.stat(extdir).isDirectory()) {
+							nova.fs.rmdir(extdir);
+						}
+						nova.fs.mkdir(extdir);
 					} catch(error) {
-						console.log("*** ERROR: Couldn't unzip ANE for test runs ***");
+						nova.workspace.showErrorMessage("Failed to make ANE temp folder.");
+						console.log("*** ERROR: Failed to make ANE temp folder *** ");
 					}
 				}
-			});
+				anePaths.forEach((anePath) => {
+					args.push("--external-library-path+=" + anePath);
+					// Needed?
+					//args.push("--library-path+=" + anePath);
+					if(packageAfterBuild==false) {
+						var aneDest = anePath.substring(anePath.lastIndexOf("/"),anePath.length);
+						//console.log("ANE DEST: [[" + aneDest + "]]");
+						//console.log("ANE PATH: [[" + anePath + "]]");
+						//console.log("/usr/bin/unzip" + " " + anePath + " " + "-d" + " " + extdir + aneDest);
+						try {
+							nova.fs.mkdir(extdir + aneDest);
+							var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
+							unzip.then((resolve) => {
+								// console.log("Unzip successful?!");
+							},(reject) => {
+								nova.workspace.showErrorMessage("Failed while trying to unzip ANE " + anePath + " to temp folder.");
+								console.log("Unzip failed?!?!");
+								return null;
+							});
+						} catch(error) {
+							nova.workspace.showErrorMessage("Failed to unzip ANE " + anePath + " to temp folder.");
+							console.log("*** ERROR: Couldn't unzip ANE for test runs ***");
+							return null;
+						}
+					}
+				});
+			}
 		}
 
 		// Additional compiler arguments
@@ -745,10 +743,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		}
 
 		if(packageAfterBuild) {
-			console.log(" #### Okay, ready to do Promise!");
+			if (nova.inDevMode()) {
+				console.log(" #### Okay, ready to do Promise!");
+			}
 			return getProcessResults(command, args, nova.workspace.path);
 		} else {
-			console.log(" #### Okay, should be playing according to Nova!");
+			if (nova.inDevMode()) {
+				console.log(" #### Okay, should be playing according to Nova!");
+			}
 			return new TaskProcessAction(command, { args: args });
 		}
 	}
@@ -840,7 +842,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			args.push(screenSize);
 		}
 
-		console.log("CONFIG: " + profile);
+		if (nova.inDevMode()) {
+			console.log("CONFIG: " + profile);
+		}
 		// @TODO If default, we should check the -app.xml to see if there is a profile specified
 		if(profile!="default") {
 			args.push("-profile");
@@ -859,7 +863,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var anes = nova.workspace.config.get("as3.packaging.anes");
 		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 		// ones that to the destination dir.
-		console.log("anes: " + JSON.stringify(anes));
+		if (nova.inDevMode()) {
+			console.log("anes: " + JSON.stringify(anes));
+		}
 		if(anes && anes.length>0) {
 			args.push("-extdir");
 			args.push(destDir + "/ane");
