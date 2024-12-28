@@ -71,7 +71,10 @@ exports.determineFlexSDKBase = function() {
 	return flexSDKBase;
 }
 
-exports.getConfigsForBuild = function() {
+exports.getConfigsForBuild = function(appendWorkspacePath = false) {
+	console.log("appendWorkspacePath: " + appendWorkspacePath);
+	console.log("appendWorkspacePath: " + appendWorkspacePath);
+
 	const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
 	const mainClass = mainApplicationPath.replace(".mxml","").replace(".as","");
 
@@ -79,11 +82,16 @@ exports.getConfigsForBuild = function() {
 	if(mainSrcDir=="") {
 		mainSrcDir = "src";
 	}
+	if(appendWorkspacePath) {
+		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
+	}
 
 	const sourceDirs = nova.workspace.config.get("as3.build.source.additional");
 
+	const flexSDKBase = exports.determineFlexSDKBase();
+
 	var sourcePath = [];
-	sourcePath.push(mainSrcDir);
+//	sourcePath.push(mainSrcDir);
 	if(sourceDirs) {
 		sourceDirs.forEach((sourceDir) => {
 			if(sourceDir.charAt(0)=="~") { // If a user shortcut, resolve
@@ -92,6 +100,7 @@ exports.getConfigsForBuild = function() {
 			if(sourceDir.includes("${PROJECT_FRAMEWORKS}")) {
 				sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
 			}
+			/** @TODO Check if it starts with ~, or a "/", then don't merge with workspace! */
 			sourcePath.push(sourceDir);
 		});
 	}
@@ -112,23 +121,47 @@ exports.getConfigsForBuild = function() {
 		});
 	}
 
+	var anePaths = nova.workspace.config.get("as3.build.anes");
+
 	var destDir = nova.workspace.config.get("as3.build.output");
 	if(destDir=="") {
-		destDir = "bin-debug";
+		if(appendWorkspacePath) {
+			destDir = nova.path.join(nova.workspace.path, "bin-debug");
+		} else {
+			destDir = "bin-debug";
+		}
+	} else {
+		/** @TODO Check if it starts with ~, or a "/", then don't merge with workspace! */
+		if(appendWorkspacePath) {
+			destDir = nova.path.join(nova.workspace.path, destDir);
+		}
+		//console.log("Using configed DEST DIR " + destDir);
 	}
 
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
 	const exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
 	const appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
 
+	var copyAssets = nova.workspace.config.get("as3.compiler.copy");
+
 	const configData = {
 		"config": "airmobile",
+		// Used by asconfig file.
 		"sourcePath":  sourcePath,
+		"sourceDirs": sourceDirs, // Needed for additional source path
+		"libPaths": libPaths,
+		"anePaths": anePaths,
 		"destDir": destDir,
 		"exportName": exportName,
 		"mainClass": mainClass,
 		"mainSrcDir": mainSrcDir,
-		"appXMLName": appXMLName
+		"appXMLName": appXMLName,
+		// Used by extension for building
+		"mainApplicationPath": mainApplicationPath,
+		"flexSDKBase": flexSDKBase,
+		"isFlex": isFlex,
+		"appXMLName": appXMLName,
+		"copyAssets": copyAssets
 	};
 
 	if(nova.inDevMode()) {

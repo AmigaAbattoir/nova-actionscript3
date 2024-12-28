@@ -34,7 +34,11 @@ exports.updateASConfigFile = function() {
 	if(asconfig["compilerOptions"]==undefined) {
 		asconfig["compilerOptions"] = {};
 	}
-	asconfig["compilerOptions"]["source-path"] = configValues.sourcePath; ///[ "src" ];
+	let sourceDirs = configValues.sourcePath;
+	sourceDirs.unshift(configValues.mainSrcDir);
+
+	asconfig["compilerOptions"]["source-path"] = sourceDirs;
+	// asconfig needs the main source dir in the mix!
 	asconfig["compilerOptions"]["output"] = [ configValues.destDir + "/" + configValues.exportName ]; ///[ "bin/HelloAIR.swf" ];
 	asconfig["compilerOptions"]["library-path"] = configValues.libraryPath///[ "libs" ];
 	asconfig["mainClass"] = configValues.mainClass; ////"HelloAIR", // @NOTE Should be the main file without src/ and the .as/.mxml

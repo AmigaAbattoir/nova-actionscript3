@@ -1,6 +1,6 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile } = require("./nova-utils.js");
-const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase } = require("./config-utils.js");
+const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getConfigsForBuild } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo } = require("./as3-utils.js");
 
 var fileExtensionsToExclude = [];
@@ -54,6 +54,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 		}
 		return result;
+	}
+
+	provideTasks(context) {
+		console.log(" #%#%#%#%#%# Dude?!");
+		consoleLogObject(context);
+		console.log(" #%#%#%#%#%# Dude?!");
 	}
 
 	quickChoicePalette(items, placeholder, addAll = false) {
@@ -818,6 +824,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {string} appXMLName - The name of the app.xml file
 	 */
 	run(buildType, flexSDKBase, profile, destDir, appXMLName, config) {
+
+
 		var runningOnDevice = false;
 		// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
 		// To launch ADL, we need to point it to the "-app.xml" file
@@ -1387,11 +1395,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// Get the context.config so we can get the Task settings!
 		var whatKind = config.get("actionscript3.request");
 
+		const configValues = getConfigsForBuild(true);
+
+		let destDir = configValues.destDir;
+/*
 		var destDir = nova.workspace.config.get("as3.build.output");
 		if(destDir=="") {
 			destDir = nova.path.join(nova.workspace.path, "bin-debug");
 		} else {
-			/** @TODO Check if it starts with ~, or a "/", then don't merge with workspace! */
+			/ * * @TODO Check if it starts with ~, or a "/", then don't merge with workspace! * /
 			destDir = nova.path.join(nova.workspace.path, destDir);
 			//console.log("Using configed DEST DIR " + destDir);
 		}
@@ -1403,8 +1415,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// Use this to get setting from the extension or the workspace!
 		var flexSDKBase = determineFlexSDKBase();
+*/
+		let mainApplicationPath =  configValues.mainApplicationPath;
+		let isFlex = configValues.isFlex;
+		let appXMLName = configValues.appXMLName;
+		let flexSDKBase = configValues.flexSDKBase;
 
 		if(action==Task.Build) {
+/*
 			var mainSrcDir = nova.path.join(nova.workspace.path, nova.workspace.config.get("as3.build.source.main"));
 			if(mainSrcDir=="") {
 				mainSrcDir = nova.path.join(nova.workspace.path, "src");
@@ -1414,11 +1432,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			var copyAssets = nova.workspace.config.get("as3.compiler.copy");
 
-			var sourceDirs = nova.workspace.config.get("as3.build.source.additional");
-
-			var libPaths = nova.workspace.config.get("as3.build.library.additional");
-
-			var anePaths = nova.workspace.config.get("as3.build.anes");
+*/
+			let mainSrcDir = configValues.mainSrcDir;
+			let exportName = configValues.exportName;
+			let copyAssets = configValues.copyAssets;
+			let sourceDirs = configValues.sourceDirs;
+			let libPaths = configValues.libPaths;
+			let anePaths = configValues.anePaths;
 
 			return this.build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, false, anePaths, config);
 		} else if(action==Task.Run) { //} && data.type=="actionscript") {
