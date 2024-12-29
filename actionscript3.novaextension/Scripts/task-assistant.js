@@ -56,12 +56,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return result;
 	}
 
-	provideTasks(context) {
-		console.log(" #%#%#%#%#%# Dude?!");
-		consoleLogObject(context);
-		console.log(" #%#%#%#%#%# Dude?!");
-	}
-
 	quickChoicePalette(items, placeholder, addAll = false) {
 		return new Promise((resolve) => {
 			if(addAll) {
@@ -1385,6 +1379,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var config = context.config;
 		var action = context.action;
 
+		/** @TODO Should be part of the Task, or Project */
 		var buildType = "air";
 		if(data.type=="mobile") {
 			buildType = "airmobile";
