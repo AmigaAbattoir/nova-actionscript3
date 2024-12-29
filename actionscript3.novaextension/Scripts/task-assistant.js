@@ -1,6 +1,6 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile } = require("./nova-utils.js");
-const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getConfigsForBuild } = require("./config-utils.js");
+const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo } = require("./as3-utils.js");
 
 var fileExtensionsToExclude = [];
@@ -153,10 +153,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					nova.workspace.config.set("as3.packaging.lastReleaseBuilt",taskFileName);
 
 					taskJson = JSON.parse(getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName));
+					// console.log("-= TASK JSON: " + taskFileName + " =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+					// consoleLogObject(taskJson);
+					// console.log("-= --------- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 					try {
-				// console.log("-= TASK JSON: " + taskFileName + " =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-				// consoleLogObject(taskJson);
-				// console.log("-= --------- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 						if(taskJson["extensionTemplate"].startsWith("actionscript-")==false) {
 							nova.workspace.showErrorMessage("Sorry, Export Release Build does not yet handle " + taskJson["extensionTemplate"] + "!");
 							return;
@@ -187,62 +187,19 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// first. It should generate one if possible, but on the unlikely event, we should abort.
 				var projectUUID = determineProjectUUID();
 				projectUUID.then((resolve) => { // Now that we have the UUID, let's try to make a build
-					/*
-					var isFlex = nova.workspace.config.get("as3.application.isFlex");
-
-					var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
-					// console.log("MAIN APP: [[" + mainApplicationPath + "]]");
-					if(mainApplicationPath==null) {
-					}
-					// console.log("IS FLEX: " + isFlex);
-					var appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
-					// console.log("packageBuild() say appXMLName:" + appXMLName);
-
-					// Use this to get setting from the extension or the workspace!
-					var flexSDKBase = determineFlexSDKBase();
-					if(flexSDKBase==null) {
-						nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
-					}
-
-					var mainSrcDir = nova.path.join(nova.workspace.path, nova.workspace.config.get("as3.build.source.main"));
-					if(mainSrcDir==null) {
-						mainSrcDir = "src";
-					}
-
-					var exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
-					var packageName = (isFlex ? mainApplicationPath.replace(".mxml",".air") : mainApplicationPath.replace(".as",".air"));
-
-					var copyAssets = nova.workspace.config.get("as3.compiler.copy");
-
-					var sourceDirs = nova.workspace.config.get("as3.build.source.additional");
-
-					var libPaths = nova.workspace.config.get("as3.build.library.additional");
-
-					var anePaths = nova.workspace.config.get("as3.packaging.anes");
-*/
-					/** @TODO Get a setting */
+					/** @TODO Get a setting from the task maybe*/
 					var releasePath = "bin-release-temp";
 
 					/** @TODO Figure out what type of build... */
-					// this.build(buildType, true, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, "release", nova.path.join(nova.workspace.path, releasePath), exportName, true, anePaths).then((resolve) => {
 					this.build(buildType, "release", true, { "releasePath": nova.path.join(nova.workspace.path, releasePath) }).then((resolve) => {
-						const configValues = getConfigsForBuild(true);
+						const configValues = getConfigsForPacking();
 						let flexSDKBase = configValues.flexSDKBase;
 						let doTimestamp= configValues.doTimestamp;
 						let timestampURL= configValues.timestampURL;
-
-						// console.log(" # # # # # # # # # # # # # # # # # # # # # # # #")
-						// console.log(" # # # # # # # # # # # # # # # # # # # # # # # #")
-						// console.log("appXMLName:" + appXMLName);
-						// console.log("this.build() resolve:");
-						// consoleLogObject(resolve);
-						// @TODO - If there is warnings, ask if you want to continue, or abort.
+						let packageName = configValues.packageName;
 
 						// Loop through the output, and copy things unless specified to exclude like the .actionScriptProperties
-						//let alsoIgnore = getWorkspaceOrGlobalConfig("as3.packaging.excludedFiles");
 						let alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
-						//console.log("alsoIgnore: ");
-						//consoleLogObject(alsoIgnore);
 						if(alsoIgnore) {
 							alsoIgnore.forEach((ignore) => {
 								//console.log("Ignroe: " + ignore);
@@ -352,9 +309,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								}
 								args.push(archType);
 							}
+
 							args.push("-storetype");
 							args.push("pkcs12");
-
 							args.push("-keystore");
 							/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 							args.push(taskConfig["as3.packaging.certificate"]);
@@ -641,8 +598,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			args.push("+configname=air");
 		}
 
-		// If air, we need to add the configname=air, I'm assuming flex would be different?!
 /*
+		// If air, we need to add the configname=air, I'm assuming flex would be different?!
 		var isFlex = nova.workspace.config.get("as3.application.isFlex");
 		if(isFlex) {
 			args.push("+configname=flex");
@@ -656,52 +613,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// Push args for the source-paths!
 		if(sourceDirs) {
-			sourceDirs.forEach((sourceDir) => {
-				/*
-				if(sourceDir.charAt(0)=="~") { // If a user shortcut, resolve
-					sourceDir = nova.path.expanduser(sourceDir);
-				}
-				if(sourceDir.includes("${PROJECT_FRAMEWORKS}")) {
-					sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
-				}
-				*/
-				args.push("--source-path+=" + sourceDir);
-			});
+			sourceDirs.forEach((sourceDir) => { args.push("--source-path+=" + sourceDir); });
 		}
 
 		// This too should be from settings
 		if(libPaths) {
-			libPaths.forEach((libPath) => {
-				/*
-				// @NOTE, not sure this is needed, but it may come in handy
-				if(libPath.includes("${PROJECT_FRAMEWORKS}")) {
-					libPath = libPath.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
-				}
-				if(libPath.includes("{locale}")) {
-					/ * * @TODO Need to figure out how to get locale... Maybe a setting in the extension or preferences * /
-					libPath = libPath.replace("{locale}","en_US");
-				}
-				*/
-				/*
-				//
-				// Actually, if it's wrong, it's wrong. That shouldn't be skipped
-				try {
-					var checkPath = libPath;
-					if(libPath.charAt(0)=="~") { // If a user shortcut, resolve
-						checkPath = nova.path.expanduser(libPath);
-					} else if(libPath.charAt(0)!="/") { // If it's not a slash, it's relative to the workspace path
-						checkPath = nova.path.join(nova.workspace.path, libPath);
-					}
-
-					if(nova.fs.stat(checkPath).isDirectory()) {
-						args.push("--library-path+=" + libPath);
-					}
-				} catch(error) {
-					//console.log("Lib folder not found! ERROR: " + error)
-				}
-				*/
-				args.push("--library-path+=" + libPath);
-			});
+			libPaths.forEach((libPath) => { args.push("--library-path+=" + libPath); });
 		}
 
 		// If we have ANEs, we will need to unzip them to a folder so that ADL can run and point to those

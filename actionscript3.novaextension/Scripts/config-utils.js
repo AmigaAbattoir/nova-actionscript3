@@ -1,5 +1,4 @@
-const { consoleLogObject } = require("./nova-utils.js");
-const { showNotification, isWorkspace } = require("./nova-utils.js");
+const { consoleLogObject, showNotification, isWorkspace } = require("./nova-utils.js");
 
 exports.getWorkspaceOrGlobalConfig = function(configName) {
 	var config = nova.config.get(configName);
@@ -71,9 +70,33 @@ exports.determineFlexSDKBase = function() {
 	return flexSDKBase;
 }
 
+exports.getConfigsForPacking = function() {
+	const flexSDKBase = exports.determineFlexSDKBase();
+	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
+	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
+
+	const isFlex = nova.workspace.config.get("as3.application.isFlex");
+	const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+
+	const packageName = (isFlex ? mainApplicationPath.replace(".mxml",".air") : mainApplicationPath.replace(".as",".air"));
+
+	const configData = {
+		"flexSDKBase": flexSDKBase,
+		"packageName": packageName,
+		"doTimestamp": doTimestamp,
+		"timestampURL": timestampURL
+	};
+
+	if(nova.inDevMode()) {
+		console.log("*** ---===[ Here are the packaging settings from the project ]===--- ***");
+		consoleLogObject(configData);
+	}
+
+	return configData;
+}
+
 exports.getConfigsForBuild = function(appendWorkspacePath = false) {
-	console.log("appendWorkspacePath: " + appendWorkspacePath);
-	console.log("appendWorkspacePath: " + appendWorkspacePath);
+	// console.log("appendWorkspacePath: " + appendWorkspacePath);
 	const flexSDKBase = exports.determineFlexSDKBase();
 
 	const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
@@ -146,10 +169,6 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 
 	const compilerAdditional = nova.workspace.config.get("as3.compiler.additional");
 
-	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
-
-	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
-
 	const configData = {
 		"config": "airmobile",
 		"sourceDirs": sourceDirs,  // Needed for additional sources (may be relative) mostly for asconfig
@@ -166,13 +185,11 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 		"flexSDKBase": flexSDKBase,
 		"isFlex": isFlex,
 		"appXMLName": appXMLName,
-		"copyAssets": copyAssets,
-		"doTimestamp": doTimestamp,
-		"timestampURL": timestampURL
+		"copyAssets": copyAssets
 	};
 
 	if(nova.inDevMode()) {
-		cosnole.log("** ---===[ Here are the building settings from the project ]===--- ***");
+		console.log("*** ---===[ Here are the building settings from the project ]===--- ***");
 		consoleLogObject(configData);
 	}
 
