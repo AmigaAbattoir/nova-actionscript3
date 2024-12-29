@@ -74,6 +74,7 @@ exports.determineFlexSDKBase = function() {
 exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	console.log("appendWorkspacePath: " + appendWorkspacePath);
 	console.log("appendWorkspacePath: " + appendWorkspacePath);
+	const flexSDKBase = exports.determineFlexSDKBase();
 
 	const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
 	const mainClass = mainApplicationPath.replace(".mxml","").replace(".as","");
@@ -86,11 +87,8 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
 	}
 
-	const sourceDirs = nova.workspace.config.get("as3.build.source.additional");
-
-	const flexSDKBase = exports.determineFlexSDKBase();
-
 	var sourcePath = [];
+	const sourceDirs = nova.workspace.config.get("as3.build.source.additional");
 //	sourcePath.push(mainSrcDir);
 	if(sourceDirs) {
 		sourceDirs.forEach((sourceDir) => {
@@ -139,16 +137,23 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	}
 
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
+
 	const exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
+
 	const appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
 
-	var copyAssets = nova.workspace.config.get("as3.compiler.copy");
+	const copyAssets = nova.workspace.config.get("as3.compiler.copy");
+
+	const compilerAdditional = nova.workspace.config.get("as3.compiler.additional");
+
+	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
+
+	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
 
 	const configData = {
 		"config": "airmobile",
-		// Used by asconfig file.
-		"sourcePath":  sourcePath,
-		"sourceDirs": sourceDirs, // Needed for additional source path
+		"sourceDirs": sourceDirs,  // Needed for additional sources (may be relative) mostly for asconfig
+		"sourcePath":  sourcePath, // Full (resolved) path of files for building
 		"libPaths": libPaths,
 		"anePaths": anePaths,
 		"destDir": destDir,
@@ -161,10 +166,13 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 		"flexSDKBase": flexSDKBase,
 		"isFlex": isFlex,
 		"appXMLName": appXMLName,
-		"copyAssets": copyAssets
+		"copyAssets": copyAssets,
+		"doTimestamp": doTimestamp,
+		"timestampURL": timestampURL
 	};
 
 	if(nova.inDevMode()) {
+		cosnole.log("** ---===[ Here are the building settings from the project ]===--- ***");
 		consoleLogObject(configData);
 	}
 
