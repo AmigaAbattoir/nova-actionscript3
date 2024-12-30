@@ -95,6 +95,49 @@ exports.consoleLogObject = function(object) {
 	console.log(JSON.stringify(object,null,4));
 }
 
+/**
+ * Resolved symbolic links to their real location
+ *
+ * @param {string} folder - The location that is a symbolic link
+ * @returns {Promise} The resolved path, or a reject error.
+ */
+exports.resolveSymLink = function(folder) {
+	return new Promise((resolve, reject) => {
+		try {
+			const process = new Process("/usr/bin/readlink", {
+				args: [folder]
+			});
+
+			let output = "";
+			let errorOutput = "";
+
+			process.onStdout(line => {
+				output += line.trim();
+			});
+
+			process.onStderr(line => {
+				errorOutput += line.trim();
+			});
+
+			process.onDidExit(status => {
+				if (status === 0) {
+					// Successfully resolved the symbolic link
+					const lastSlashIndex = folder.lastIndexOf('/');
+					const basePath = folder.substring(0, lastSlashIndex);
+					const resolvedPath = nova.path.normalize(nova.path.join(basePath, output));
+					resolve(resolvedPath);
+				} else {
+					reject(new Error(`Failed to resolve symlink for ${folder}: ${errorOutput}`));
+				}
+			});
+
+			process.start();
+		} catch (error) {
+			reject(error);
+		}
+	});
+}
+
 exports.rangeToLspRange = function(document, range) {
 	const fullContents = document.getTextInRange(new Range(0, document.length));
 

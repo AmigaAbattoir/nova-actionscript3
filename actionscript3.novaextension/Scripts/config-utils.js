@@ -78,11 +78,13 @@ exports.getConfigsForPacking = function() {
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
 	const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
 
+	const appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
 	const packageName = (isFlex ? mainApplicationPath.replace(".mxml",".air") : mainApplicationPath.replace(".as",".air"));
 
 	const configData = {
 		"flexSDKBase": flexSDKBase,
 		"packageName": packageName,
+		"appXMLName": appXMLName,
 		"doTimestamp": doTimestamp,
 		"timestampURL": timestampURL
 	};

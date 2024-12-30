@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile } = require("./nova-utils.js");
+const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo } = require("./as3-utils.js");
 
@@ -145,6 +145,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return;
 				}
 
+				// This will change later, based on the task's template type
 				var buildType = "air";
 
 				// If we have a task file name, then let's process it
@@ -169,8 +170,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								buildType="airmobile";
 								break;
 							}
+							/*
+							case "actionscript-flash": {
+								buildType="flash";
+								break;
+							}
+							*/
 						}
-
 					} catch(error) { }
 
 					if(taskConfig==null) {
@@ -194,9 +200,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					this.build(buildType, "release", true, { "releasePath": nova.path.join(nova.workspace.path, releasePath) }).then((resolve) => {
 						const configValues = getConfigsForPacking();
 						let flexSDKBase = configValues.flexSDKBase;
+						let packageName = configValues.packageName;
+						let appXMLName = configValues.appXMLName;
 						let doTimestamp= configValues.doTimestamp;
 						let timestampURL= configValues.timestampURL;
-						let packageName = configValues.packageName;
 
 						// Loop through the output, and copy things unless specified to exclude like the .actionScriptProperties
 						let alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
@@ -298,7 +305,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									// @NOTE Not sure what the android-studio packages should be...
 									packageName = packageName.replace(/\.air$/, ".apk");
 								}
-
 								args.push("-arch");
 								// console.log("taskConfig: ");
 								// consoleLogObject(taskConfig);
@@ -456,18 +462,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	/**
 	 * Builds the SWF for the project
 	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
-	 * @param {bool} copyAssets - If we should copy assets to the destination
-	 * @param {string} mainSrcDir - The main source folder (where the main class or app.xml is)
-	 * @param {string} mainApplicationPath - The path to the
-	 * @param {Array} sourceDirs - Any additional paths that need to be included in the project
-	 * @param {Array} libPaths - Any additional library paths that need to be included
-	 * @param {string} appXMLName - The name of the app.xml file
-	 * @param {string} flexSDKBase - The location of the Flex SDK
 	 * @param {string} whatKind - What kind of build, either `release`|`debug`
-	 * @param {string} destDir - The destination to save the build to
-	 * @param {string} exportName - The name of the exported file
 	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
-	 * as a Promise, otherwise a standard Nova Task that it can handle
+	 * @param {Object} configOverrides - A object of variables to override
 	 */
 	//build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths = []) {
 	build(buildType, whatKind, packageAfterBuild = false, configOverrides = {}) {
@@ -775,12 +772,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	/**
 	 * Runs the project using Nova's task system
 	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
-	 * @param {string} flexSDKBase - The location of the Flex SDK
-	 * @param {string} profile -
-	 * @param {string} destDir - The location of where the saved build is
-	 * @param {string} appXMLName - The name of the app.xml file
+	 * @param {string} profile - Which type of profile to use
+	 * @param {Object} config - The Task's configs
 	 */
-	// run(buildType, flexSDKBase, profile, destDir, appXMLName, config) {
 	run(buildType, profile, config) {
 		const configValues = getConfigsForBuild(true);
 		let flexSDKBase = configValues.flexSDKBase;
@@ -866,49 +860,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	}
 
 	/**
-	 * Resolved symbolic links to their real location
-	 *
-	 * @param {string} folder - The location that is a symbolic link
-	 * @returns {Promise} The resolved path, or a reject error.
-	 */
-	resolveSymLink(folder) {
-		return new Promise((resolve, reject) => {
-			try {
-				const process = new Process("/usr/bin/readlink", {
-					args: [folder]
-				});
-
-				let output = "";
-				let errorOutput = "";
-
-				process.onStdout(line => {
-					output += line.trim();
-				});
-
-				process.onStderr(line => {
-					errorOutput += line.trim();
-				});
-
-				process.onDidExit(status => {
-					if (status === 0) {
-						// Successfully resolved the symbolic link
-						const lastSlashIndex = folder.lastIndexOf('/');
-						const basePath = folder.substring(0, lastSlashIndex);
-						const resolvedPath = nova.path.normalize(nova.path.join(basePath, output));
-						resolve(resolvedPath);
-					} else {
-						reject(new Error(`Failed to resolve symlink for ${folder}: ${errorOutput}`));
-					}
-				});
-
-				process.start();
-			} catch (error) {
-				reject(error);
-			}
-		});
-	}
-
-	/**
 	 * Copies the files from one place to another.
 	 *
 	 * @param {string} src - The source of the files to copy
@@ -934,7 +885,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 						if (stats.isSymbolicLink()) {
 							// If it's a symbolic link, we need to get the real path
-							return this.resolveSymLink(currPath)
+							return resolveSymLink(currPath)
 								.then(resolvedPath => {
 									if (!nova.fs.stat(resolvedPath).isDirectory()) {
 										try {
@@ -1356,7 +1307,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var whatKind = config.get("actionscript3.request");
 
 		if(action==Task.Build) {
-			//return this.build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, false, anePaths, config);
 			return this.build(buildType, whatKind, false);
 		} else if(action==Task.Run) {
 			// @TODO Check if the output files are there, otherwise prompt to build
@@ -1366,10 +1316,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 
 			if(whatKind=="debug") {
-				// return this.debugRun(buildType, flexSDKBase, profile, destDir, appXMLName, config);
 				return this.debugRun(buildType, profile, config);
 			} else {
-				// return this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config)
 				return this.run(buildType, profile, config)
 			}
 		} else if(action==Task.Clean) {
