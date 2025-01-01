@@ -40,7 +40,7 @@ exports.updateASConfigFile = function() {
 
 	asconfig["compilerOptions"]["source-path"] = sourceDirs;
 	// asconfig needs the main source dir in the mix!
-	asconfig["compilerOptions"]["output"] = [ configValues.destDir + "/" + configValues.exportName ]; ///[ "bin/HelloAIR.swf" ];
+	asconfig["compilerOptions"]["output"] = configValues.destDir + "/" + configValues.exportName; ///[ "bin/HelloAIR.swf" ] Actually, example was wrong!;
 	asconfig["compilerOptions"]["library-path"] = configValues.libraryPath///[ "libs" ];
 	asconfig["mainClass"] = configValues.mainClass; ////"HelloAIR", // @NOTE Should be the main file without src/ and the .as/.mxml
 	asconfig["application"] = configValues.mainSrcDir + "/" + configValues.appXMLName; /// "src/HelloAIR-app.xml"
