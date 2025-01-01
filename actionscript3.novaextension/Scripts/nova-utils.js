@@ -85,12 +85,19 @@ exports.isWorkspace = function() {
 	}
 }
 
+/**
+ * Saves all the open text editors!
+ */
 exports.saveAllFiles = function() {
 	nova.workspace.textEditors.forEach((editor)=> {
 		editor.save();
 	});
 }
 
+/**
+ * Helper to log out an object by trying to stringify it
+ * @param {Object} object - What you want to try to console.log()
+ */
 exports.consoleLogObject = function(object) {
 	console.log(JSON.stringify(object,null,4));
 }
@@ -221,3 +228,21 @@ exports.getStringOfFile = function(filename) {
 	}
 	return contents;
 };
+
+/**
+ * Returns a string as a sortable timestamp.
+ * @returns {String} - The current timestamp in YYYYMMDDD_HHmmss
+ */
+exports.getCurrentDateAsSortableString = function() {
+	const now = new Date();
+
+	const year = now.getFullYear();
+	const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+	const day = String(now.getDate()).padStart(2, '0');
+	const hours = String(now.getHours()).padStart(2, '0');
+	const minutes = String(now.getMinutes()).padStart(2, '0');
+	const seconds = String(now.getSeconds()).padStart(2, '0');
+
+	return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+};
+

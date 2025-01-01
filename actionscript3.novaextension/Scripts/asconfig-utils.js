@@ -9,7 +9,8 @@ exports.makeASConfigFile = function() {
 		// @NOTE, haven't work on libs yet... "type": "lib",
 		"compilerOptions": {
 			"source-path": configValues.sourcePath,
-			"output": configValues.destDir + "/" + configValues.exportName
+			"output": configValues.destDir + "/" + configValues.exportName,
+			"library-path": configValues.libraryPath
 		},
 		"mainClass": configValues.mainClass, // @NOTE Should be the main file without src/ and the .as/.mxml
 		"application": configValues.mainSrcDir + "/" + configValues.appXMLName,

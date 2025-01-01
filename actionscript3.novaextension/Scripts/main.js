@@ -1,9 +1,9 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
 const { getAIRSDKInfo } = require("./as3-utils.js");
-const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile } = require("./nova-utils.js");
+const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile, getProcessResults, getCurrentDateAsSortableString } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
-const { updateASConfigFile } = require("/asconfig-utils.js");
+const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 var langserver = null;
 var taskprovider = null;
 
@@ -543,13 +543,15 @@ class AS3MXMLLanguageServer {
 				// ------------------------------------------------------------------------
 				// Receive Notification Handlers
 				// Notification Handlers
-				client.onNotification("as3mxml/logCompilerShellOutput", (param) => {
+				/* // @NOTE Not sure if we can do this with Nova
+ 				client.onNotification("as3mxml/logCompilerShellOutput", (param) => {
 					console.log(" !!!Got as3mxml/logCompilerShellOutput notificatiON!!");
 				});
 
 				client.onNotification("as3mxml/clearCompilerShellOutput", () => {
 					console.log(" !!!Got as3mxml/clearCompilerShellOutput notificatiON!!");
 				});
+				*/
 
 				client.onNotification("as3mxml/setActionScriptActive", () => {
 					as3mxmlCodeIntelligenceReady = true;
@@ -614,20 +616,7 @@ class AS3MXMLLanguageServer {
 								case 0: {
 									if(hasExistingASConfig) {
 										// Back it up...
-										function doSortableDataFormat() {
-											const now = new Date();
-
-											const year = now.getFullYear();
-											const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-											const day = String(now.getDate()).padStart(2, '0');
-											const hours = String(now.getHours()).padStart(2, '0');
-											const minutes = String(now.getMinutes()).padStart(2, '0');
-											const seconds = String(now.getSeconds()).padStart(2, '0');
-
-											return `${year}${month}${day}_${hours}${minutes}${seconds}`;
-										}
-
-										nova.fs.copy(nova.workspace.path + "/asconfig.json",nova.workspace.path + "/asconfig-" + doSortableDataFormat() + ".json");
+										nova.fs.copy(nova.workspace.path + "/asconfig.json",nova.workspace.path + "/asconfig-" + getCurrentDateAsSortableString() + ".json");
 										this.loadASConfigFile();
 									} else {
 										nova.workspace.context.set("currentASConfigText",JSON.stringify({}));
@@ -647,6 +636,10 @@ class AS3MXMLLanguageServer {
 					);
 				} else {
 					nova.workspace.context.set("currentASConfigAutomatic", (needAutoASConfig=="automatic" ? true : false));
+					// If in asconfig automatic mode, load the asconfig file to keep track of.
+					if(needAutoASConfig=="automatic") {
+						loadASConfigFile();
+					}
 				}
 
 			} catch (err) {
