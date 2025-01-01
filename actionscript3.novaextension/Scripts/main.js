@@ -35,15 +35,23 @@ exports.activate = function() {
 	nova.commands.register("as3.packaging.certificateCreate", (workspace) => {
 		return new Promise((resolve) => {
 			console.log("Called... as3.packaging.certificateCreate");
-			showNotification("Create Certificate", "Still need to do...");
-			nova.workspace.showErrorMessage("Create Certificate", "Still need to do...");
+			nova.workspace.showErrorMessage("Create Certificate\n\nStill need to do...");
 		});
 	});
 
 	nova.commands.register("as3.clearExportPassword", (workspace) => {
 		return new Promise((resolve) => {
-			nova.workspace.showErrorMessage("Clear Password", "Still need to do...");
-			showNotification("Clear Password", "Still need to do...");
+			nova.workspace.showErrorMessage("Clear Password\n\nStill need to do... And we need to get the Task at hand...");
+			// @TODO Ask if you are sure?
+			// If yes, clear..
+		});
+	});
+
+	nova.commands.register("as3.storeExportPassword", (workspace) => {
+		return new Promise((resolve) => {
+			nova.workspace.showErrorMessage("Store Password\n\nStill need to do... And we need to get the Task at hand...");
+			// @TODO Ask if you are sure?
+			// If yes, clear..
 		});
 	});
 
@@ -75,13 +83,13 @@ exports.activate = function() {
 	nova.assistants.registerTaskAssistant(taskprovider, { identifier: "actionscript" });
 
 	langserver = new AS3MXMLLanguageServer();
-
+/*
 	//                                          [ Nova stuff...                     ][ Our params to pass]
 	nova.commands.register("as3.clean",(workspace, workspacePath, sourcePath, outputPath) => {
 		//                [ Nova stuff ..           ][ Our params]
 		taskprovider.clean(workspacePath, sourcePath, outputPath);
 	});
-
+*/
 	nova.commands.register("as3.importFlashBuilderSettings",() => {
 		if(hasProjectAndASProperties) {
 			let imported = nova.workspace.config.get("as3.project.importedFB");
@@ -99,16 +107,6 @@ exports.activate = function() {
 			} else {
 				taskprovider.importFlashBuilderSettings();
 			}
-		}
-	});
-
-	nova.commands.register("as3.clearExportPassword",() => {
-		var projectUUID =  nova.workspace.config.get("as3.application.projectUUID");
-		try {
-			nova.credentials.removePassword(projectUUID,"release-build");
-			showNotification("Remove Password", "Successfully removed password from your keychain!")
-		} catch(error) {
-			nova.workspace.showErrorMessage("Remove Password Failedn\n\nEither the Project's UUID is wrong, or there was no password");
 		}
 	});
 

@@ -191,8 +191,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 				// We need a project UUID which we use to save the certificate password in a later step, but let's check
 				// first. It should generate one if possible, but on the unlikely event, we should abort.
-				var projectUUID = determineProjectUUID();
-				projectUUID.then((resolve) => { // Now that we have the UUID, let's try to make a build
+				var getProjectUUID = determineProjectUUID();
+				getProjectUUID.then((resolve) => { // Now that we have the UUID, let's try to make a build
+					var projectUUID = resolve;
 					/** @TODO Get a setting from the task maybe*/
 					var releasePath = "bin-release-temp";
 
@@ -231,7 +232,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 						// Check for password, if no, show password.
 						// @TODO We should do something like FB where when you enter the password, it tries to verify it. Once it's correct, you can continue.
-						var passwordCheck = nova.credentials.getPassword(projectUUID,"release-build");
+						var certificateLocation = taskConfig["as3.packaging.certificate"];
+						var certificateName = certificateLocation.split("/").pop();
+
+						var passwordCheck = nova.credentials.getPassword("export-with-"+certificateName,certificateLocation);
 						if(passwordCheck==null) {
 							passwordCheck = "";
 						}
@@ -243,7 +247,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						if(passwordCheck=="") {
 							var request = new NotificationRequest("Export Release Build...");
 							request.title = "Digital Signature ";
-							request.body = "Enter the password for the certificate " + taskConfig["as3.packaging.certificate"];
+							request.body = "Enter the password for the certificate " + certificateLocation;
 							request.textInputValue = passwordCheck;
 							request.type = "input";
 							request.actions = ["This time", "Save", "Cancel"];
@@ -266,7 +270,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								case 1: { // Save the password
 									password = reply.textInputValue;
 									// @NOTE Should we also tie in the certificate name? Only useful if using different certificates I guess.
-									nova.credentials.setPassword(projectUUID,"release-build",password);
+									nova.credentials.setPassword("export-with-"+certificateName,certificateLocation,password);
 									break;
 								}
 								case 0: { // This time
@@ -452,7 +456,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						var message = reject.stderr.replaceAll(nova.workspace.path,"");
 						nova.workspace.showErrorMessage("Export Release Build failed!\n\nOne or more errors were found while trying to build the release version. Unable to export.\n" + message);
 					});
-				}, (reject) => {
+				},
+				(reject) => {
 					nova.workspace.showErrorMessage("Project UUID Missing\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu, or ensure that `uuidgen` is on your system's path!");
 				});
 			});
