@@ -283,31 +283,6 @@
 				"allowFolders": false,
 				"allowFiles": true,
 				"description": "Select the .p12 to sign this build with"
-			},
-			{
-				"comment": "@TODO Implementing Commands from Prefs",
-
-				"description": "@TODO Need to see how to implement a UI for this...",
-				"key": "as3.packaging.certificateCreate",
-				"resolve": "as3.packaging.certificateCreate",
-				"title": "Create Certificate",
-				"type": "command"
-			},
-			{
-				"comment": "@TODO Implementing Commands from Prefs",
-
-				"key": "as3.clearExportPassword",
-				"title": "Store Password",
-				"description": "@TODO Stores the password for this certificate in your Keychain",
-				"type": "command"
-			},
-			{
-				"comment": "@TODO Implementing Commands from Prefs",
-
-				"key": "as3.clearExportPassword",
-				"title": "Clear Password",
-				"description": "@TODO Clears the password for this certificate from your Keychain if stored",
-				"type": "command"
 			}
 		]
 	},

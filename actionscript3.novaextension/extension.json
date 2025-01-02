@@ -358,20 +358,7 @@
 					"type": "path",
 					"allowFolders": false,
 					"allowFiles": true,
-					"description": "Select the .p12 file to build your AIR app with",
-					"note": "@TODO Need to see how to implement a UI for this...",
-					"comment": [
-						{
-							"key": "as3.packaging.certificateCreate",
-							"title": "Create",
-							"type": "command"
-						},
-						{
-							"key": "as3.clearExportPassword",
-							"title": "Clear",
-							"type": "command"
-						}
-					]
+					"description": "Select the .p12 file to build your AIR app with"
 				},
 				{
 					"key": "as3.packaging.type",
@@ -481,20 +468,11 @@
 						{
 							"key": "as3.build.library.additional",
 							"title": "Build path libraries",
+							"description": "You can choose to add either individual SWCs or folders of SWCs",
 							"type": "pathArray",
 							"relative": true,
 							"allowFolders": true,
 							"allowFiles": true
-						},
-						{
-							"key": "as3.build.addSWCFolder",
-							"title": "Add SWC Folder...",
-							"type": "command"
-						},
-						{
-							"key": "as3.build.addSWC...",
-							"title": "Add SWC",
-							"type": "command"
 						},
 						{
 							"type": "separator"
@@ -827,8 +805,12 @@
 				"command": "as3.paneltest"
 			},
 			{
-				"title": "      Tester",
-				"command": "as3.tester"
+				"title": "      Test Task",
+				"command": "as3.testtask"
+			},
+			{
+				"title": "      PASSWORD Tester",
+				"command": "as3.password.tester"
 			}
 		]
 	}
