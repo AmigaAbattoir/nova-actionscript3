@@ -324,7 +324,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							args.push("pkcs12");
 							args.push("-keystore");
 							/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-							args.push(taskConfig["as3.packaging.certificate"]);
+							args.push(certificateLocation);
 
 							args.push("-storepass");
 							args.push(password);
