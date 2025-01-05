@@ -12,6 +12,7 @@
 		"clips",
 		"completions"
 	],
+	"bugs-WHENDONE": "https://github.com/AmigaAbattoir/nova-actionscript3/issues",
 
 	"main": "main.js",
 
@@ -170,6 +171,7 @@
 		{
 			"title": "Java",
 			"type": "section",
+			"description": "Java is required for AS3MXML and other AIR tools like ADT and ADL.",
 			"children": [
 				{
 					"key": "as3.java.path",
@@ -183,6 +185,7 @@
 		{
 			"title": "SDKs",
 			"type": "section",
+			"description": "Here is where all setting for which AID SDKs to use",
 			"children": [
 				{
 					"key": "as3.sdk.default",
@@ -199,7 +202,7 @@
 					"allowFiles": false,
 					"type": "pathArray",
 					"placeholder": "",
-					"description": "(TODO) Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
+					"description": "(*NOTE Not implemented yet.*) Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
 
 				},
 				{
@@ -241,6 +244,7 @@
 		{
 			"title": "Language Server",
 			"type": "section",
+			"description": "This is where you can change some of the options for the AS3MXML language server",
 			"children": [
 				{
 					"key": "as3.languageServer.path",
@@ -261,7 +265,7 @@
 				{
 					"key": "as3.languageServer.concurrentRequests",
 					"title": "Concurrent Requests",
-					"type": "bool",
+					"type": "boolean",
 					"default": true,
 					"description": "(Advanced) Specifies if requests to the language server will be processed concurrently or in a queue. Disabling concurrency will result in slower code intelligence, but it may be more stable if code intelligence stops working."
 				}
@@ -301,7 +305,7 @@
 			]
 		},
 		{
-			"title": "Additional Options...",
+			"title": "Additional Options",
 			"type": "section",
 			"children": [
 				{
@@ -349,7 +353,7 @@
 		},
 		{
 			"title": "Build Packaging",
-			"description": "Used for packaging AIR projects. Not used in Flash projects.",
+			"description": "Used for packaging AIR projects but not used in Flash projects.\n\nThese are the setting that will be used for building and running. Exporting release builds will default to these values, unless otherwise specified in the Task or if it is not supported for that type of Task",
 			"type": "section",
 			"children": [
 				{
@@ -375,7 +379,7 @@
 				{
 					"key": "as3.packaging.timestamp",
 					"title": "Timestamp",
-					"type": "bool",
+					"type": "boolean",
 					"description": "If you want to timestamp the packaging of your project, enable this. By unchecking it, it is the same as specifing \"none\" below for the Timestamp URL",
 					"default": true
 				},
@@ -388,19 +392,11 @@
 				{
 					"key": "as3.packaging.excludedFiles",
 					"title": "Files to exclude when packaging",
-					"type": "pathArray",
-					"allowFolders": true,
-					"allowFiles": true
-				},
-				{
-					"key": "as3.packaging.anes",
-					"title": "Native extensions",
-					"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+					"description": "When packaging, these files will not be included. These can also be specified in the Task",
 					"type": "pathArray",
 					"relative": true,
-					"allowFolders": false,
-					"allowFiles": true,
-					"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package"
+					"allowFolders": true,
+					"allowFiles": true
 				}
 			]
 		},
@@ -433,7 +429,7 @@
 					"key": "as3.build.outputURL",
 					"title": "Output folder URL",
 					"type": "string",
-					"description": "(Flash only) The location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
+					"description": "* Note: Flash only\nThe location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
 				},
 				{
 					"title": "Source Path",
@@ -515,21 +511,6 @@
 							"relative": true,
 							"allowFolders": false,
 							"allowFiles": true
-						},
-						{
-							"key": "as3.packaging.addAneButton",
-							"title": "Add ANE",
-							"type": "command"
-						},
-						{
-							"key": "as3.packaging.addAneFolderButton",
-							"title": "Add Folder",
-							"type": "command"
-						},
-						{
-							"key": "as3.packaging.addAneRefreshButton",
-							"title": "Refresh",
-							"type": "command"
 						}
 					]
 				}
@@ -538,6 +519,7 @@
 		{
 			"title": "Compiler",
 			"type": "section",
+			"description": "Selects options for compiling, like which SDK to use as well as other options when building for Flash.",
 			"children": [
 				{
 					"title": "AIR/Flex SDK version",
@@ -558,6 +540,41 @@
 							"allowFolders": true,
 							"allowFiles": false,
 							"placeholder": "If empty, defaults the one specified in the extention's preferences"
+						}
+					]
+				},
+				{
+					"title": "Compiler options",
+					"type": "section",
+					"children": [
+						{
+							"key": "as3.compiler.copy",
+							"title": "Copy non-embedded files to output folder",
+							"type": "boolean",
+							"default": true
+						},
+						{
+							"key": "as3.compiler.generateAccessable",
+							"title": "Generate accessible SWF file",
+							"type": "boolean",
+							"default": false
+						},
+						{
+							"key": "as3.compiler.strict",
+							"title": "Enable strict type checking",
+							"type": "boolean",
+							"default": true
+						},
+						{
+							"key": "as3.compiler.enableWarnings",
+							"title": "Enable warnings",
+							"type": "boolean",
+							"default": true
+						},
+						{
+							"key": "as3.compiler.additional",
+							"title": "Additional compiler arguments",
+							"type": "text"
 						}
 					]
 				},
@@ -610,66 +627,31 @@
 							"type": "enum",
 							"values": [ "Classic","Ruffle"],
 							"default": "Classic",
-							"description": "Specifies which type of wrapper to generate for the project. Classic will use the default in the SDK. Ruffle will supply a version that will generate a simple page (no history)."
+							"description": "*NOTE Not implemented yet.* Specifies which type of wrapper to generate for the project. Classic will use the default in the SDK. Ruffle will supply a version that will generate a simple page (no history)."
 						},
 						{
 							"key": "as3.flash.generateHTML",
 							"title": "Generate HTML wrapper file",
-							"type": "bool",
+							"type": "boolean",
 							"default": true
 						},
 						{
 							"key": "as3.flash.checkTarget",
 							"title": "Check target player version",
-							"type": "bool",
+							"type": "boolean",
 							"default": false
 						},
 						{
 							"key": "as3.flash.express",
 							"title": "Use Express Install",
-							"type": "bool",
+							"type": "boolean",
 							"default": true
 						},
 						{
 							"key": "as3.flash.navigation",
 							"title": "Enable integration with browser navigation",
-							"type": "bool",
+							"type": "boolean",
 							"default": true
-						}
-					]
-				},
-				{
-					"title": "Compiler options",
-					"type": "section",
-					"children": [
-						{
-							"key": "as3.compiler.copy",
-							"title": "Copy non-embedded files to output folder",
-							"type": "bool",
-							"default": true
-						},
-						{
-							"key": "as3.compiler.generateAccessable",
-							"title": "Generate accessible SWF file",
-							"type": "bool",
-							"default": false
-						},
-						{
-							"key": "as3.compiler.strict",
-							"title": "Enable strict type checking",
-							"type": "bool",
-							"default": true
-						},
-						{
-							"key": "as3.compiler.enableWarnings",
-							"title": "Enable warnings",
-							"type": "bool",
-							"default": true
-						},
-						{
-							"key": "as3.compiler.additional",
-							"title": "Additional compiler arguments",
-							"type": "text"
 						}
 					]
 				}
@@ -678,7 +660,7 @@
 		{
 			"title": "Modules",
 			"type": "section",
-			"description": "Specify the modules to build for this project (Not sure how to handle this, but it was in FB 4.6...)",
+			"description": "Specify the modules to build for this project. (NOTE: Not sure how to handle this, but it was in FB 4.6)",
 			"children": [
 				{
 					"key": "as3.modules.list",
@@ -687,11 +669,6 @@
 					"relative": true,
 					"allowFolders": false,
 					"allowFiles": true
-				},
-				{
-					"key": "as3.modules.edit",
-					"title": "Edit...",
-					"type": "command"
 				}
 			]
 		}

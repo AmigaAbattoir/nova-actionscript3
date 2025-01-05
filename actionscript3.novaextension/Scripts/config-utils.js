@@ -70,16 +70,22 @@ exports.determineFlexSDKBase = function() {
 	return flexSDKBase;
 }
 
-exports.getConfigsForPacking = function() {
+exports.getConfigsForPacking = function(file) {
 	const flexSDKBase = exports.determineFlexSDKBase();
 	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
 	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
 
-	const isFlex = nova.workspace.config.get("as3.application.isFlex");
+	//const isFlex = nova.workspace.config.get("as3.application.isFlex");
 	const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
 
-	const appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
-	const packageName = (isFlex ? mainApplicationPath.replace(".mxml",".air") : mainApplicationPath.replace(".as",".air"));
+	// If there is a different file for the mainApplication
+	if(!file) {
+		file = mainApplicationPath;
+	}
+	const appAndExportName = exports.getAppXMLNameAndExport(file);
+	const exportName = appAndExportName.exportName;
+	const appXMLName = appAndExportName.appXMLName;
+	const packageName = exportName.replace(".swf",".air");
 
 	const configData = {
 		"flexSDKBase": flexSDKBase,
@@ -91,6 +97,26 @@ exports.getConfigsForPacking = function() {
 
 	if(nova.inDevMode()) {
 		console.log("*** ---===[ Here are the packaging settings from the project ]===--- ***");
+		consoleLogObject(configData);
+	}
+
+	return configData;
+}
+
+exports.getAppXMLNameAndExport = function(file) {
+	/* @TODO Strip to last part, remove any src/ or path prior to it */
+	const isFlex = nova.workspace.config.get("as3.application.isFlex");
+
+	const exportName = (isFlex ? file.replace(".mxml",".swf") : file.replace(".as",".swf"));
+	const appXMLName = (isFlex ? file.replace(".mxml","-app.xml") : file.replace(".as","-app.xml"));
+
+	const configData = {
+		"exportName": exportName,
+		"appXMLName": appXMLName,
+	};
+
+	if(nova.inDevMode()) {
+		console.log("*** ---===[ Here are the app xml and export names settings from the project ]===--- ***");
 		consoleLogObject(configData);
 	}
 
@@ -163,9 +189,9 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
 
-	const exportName = (isFlex ? mainApplicationPath.replace(".mxml",".swf") : mainApplicationPath.replace(".as",".swf"));
-
-	const appXMLName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
+	const appAndExportName = exports.getAppXMLNameAndExport(mainApplicationPath);
+	const exportName = appAndExportName.exportName;
+	const appXMLName = appAndExportName.appXMLName;
 
 	const copyAssets = nova.workspace.config.get("as3.compiler.copy");
 

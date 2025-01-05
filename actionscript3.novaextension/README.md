@@ -23,7 +23,7 @@ It currently provides:
 
  * **Tasks** - *Note:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile (through Desktop). Also, limited support for ANEs. Still looking into some mobile, and web (maybe with Ruffle too at some point).
 
- * **Exporting AIR Packages** - *Note:* Currently, limited to desktop/extendedDesktop AIR Bundle and Android.
+ * **Exporting AIR Packages** - *Note:* Currently, limited to desktop/extendedDesktop AIR Bundle and Android projects.
 
 ## Notes
 

@@ -1,11 +1,15 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile } = require("./nova-utils.js");
-const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
+const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo } = require("./as3-utils.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
 
+/**
+ * Checks to see if this is a file that should be ignored
+ * @param {string} fileName - The filename to check with the list of file that need to be excluded
+ */
 function shouldIgnoreFileName(fileName) {
 	if(fileNamesToExclude.includes(fileName)) {
 		return true;
@@ -14,6 +18,33 @@ function shouldIgnoreFileName(fileName) {
 		return true;
 	}
 	return false;
+}
+
+/**
+ * Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
+ * @param {string} folderPath - The folder path to look through
+ * @param {string} relativePath - The relative path name from this directory
+ * @returns {Array} - Files names with path
+ */
+function listFilesRecursively(folderPath, relativePath = "") {
+	let fileList = [];
+	try {
+		nova.fs.listdir(folderPath).forEach(filename => {
+			let fullPath = nova.path.join(folderPath, filename);
+			let currentRelativePath = nova.path.join(relativePath, filename);
+
+			if (nova.fs.stat(fullPath).isDirectory()) {
+				// Recurse into subdirectory and add the returned files to the list
+				fileList = fileList.concat(listFilesRecursively(fullPath, currentRelativePath));
+			} else {
+				// Add the relative file path to the list
+				fileList.push(currentRelativePath);
+			}
+		});
+	} catch (error) {
+		console.error(`Error reading folder ${folderPath}: ${error}`);
+	}
+	return fileList;
 }
 
 exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
@@ -197,17 +228,47 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					/** @TODO Get a setting from the task maybe*/
 					var releasePath = "bin-release-temp";
 
-					/** @TODO Figure out what type of build... */
-					this.build(buildType, "release", true, { "releasePath": nova.path.join(nova.workspace.path, releasePath) }).then((resolve) => {
-						const configValues = getConfigsForPacking();
+					// Setup build configuration override
+					var configOverrides = {
+						"releasePath": nova.path.join(nova.workspace.path, releasePath)
+					};
+
+					// If we have a custom ANEs marked, let's also change the build config
+					if(taskConfig["as3.packaging.customANEs"] && taskConfig["as3.packaging.customANEs"]==true) {
+						configOverrides["anes"] =  taskConfig["as3.packaging.anes"];
+						configOverrides["anesIgnoreError"] =  taskConfig["as3.ane.ignoreError"];
+					}
+
+					// What if we have a custom Application file? Let's change that and the export and descriptor file.
+					if(taskConfig["as3.task.applicationFile"] && taskConfig["as3.task.applicationFile"].trim()!="") {
+						let mainApplicationPath = taskConfig["as3.task.applicationFile"];
+						configOverrides["mainApplicationPath"] = mainApplicationPath;
+						const customApp = getAppXMLNameAndExport(mainApplicationPath);
+						configOverrides["exportName"] = customApp.exportName;
+						configOverrides["appXMLName"] = customApp.appXMLName;
+					}
+
+					this.build(buildType, "release", true, configOverrides).then((resolve) => {
+						const configValues = getConfigsForPacking(taskConfig["as3.task.applicationFile"]);
 						let flexSDKBase = configValues.flexSDKBase;
-						let packageName = configValues.packageName;
 						let appXMLName = configValues.appXMLName;
 						let doTimestamp= configValues.doTimestamp;
 						let timestampURL= configValues.timestampURL;
 
+						// Check if there is a custom name in the Task
+						let packageName = configValues.packageName;
+						if(taskConfig["as3.export.basename"] && taskConfig["as3.export.basename"].trim()!="") {
+							packageName = taskConfig["as3.export.basename"];
+							if(packageName.endsWith(".air")==false) {
+								packageName += ".air";
+							}
+						}
 						// Loop through the output, and copy things unless specified to exclude like the .actionScriptProperties
-						let alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
+						let alsoIgnore = nova.workspace.config.get("as3.packaging.excludedFiles");
+						// Check if the Task has custom content setting marked true and then use it says to use custom setting for it!
+						if(taskConfig["as3.packaging.customContents"] && taskConfig["as3.packaging.customContents"]==true) {
+							alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
+						}
 						if(alsoIgnore) {
 							alsoIgnore.forEach((ignore) => {
 								//console.log("Ignroe: " + ignore);
@@ -230,11 +291,17 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							});
 						}
 
-						// Check for password, if no, show password.
-						// @TODO We should do something like FB where when you enter the password, it tries to verify it. Once it's correct, you can continue.
-						var certificateLocation = taskConfig["as3.packaging.certificate"];
+						// Figure out the certificate to use when signing.
+						var certificateLocation = nova.workspace.config.get("as3.packaging.certificate");
+						// Check if the Task has a custom certificate set for it!
+						if(taskConfig["as3.packaging.certificate"] && taskConfig["as3.packaging.certificate"]!="") {
+							certificateLocation = taskConfig["as3.packaging.certificate"];
+						}
 						var certificateName = certificateLocation.split("/").pop();
 
+						/** @TODO Check if the certificate location is a valid file. Maybe check if it is a .p12?! */
+
+						// Check if we have the password stored in the user's Keychain
 						var passwordCheck = nova.credentials.getPassword("export-with-"+certificateName,certificateLocation);
 						if(passwordCheck==null) {
 							passwordCheck = "";
@@ -244,6 +311,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						var passwordGet;
 
 						// If password is empty, let's try to get it.
+						// @TODO We should do something like FB where when you enter the password, it tries to verify it. Once it's correct, you can continue.
 						if(passwordCheck=="") {
 							var request = new NotificationRequest("Export Release Build...");
 							request.title = "Digital Signature ";
@@ -323,53 +391,33 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							args.push("-storetype");
 							args.push("pkcs12");
 							args.push("-keystore");
-							/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 							args.push(certificateLocation);
 
 							args.push("-storepass");
 							args.push(password);
 
-							/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-							//var doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
 							if(doTimestamp==false) {
 								args.push("-tsa");
 								args.push("none");
 							} else {
-								//var customTimestamp = nova.workspace.config.get("as3.packaging.timestampUrl");
 								if(timestampURL!=null && timestampURL!="") {
 									args.push("-tsa");
 									args.push(timestampURL);
 								}
 							}
 
-							// AIR (or APK, AAB, IPA) Package name
-							// @TODO Export location being set somewhere? maybe?
-							args.push(nova.path.join(nova.workspace.path, packageName));
+							// Set location and AIR (or APK, AAB, IPA) Package name
+							let exportLocation = nova.workspace.path;
+							if(taskConfig["as3.export.folder"]) {
+								exportLocation = nova.path.join(nova.workspace.path, taskConfig["as3.export.folder"]);
+								if(this.ensureFolderIsAvailable(exportLocation)==false) {
+									nova.workspace.showErrorMessage("Export Release Build failed!\n\nCannot export to folder "+exportLocation);
+								}
+							}
+							args.push(nova.path.join(exportLocation, packageName));
 
 							// Descriptor
 							args.push(appXMLName);
-
-							// Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
-							function listFilesRecursively(folderPath, relativePath = "") {
-								let fileList = [];
-								try {
-									nova.fs.listdir(folderPath).forEach(filename => {
-										let fullPath = nova.path.join(folderPath, filename);
-										let currentRelativePath = nova.path.join(relativePath, filename);
-
-										if (nova.fs.stat(fullPath).isDirectory()) {
-											// Recurse into subdirectory and add the returned files to the list
-											fileList = fileList.concat(listFilesRecursively(fullPath, currentRelativePath));
-										} else {
-											// Add the relative file path to the list
-											fileList.push(currentRelativePath);
-										}
-									});
-								} catch (error) {
-									console.error(`Error reading folder ${folderPath}: ${error}`);
-								}
-								return fileList;
-							}
 
 							// Usage
 							let baseFolderPath = nova.path.join(nova.workspace.path, releasePath);
@@ -429,15 +477,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								var message = "Okay?!!!";
 								if(status==0) {
 									showNotification("Export Package Successful!", "Congrats!");
-									// @TODO, add button to reveal path
-									//nova.fs.rmdir(nova.path.join(nova.workspace.path, "bin-release-temp"));
+									// @TODO, add button to reveal path on notification
+									if(taskConfig["as3.export.deleteAfterSuccess"] && taskConfig["as3.export.deleteAfterSuccess"]==true) {
+										nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
+									}
 								} else {
 									var result = resolveStatusCodeFromADT(status);
-									// console.log("RESULT: ");
-									// console.log("STDOUT: " + stdout);
-									// console.log("STDERR: " + stderr);
 									message = result.message;
 									if (nova.inDevMode()) {
+										// console.log("RESULT: ");
 										console.log("STDOUT: " + stdout);
 										console.log("STDERR: " + stderr);
 									}
@@ -492,14 +540,31 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let anePaths = configValues.anePaths;
 		let compilerAdditional = configValues.compilerAdditional;
 
+		// When building, especially for exporting, we may have different values
 		if(configOverrides) {
-			// Building a release may choose a different location
+			/*
+			console.log(" Config overrides!!!!" ); consoleLogObject(configOverrides);
+			*/
+
+			// Building a release is in a different folder
 			if(configOverrides.releasePath!=null) {
 				destDir = configOverrides.releasePath;
 			}
-			// May want to make a faster build where it doesn't copy all assets?! Maybe?
-			if(configOverrides.copyAssets!=null) {
-				copyAssets = configOverrides.copyAssets;
+
+			// There may be custom ANEs for different builds
+			if(configOverrides.anes!=null) {
+				anePaths = configOverrides.anes;
+			}
+
+			// You cam want to choose a different main file for different packages
+			if(configOverrides.mainApplicationPath!=null) {
+				mainApplicationPath = configOverrides.mainApplicationPath;
+			}
+			if(configOverrides.appXMLName!=null) {
+				appXMLName = configOverrides.appXMLName;
+			}
+			if(configOverrides.exportName!=null) {
+				exportName = configOverrides.exportName;
 			}
 		}
 
@@ -828,7 +893,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// ADL wants the directory with the ANEs
 		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 		//var anes = config.get("as3.packaging.anePaths"); //nova.workspace.config.get("as3.packaging.anes");
-		var anes = nova.workspace.config.get("as3.packaging.anes");
+
+		/** @NOTE Should check if there's a difference in the Workspace config and the packaging */
+		var anes = anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
 		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 		// ones that to the destination dir.
 		if (nova.inDevMode()) {
@@ -1171,13 +1238,21 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	}
 
 	/**
-	 * Makes sure that we have  a Task folder so we can generate new tasks
+	 * Makes sure that we have a folder so we can put stuff in it
+	 *
+	 * @returns {boolean} - True if the folder is there, otherwise false
 	 */
 	ensureFolderIsAvailable(folder) {
 		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
 			// console.log(" Making folder at " + folder + "!!!");
 			nova.fs.mkdir(folder+"/");
 		}
+		// Double check, do we have the folder?
+		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
+			console.log(" *** ERROR: Failed to make folder at " + folder + "! ***");
+			return false;
+		}
+		return true;
 	}
 
 	/**

@@ -464,7 +464,7 @@ class AS3MXMLLanguageServer {
 				// Send Change workspace config slightly after startup
 				// Ideally, it should be onNotification("initialized")...
 				setTimeout(function() {
-					// @NOTE Should do programmatically, just copying from VSCode to see if it works!
+					// @NOTE Most of it is just copied from VSCode, some setting are probably not needed!
 					const config = {
 						settings: {
 							as3mxml: {

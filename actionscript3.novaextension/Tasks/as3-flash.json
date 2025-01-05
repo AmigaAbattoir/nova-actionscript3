@@ -8,7 +8,7 @@
 				"title": "Enable view source",
 				"link": "https://help.adobe.com/archive/en_US/flex/mobileapps/developing_mobile_apps_flex_4.6.pdf",
 				"description": "Inlcude the source files in your exported folder. Learn how to add \"View Source\" menu item",
-				"type": "bool",
+				"type": "boolean",
 				"default": false
 			},
 			{
@@ -22,17 +22,18 @@
 		]
 	},
 	{
-		"title": "Export",
+		"title": "Export Release",
 		"type": "section",
-		"description": "Options for exporting a release build of this application",
+		"description": "Options for exporting a release build of this application. These are only used when using the `Export Release Build...` option",
 		"children": [
 			{
 				"key": "as3.export.folder",
-				"title": "Export to folder",
+				"title": "Package exported to folder",
 				"type": "path",
 				"relative": true,
 				"allowFolders": true,
 				"allowFiles": false,
+				"placeholder": "In your project's root",
 				"default": "bin-release",
 				"description": "The location of folder containing the output, relative to your project's folder"
 			}

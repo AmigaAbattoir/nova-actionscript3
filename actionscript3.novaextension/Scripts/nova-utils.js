@@ -169,7 +169,7 @@ exports.rangeToLspRange = function(document, range) {
 		chars += lineLength;
 	}
 	return null;
-};
+}
 
 /**
  * Opens a file and dumps it into a string.
@@ -202,7 +202,7 @@ exports.getStringOfWorkspaceFile = function(filename) {
 		return null;
 	}
 	return contents;
-};
+}
 
 /**
  * Opens a file and dumps it into a string.
@@ -227,7 +227,7 @@ exports.getStringOfFile = function(filename) {
 		return null;
 	}
 	return contents;
-};
+}
 
 /**
  * Returns a string as a sortable timestamp.
@@ -244,5 +244,4 @@ exports.getCurrentDateAsSortableString = function() {
 	const seconds = String(now.getSeconds()).padStart(2, '0');
 
 	return `${year}${month}${day}_${hours}${minutes}${seconds}`;
-};
-
+}

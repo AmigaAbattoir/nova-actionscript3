@@ -5,15 +5,6 @@
 		"type": "section",
 		"children": [
 			{
-				"key": "as3.task.applicationFile",
-				"title": "Application file",
-				"type": "path",
-				"placeholder": "If empty, default's to project's Application File",
-				"allowFolders": false,
-				"allowFiles": true,
-				"filetype": [ "as","mxml" ]
-			},
-			{
 				"key": "as3.task.launchMethod",
 				"title": "Launch method",
 				"description": "When running, how should this be launched?",
@@ -129,201 +120,240 @@
 		]
 	},
 	{
-		"title": "Additional Options",
-		"description": "Some additional options that are used for generating the release build. Right now, they are used, but may end up being programmatically set.",
+		"title": "Exporting Release Build Options",
 		"type": "section",
+		"description": "All the below options are used when using the `Export Release Build...` option. They allow you to customize what is used when trying to export a package. This allows for using one project to build for different types of devices by using different task.",
 		"children": [
 			{
-				"key": "as3.task.commandLine",
-				"title": "Command line arguments",
-				"type": "string"
-			},
-			{
-				"key": "as3.task.mainApplicationPath",
-				"title": "Publisher ID",
-				"type": "string"
-			},
-			{
-				"key": "as3.task.profile",
-				"title": "Profile",
-				"type": "enum",
-				"default": "default",
-				"values": [
-					["default", "Default (first in app.xml)"],
-					["mobileDevice", "Mobile Device"],
-					["extendedMobileDevice", "Extended Mobile Device"]
-				]
-			}
-		]
-	},
-	{
-		"title": "Export",
-		"type": "section",
-		"description": "Options for exporting a release build of this application",
-		"children": [
-			{
-				"key": "as3.export.folder",
-				"title": "Export to folder",
-				"type": "path",
-				"relative": true,
-				"allowFolders": true,
-				"allowFiles": false,
-				"default": "bin-release",
-				"description": "The location of folder containing the output, relative to your project's folder"
-			},
-			{
-				"key": "as3.export.basename",
-				"title": "Base filename",
-				"type": "string",
-				"placeholder": "Your project's main file minus `.extension`"
-			},
-			{
-				"key": "as3.packaging.type",
-				"title": "Export as",
-				"default": "signed-air",
-				"type":  "enum",
-				"values": [
-					["signed-air","Signed AIR package"],
-					["signed-captive","Signed application with captive runtime"],
-					["intermediate","Intermediate AIRI package that must be manually signed later"]
-				]
-			}
-		]
-	},
-	{
-		"title": "Deployment",
-		"type": "section",
-		"children": [
-			{
-				"title": "Install and launch application on any connected devices",
-				"key": "as3.deployment.launchConnected",
-				"type": "boolean",
-				"default": true
-			},
-			{
-				"title": "Export Options:",
-				"key": "as3.deployment.options",
-				"type": "enum",
-				"description": "(Deprecated) Use the Target options below",
-				"default": "captive",
-				"values": [
-					["captive", "Export application with captive runtime"],
-					["shared", "Export application that uses a shared AIR runtime"]
+				"title": "Additional Options",
+				"description": "Some additional options that are used for generating the release build.",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.task.commandLine",
+						"title": "Command line arguments",
+						"type": "string"
+					},
+					{
+						"key": "as3.task.publisherId",
+						"title": "Publisher ID",
+						"type": "string"
+					},
+					{
+						"key": "as3.task.profile",
+						"title": "Profile",
+						"type": "enum",
+						"default": "default",
+						"values": [
+							["default", "Default (first in app.xml)"],
+							["mobileDevice", "Mobile Device"],
+							["extendedMobileDevice", "Extended Mobile Device"]
+						]
+					}
 				]
 			},
 			{
-				"title": "AIR download URL:",
-				"key": "as3.deployment.url",
-				"description": "(Deprecated) The URL specified for an application must point to a download location on the store where the application will be hosted. You can also enter your own url.",
-				"type": "enum",
-				"radio": false,
-				"allowsCustom": true,
-				"default": "https://market.android.com/details?id=com.adobe.air",
-				"enabled": false,
-				"deprecated": true,
-				"values": [
-					["https://market.android.com/details?id=com.adobe.air"],
-					["http://www.amazon.com/gp/mas/dl/android?p=com.adobe.air"]
+				"title": "Export Release",
+				"type": "section",
+				"description": "Options for exporting a release build of this application. These are only used when using the `Export Release Build...` option",
+				"children": [
+					{
+						"key": "as3.export.deleteAfterSuccess",
+						"title": "Delete temp folder after success",
+						"type": "boolean",
+						"default": true
+					},
+					{
+						"key": "as3.export.folder",
+						"title": "Package exported to folder",
+						"type": "path",
+						"relative": true,
+						"allowFolders": true,
+						"allowFiles": false,
+						"placeholder": "In your project's root",
+						"description": "The location of folder containing the final packaged output, relative to your project's folder"
+					},
+					{
+						"key": "as3.task.applicationFile",
+						"title": "Application file",
+						"type": "path",
+						"placeholder": "If empty, your project's Main Application file",
+						"description": "This will default to your project's Main application file, or you can select a different one for this type of export",
+						"allowFolders": false,
+						"allowFiles": true,
+						"filetype": [ "as","mxml" ]
+					},
+					{
+						"key": "as3.export.basename",
+						"title": "Base filename",
+						"type": "string",
+						"placeholder": "If empty, your project's Main Application file minus `.extension`"
+					},
+					{
+						"key": "as3.packaging.type",
+						"title": "Export as",
+						"default": "signed-air",
+						"type":  "enum",
+						"values": [
+							["signed-air","Signed AIR package"],
+							["signed-captive","Signed application with captive runtime"],
+							["intermediate","Intermediate AIRI package that must be manually signed later"]
+						]
+					}
 				]
 			},
 			{
-				"key": "as3.deployment.noFlair",				"title": "No Android Flair",				"description": "Remove the \"air\" prefixed to the Android package",				"type": "boolean",				"default": false			},			{
-				"key": "as3.deployment.target",
-				"title": "Target",
-				"type": "enum",
-				"description": "The type of package to create.",
-				"radio": false,
-				"default": "apk",
-				"values": [
-					["apk","APK"],
-					["apk-debug","APK with debugging support"],
-					["apk-emulator","APK for emulator"],
-					["apk-captive-runtime","APK with Captive Runtime"],
-					["apk-profile","APK that support profiling"],
-					["aab","AAB"],
-					["aab-debug","AAB with debugging support"],
-					["android-studio","Android Studio"],
-					["android-studio-debug","Android Studio with debugging support"]
+				"title": "Deployment",
+				"type": "section",
+				"children": [
+					{
+						"title": "Install and launch application on any connected devices",
+						"key": "as3.deployment.launchConnected",
+						"type": "boolean",
+						"default": true
+					},
+					{
+						"title": "Export Options:",
+						"key": "as3.deployment.options",
+						"type": "enum",
+						"description": "(Deprecated) Use the Target options below",
+						"default": "captive",
+						"values": [
+							["captive", "Export application with captive runtime"],
+							["shared", "Export application that uses a shared AIR runtime"]
+						]
+					},
+					{
+						"title": "AIR download URL:",
+						"key": "as3.deployment.url",
+						"description": "(Deprecated) The URL specified for an application must point to a download location on the store where the application will be hosted. You can also enter your own url.",
+						"type": "enum",
+						"radio": false,
+						"allowsCustom": true,
+						"default": "https://market.android.com/details?id=com.adobe.air",
+						"enabled": false,
+						"deprecated": true,
+						"values": [
+							["https://market.android.com/details?id=com.adobe.air"],
+							["http://www.amazon.com/gp/mas/dl/android?p=com.adobe.air"]
+						]
+					},
+					{
+						"key": "as3.deployment.noFlair",
+						"title": "No Android Flair",
+						"description": "Remove the \"air\" prefixed to the Android package",
+						"type": "boolean",
+						"default": false
+					},
+					{
+						"key": "as3.deployment.target",
+						"title": "Target",
+						"type": "enum",
+						"description": "The type of package to create.",
+						"radio": false,
+						"default": "apk",
+						"values": [
+							["apk","APK"],
+							["apk-debug","APK with debugging support"],
+							["apk-emulator","APK for emulator"],
+							["apk-captive-runtime","APK with Captive Runtime"],
+							["apk-profile","APK that support profiling"],
+							["aab","AAB"],
+							["aab-debug","AAB with debugging support"],
+							["android-studio","Android Studio"],
+							["android-studio-debug","Android Studio with debugging support"]
+						]
+					},
+					{
+						"key": "as3.deployment.arch",
+						"title": "Architecture",
+						"type": "enum",
+						"radio": false,
+						"default": "armv7",
+						"values": [
+							["armv7"],
+							["armv8"],
+							["x86"],
+							["x64"],
+							["all"]
+						]
+					},
+					{
+						"key": "as3.deployment.platfromsdk",
+						"title": "Platform SDK",
+						"type": "path",
+						"allowFolders": true,
+						"allowFiles": false,
+						"placeholder": "~/Library/Android/sdk",
+						"description": "The path to the platform SDK for the target device. Only set this value to use a different version of the Android SDK."
+					}
 				]
 			},
 			{
-				"key": "as3.deployment.arch",
-				"title": "Architecture",
-				"type": "enum",
-				"radio": false,
-				"default": "armv7",
-				"values": [
-					["armv7"],
-					["armv8"],
-					["x86"],
-					["x64"],
-					["all"]
+				"title": "Digital Signature",
+				"description": "Certificate and password options for building.\n\nThese are the setting that will be used for building and running. Exporting release builds will default to these values, unless otherwise specified in the task",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.packaging.certificate",
+						"title": "Certificate",
+						"type": "path",
+						"placeholder": "Your project's certificate",
+						"allowFolders": false,
+						"allowFiles": true,
+						"description": "Select the .p12 to sign this build with. If empty, this will default to use the certificate set in the Projects's preferences."
+					}
 				]
 			},
 			{
-				"key": "as3.deployment.platfromsdk",
-				"title": "Platform SDK",
-				"type": "path",
-				"allowFolders": true,
-				"allowFiles": false,
-				"placeholder": "~/Library/Android/sdk",
-				"description": "The path to the platform SDK for the target device. Only set this value to use a different version of the Android SDK."
-			}
-		]
-	},
-	{
-		"title": "Digital Signature",
-		"description": "Certificate and password options for building",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.packaging.certificate",
-				"title": "Certificate",
-				"type": "path",
-				"allowFolders": false,
-				"allowFiles": true,
-				"description": "Select the .p12 to sign this build with"
-			}
-		]
-	},
-	{
-		"title": "Package Contents",
-		"description": "When preparing the export package, these file will be excluded from the build.",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.packaging.excludedFiles",
-				"title": "Files to exclude when packaging",
-				"type": "pathArray",
-				"allowFolders": true,
-				"allowFiles": true
-			}
-		]
-	},
-	{
-		"title": "Native Extensions",
-		"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.packaging.anes",
-				"title": "Native extensions",
-				"type": "pathArray",
-				"relative": true,
-				"allowFolders": false,
-				"allowFiles": true,
-				"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package. May need to look into the \"resolve\" options to see if that's possible"
+				"title": "Package Contents",
+				"description": "When preparing the export package, these file will be excluded from the build.",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.packaging.customContents",
+						"title": "Use custom Packaging Contents",
+						"type": "boolean",
+						"description": "If this is checked, the settings below will be used to exclude files when packaging a release build."
+					},
+					{
+						"key": "as3.packaging.excludedFiles",
+						"title": "Files to exclude when packaging",
+						"type": "pathArray",
+						"description": "Remember, to use these options, ensure the above `Use custom Packaging Contents` is checked.",
+						"relative": true,
+						"allowFolders": true,
+						"allowFiles": true
+					}
+				]
 			},
 			{
-					"key": "as3.ane.ignoreError",
-					"title": "Ignore Error",
-					"type": "boolean",
-					"default": "false"
-			},
-			{
-					"key": "as3.ane.refresh",
-					"title": "Refresh",
-					"type": "command"
+				"title": "Native Extensions",
+				"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.packaging.customANEs",
+						"title": "Use custom ANE settings",
+						"type": "boolean",
+						"description": "If this is checked, the settings below will be used for ANES when packaging a release build."
+					},
+					{
+						"key": "as3.packaging.anes",
+						"title": "Native extensions",
+						"type": "pathArray",
+						"relative": true,
+						"allowFolders": false,
+						"allowFiles": true,
+						"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package. May need to look into the \"resolve\" options to see if that's possible"
+					},
+					{
+							"key": "as3.ane.ignoreError",
+							"title": "Ignore Error",
+							"type": "boolean",
+							"default": "false"
+					}
+				]
 			}
 		]
 	}

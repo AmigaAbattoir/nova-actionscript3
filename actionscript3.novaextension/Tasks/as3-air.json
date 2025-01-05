@@ -1,120 +1,155 @@
 [
 	{
-		"title": "Additional Options",
-		"description": "Some additional options that are used for generating the release build. Right now, they are used, but may end up being programmatically set.",
+		"title": "Exporting Release Build Options",
 		"type": "section",
+		"description": "All the below options are used when using the `Export Release Build...` option. They allow you to customize what is used when trying to export a package. This allows for using one project to build for different types of devices by using different task.",
 		"children": [
 			{
-				"key": "as3.task.commandLine",
-				"title": "Command line arguments",
-				"type": "string"
-			},
-			{
-				"key": "as3.task.mainApplicationPath",
-				"title": "Publisher ID",
-				"type": "string"
-			},
-			{
-				"key": "as3.task.profile",
-				"title": "Profile",
-				"type": "enum",
-				"default": "desktop",
-				"values": [
-					["default", "Default (first in app.xml)"],
-					["desktop", "Desktop"],
-					["extendedDesktop", "Extended Desktop"],
-					["mobileDevice", "Mobile Device"],
-					["extendedMobileDevice", "Extended Mobile Device"]
+				"title": "Additional Options",
+				"description": "Some additional options that are used for generating the release build. Right now, they are used, but may end up being programmatically set.",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.task.commandLine",
+						"title": "Command line arguments",
+						"type": "string"
+					},
+					{
+						"key": "as3.task.mainApplicationPath",
+						"title": "Publisher ID",
+						"type": "string"
+					},
+					{
+						"key": "as3.task.profile",
+						"title": "Profile",
+						"type": "enum",
+						"default": "desktop",
+						"values": [
+							["default", "Default (first in app.xml)"],
+							["desktop", "Desktop"],
+							["extendedDesktop", "Extended Desktop"],
+							["mobileDevice", "Mobile Device"],
+							["extendedMobileDevice", "Extended Mobile Device"]
+						]
+					}
 				]
-			}
-		]
-	},
-	{
-		"title": "Export",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.export.folder",
-				"title": "Export to folder",
-				"type": "path",
-				"relative": true,
-				"allowFolders": true,
-				"allowFiles": false,
-				"default": "bin-release",
-				"description": "The location of folder containing the output, relative to your project's folder"
 			},
 			{
-				"key": "as3.export.basename",
-				"title": "Base filename",
-				"type": "string",
-				"placeholder": "Your project's main file minus .extension"
+				"title": "Export Release",
+				"type": "section",
+				"description": "Options for exporting a release build of this application. These are only used when using the `Export Release Build...` option",
+				"children": [
+					{
+						"key": "as3.export.deleteAfterSuccess",
+						"title": "Delete temp folder after success",
+						"type": "boolean",
+						"default": true
+					},
+					{
+						"key": "as3.export.folder",
+						"title": "Export to folder",
+						"type": "path",
+						"relative": true,
+						"allowFolders": true,
+						"allowFiles": false,
+						"default": "bin-release",
+						"description": "The location of folder containing the output, relative to your project's folder"
+					},
+					{
+						"key": "as3.task.applicationFile",
+						"title": "Application file",
+						"type": "path",
+						"placeholder": "If empty, your project's Main Application file",
+						"description": "This will default to your project's Main application file, or you can select a different one for this type of export",
+						"allowFolders": false,
+						"allowFiles": true,
+						"filetype": [ "as","mxml" ]
+					},
+					{
+						"key": "as3.export.basename",
+						"title": "Base filename",
+						"type": "string",
+						"placeholder": "Your project's main file minus .extension"
+					},
+					{
+						"key": "as3.packaging.type",
+						"title": "Export as",
+						"type":  "enum",
+						"values": [
+							["signed-air","Signed AIR package"],
+							["signed-native","Signed native installer"],
+							["signed-captive","Signed application with captive runtime"],
+							["intermediate","Intermediate AIRI package that must be manually signed later"]
+						],
+						"default": "signed-air"
+					}
+				]
 			},
 			{
-				"key": "as3.packaging.type",
-				"title": "Export as",
-				"type":  "enum",
-				"values": [
-					["signed-air","Signed AIR package"],
-					["signed-native","Signed native installer"],
-					["signed-captive","Signed application with captive runtime"],
-					["intermediate","Intermediate AIRI package that must be manually signed later"]
-				],
-				"default": "signed-air"
-			}
-		]
-	},
-	{
-		"title": "Digital Signature",
-		"description": "Certificate and password options for building",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.packaging.certificate",
-				"title": "Certificate",
-				"type": "path",
-				"allowFolders": false,
-				"allowFiles": true,
-				"description": "Select the .p12 to sign this build with"
-			}
-		]
-	},
-	{
-		"title": "Package Contents",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.packaging.excludedFiles",
-				"title": "Files to exclude when packaging",
-				"type": "pathArray",
-				"allowFolders": true,
-				"allowFiles": true
-			}
-		]
-	},
-	{
-		"title": "Native Extensions",
-		"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
-		"type": "section",
-		"children": [
-			{
-				"key": "as3.packaging.anes",
-				"title": "Native extensions",
-				"type": "pathArray",
-				"relative": true,
-				"allowFolders": false,
-				"allowFiles": true,
-				"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package. May need to look into the \"resolve\" options to see if that's possible"
+				"title": "Digital Signature",
+				"description": "Certificate and password options for building.\n\nThese are the setting that will be used for building and running. Exporting release builds will default to these values, unless otherwise specified in the task",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.packaging.certificate",
+						"title": "Certificate",
+						"type": "path",
+						"placeholder": "Your project's certificate",
+						"allowFolders": false,
+						"allowFiles": true,
+						"description": "Select the .p12 to sign this build with. If empty, this will default to use the certificate set in the Projects's preferences."
+					}
+				]
 			},
 			{
-					"key": "as3.ane.ignoreError",
-					"title": "Ignore Error",
-					"type": "boolean",
-					"default": "false"
+				"title": "Package Contents",
+				"description": "When preparing the export package, these file will be excluded from the build.",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.packaging.customContents",
+						"title": "Use custom Packaging Contents",
+						"type": "boolean",
+						"description": "If this is checked, the settings below will be used to exclude files when packaging a release build."
+					},
+					{
+						"key": "as3.packaging.excludedFiles",
+						"title": "Files to exclude when packaging",
+						"type": "pathArray",
+						"description": "Remember, to use these options, ensure the above `Use custom Packaging Contents` is checked.",
+						"relative": true,
+						"allowFolders": true,
+						"allowFiles": true
+					}
+				]
 			},
 			{
-					"key": "as3.ane.refresh",
-					"title": "Refresh",
-					"type": "command"
+				"title": "Native Extensions",
+				"description": "ActionScript Native Extensions (ANE) allow you to incorporate native platform capabilities into your application and use them like standard libraries",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.packaging.customANEs",
+						"title": "Use custom ANE settings",
+						"type": "boolean",
+						"description": "If this is checked, the settings below will be used for ANES when packaging a release build."
+					},
+					{
+						"key": "as3.packaging.anes",
+						"title": "Native extensions",
+						"type": "pathArray",
+						"relative": true,
+						"allowFolders": false,
+						"allowFiles": true,
+						"comment": "This should really show a list of the ANE Details, checkbox if it's used, checkbox if you want to package. May need to look into the \"resolve\" options to see if that's possible"
+					},
+					{
+							"key": "as3.ane.ignoreError",
+							"title": "Ignore Error",
+							"type": "boolean",
+							"default": "false"
+					}
+				]
 			}
 		]
 	}
