@@ -154,19 +154,19 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 		});
 	}
 
-	var libraryPath = [];
 	const libPaths = nova.workspace.config.get("as3.build.library.additional");
+	var libraryPaths = [];
 	if(libPaths) {
 		libPaths.forEach((libPath) => {
 			// @NOTE, not sure this is needed, but it may come in handy
 			if(libPath.includes("${PROJECT_FRAMEWORKS}")) {
-				libPath = libPath.replace("${PROJECT_FRAMEWORKS}",exports.determineFlexSDKBase()+"/frameworks/");
+				libPath = libPath.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
 			}
 			if(libPath.includes("{locale}")) {
 				/** @TODO Need to figure out how to get locale... Maybe a setting in the extension or preferences */
 				libPath = libPath.replace("{locale}","en_US");
 			}
-			libraryPath.push(libPath);
+			libraryPaths.push(libPath);
 		});
 	}
 
@@ -201,7 +201,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 		"config": "airmobile",
 		"sourceDirs": sourceDirs,  // Needed for additional sources (may be relative) mostly for asconfig
 		"sourcePath":  sourcePath, // Full (resolved) path of files for building
-		"libPaths": libPaths,
+		"libPaths": libraryPaths,
 		"anePaths": anePaths,
 		"destDir": destDir,
 		"exportName": exportName,
