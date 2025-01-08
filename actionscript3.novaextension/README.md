@@ -43,6 +43,20 @@ ActionScript 3 requires the following to be installed on your Mac:
 
   * Default location looked for is at `~/Applications/AIRSDK`, if you have others, your will need to change the extension settings.
 
+## Optional
+
+* Ruffle
+
+ * You can use Ruffle if you want to launch a Flash project, instead of Flash Player
+
+* Flash Player
+
+ * You can still use a standalone Flash Player to launch Flash projects
+
+* Old version of Chrome and PPAPI Flash Player
+
+ * If you really want to live dangerously, why not throw on an old version of Chrome or Chromium and an old version (not like there's a new one) of the PPAPI Flash Player.
+
 ## Usage
 
 It should work if you open a files *.as, or *.mxml.

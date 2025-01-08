@@ -1,5 +1,24 @@
 [
 	{
+		"title": "Launcher",
+		"type": "section",
+		"children": [
+			{
+				"key": "as3.launch.type",
+				"title": "Launch type",
+				"description": "How should we try running the SWF?",
+				"type": "enum",
+				"radio": false,
+				"values": [
+					[ "standalone", "Flash Player" ],
+					[ "ruffle", "Ruffle" ],
+					[ "browser", "Browser" ]
+				],
+				"default": "standalone"
+			}
+		]
+	},
+	{
 		"title": "View Source",
 		"type": "section",
 		"children": [

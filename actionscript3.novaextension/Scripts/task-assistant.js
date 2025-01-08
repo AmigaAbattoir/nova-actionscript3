@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
-const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo } = require("./as3-utils.js");
+const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
@@ -45,6 +45,31 @@ function listFilesRecursively(folderPath, relativePath = "") {
 		console.error(`Error reading folder ${folderPath}: ${error}`);
 	}
 	return fileList;
+}
+
+/**
+ * Finds the actual executable file in a Mac App
+ * @param {string} appLocation - Location of the Application.app "folder"
+ * @returns {string|null} - The location of the first executable in the .app, otherwise null
+ */
+function getExec(appLocation) {
+	const exePath = nova.path.join(appLocation,"/Contents/MacOS"); // Path to the MacOS folder
+	let execFiles
+	try {
+		execFiles = nova.fs.listdir(exePath); // List all files in the folder
+		if (!execFiles) {
+			console.error("No files found in " + exePath);
+			return null;
+		}
+		for (const exec of execFiles) {
+			const execCheck = nova.path.join(exePath,exec);
+			if (nova.fs.access(execCheck, nova.fs.F_OK | nova.fs.X_OK)) {
+				return execCheck; // Return the first executable file found
+			}
+		}
+	} catch(error) {
+		return null;
+	}
 }
 
 exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
@@ -520,6 +545,225 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Object} configOverrides - A object of variables to override
 	 */
 	//build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths = []) {
+	buildFlash(buildType, whatKind) {
+		console.log("BUILD TYPE: " + buildType);
+
+		const configValues = getConfigsForBuild(true);
+
+		let flexSDKBase = configValues.flexSDKBase;
+		if(flexSDKBase==null) {
+			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
+			return null;
+		}
+		let destDir = configValues.destDir;
+		let mainApplicationPath =  configValues.mainApplicationPath;
+		let isFlex = configValues.isFlex;
+		let appXMLName = configValues.appXMLName;
+		let mainClass = configValues.mainClass;
+		let mainSrcDir = configValues.mainSrcDir;
+		let exportName = configValues.exportName;
+		let copyAssets = configValues.copyAssets;
+		let sourceDirs = configValues.sourceDirs;
+		let libPaths = configValues.libPaths;
+		let anePaths = configValues.anePaths;
+		let compilerAdditional = configValues.compilerAdditional;
+
+		// If we are asked to build the HTML Wrapper
+		if(nova.workspace.config.get("as3.flash.generateHTML")) {
+			// Read the application file and look for the [SWF()] block for info.
+			let metadata = {};
+
+			// Load main class, and get any SWF Metadata
+			var mainAppFile = getStringOfWorkspaceFile("src/"+mainApplicationPath);
+
+			// Regex to extract [SWF(...)]
+			const swfRegex = /\[SWF\((.*?)\)\]/;
+			const match = mainAppFile.match(swfRegex);
+
+			// If there is a match, then we may have some useful SWF metadata
+			if (match) {
+				const metadataString = match[1]; // Get content inside [SWF(...)]
+
+				// Regex to extract key-value pairs (e.g., width="800")
+				const keyValueRegex = /(\w+)="(.*?)"/g;
+
+				let keyValueMatch;
+				// Make a object with keys that have the different values so we can grab them later
+				while ((keyValueMatch = keyValueRegex.exec(metadataString)) !== null) {
+					const key = keyValueMatch[1];
+					const value = keyValueMatch[2];
+					metadata[key] = value;
+				}
+			}
+
+			// Set the variables in the index.template.html from any SWF metadata we may have
+			let swf_width = metadata?.width || "550";
+			let swf_height = metadata?.height || "400";
+			let swf_bgcolor = metadata?.backgroundColor || "#FFFFFF";
+			let swf_title = metadata?.pageTitle || mainClass;
+
+			// Figure out the Flash Player version
+			let swf_version_major = 0;
+			let swf_version_minor = 0;
+			let swf_version_revision = 0;
+
+			// If they selected to use a specified version, let's just grab the values from those configs
+			if(nova.workspace.config.get("as3.flash.options")=="specified") {
+				swf_version_major = nova.workspace.config.get("as3.flash.minimum.major");
+				swf_version_minor = nova.workspace.config.get("as3.flash.minimum.minor");
+				swf_version_revision = nova.workspace.config.get("as3.flash.minimum.revision");
+			} else {
+				let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+				let flashVersion = convertAIRSDKToFlashPlayerVersion(currentAIRSDKVersion);
+				swf_version_major = flashVersion.major;
+				swf_version_minor = flashVersion.minor;
+				// Revision always is 0
+			}
+
+			// Actually, this might be specified in AIRSDK/ide/flashbuilder/flashbuilder-config.xml (at least on Mac, didn't see it on the Windows one I had)
+			let swf_expressInstallSwf = "expressInstall.swf";
+
+			// If we want to use the navigation history, then we need to make this a -- to make the template as an end comment
+			let swf_useBrowserHistory = nova.workspace.config.get("as3.flash.navigation") ? "--" : "";
+
+			let swf_application = mainClass;
+			let swf_swf = exportName.replace(".swf","");
+
+			// Replace the variables in the template
+			let htmlTemplateFile = getStringOfWorkspaceFile("html-template/index.template.html");
+			let newHtml = htmlTemplateFile.replace(/\${(.*?)}/g, (_, variable) => {
+				// Try to replace with variable, otherwise, just return empty string
+				try {
+					return eval("swf_"+variable);
+				}catch(error) {
+					return "";
+				}
+			});
+
+			// Create the html page based on the template
+			try {
+				var newHtmlFile = nova.fs.open(destDir + "/" + swf_title + ".html", "w");
+				newHtmlFile.write(newHtml);
+				newHtmlFile.close();
+			} catch(error) {
+				if(lineCount==0) {
+					nova.workspace.showErrorMessage("Error writing HTML file at " + appXMLLocation + ". Please check it's content that it is valid.");
+					console.log("*** ERROR: Writing HTML file! error: ",error);
+					consoleLogObject(error);
+					return null;
+				}
+			}
+
+			// Copy other files in html-template (except index.template.html!)
+			fileNamesToExclude = [ "index.template.html" ];
+			fileExtensionsToExclude = [];
+
+			this.copyAssetsOf(nova.workspace.path+"/html-template", destDir, false).then(() => {
+				if (nova.inDevMode()) {
+					console.log("All assets copied successfully.");
+				}
+			})
+			.catch(error => {
+				nova.workspace.showErrorMessage("Error during asset copying: " + error);
+				if (nova.inDevMode()) {
+					console.error("Error during asset copying:", error);
+				}
+				return null;
+			});
+		}
+
+		// Let's compile this thing!!
+		var command = flexSDKBase + "/bin/mxmlc";
+		var args = new Array();
+		/*
+		if(whatKind=="debug") {
+			args.push("--debug=true");
+		}
+		*/
+		args.push("--debug=true");
+
+		args.push("--warnings=true");
+
+		// console.log("buildType: " + buildType);
+		/*
+		if(buildType=="airmobile") {
+			args.push("+configname=airmobile");
+		} else {
+			args.push("+configname=air");
+		}
+
+				// If air, we need to add the configname=air, I'm assuming flex would be different?!
+				var isFlex = nova.workspace.config.get("as3.application.isFlex");
+				if(isFlex) {
+		*/
+					args.push("+configname=flex");
+		/*
+				}
+		*/
+		// Push where the final SWF will be outputted
+		args.push("--output=" + destDir + "/" + exportName);
+
+		// Add base, just in case there are Embeds that look for stuff here using relative locations
+		//args.push("--source-path=./");
+
+		// Push args for the source-paths!
+		if(sourceDirs) {
+			sourceDirs.forEach((sourceDir) => { args.push("--source-path+=" + sourceDir); });
+		}
+
+		// This too should be from settings
+		if(libPaths) {
+			libPaths.forEach((libPath) => { args.push("--library-path+=" + libPath); });
+		}
+
+		// Additional compiler arguments
+		if(compilerAdditional!=null) {
+			/** @NOTE Needs work on parsing the additional args.
+				Should really parse to make sure that there are no spaces or dash spaces
+				Or make sure there's a quote around it if there's paths, or maybe just a
+				space after an equal sign.
+			*/
+			var additional = compilerAdditional;
+			var ops = additional.split(" -");
+			ops.forEach((addition,index) => {
+				additional = (index>0 ? "-" : "") + addition;
+
+				var eqLoc = addition.indexOf("=");
+				var spaceLoc = addition.indexOf(" ");
+
+				// Should handle something like "-locale en_US"
+				if(eqLoc==-1 && spaceLoc!=-1) {
+					var moreArgs = addition.split(" ");
+					args.push(moreArgs[0]); 
+					args.push(moreArgs[1]); 
+				} else {
+					args.push(additional); 
+				}
+			});
+		}
+
+		args.push("--");
+		// We need the active application file to trigger this
+		args.push("src/" + mainApplicationPath);
+		if (nova.inDevMode()) {
+			console.log(" *** COMMAND [[" + command + "]] ARG: \n");
+			consoleLogObject(args);
+		}
+
+		if (nova.inDevMode()) {
+			console.log(" #### Okay, should be playing according to Nova!");
+		}
+		return new TaskProcessAction(command, { args: args });
+	}
+
+	/**
+	 * Builds the SWF for the project
+	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
+	 * @param {string} whatKind - What kind of build, either `release`|`debug`
+	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
+	 * @param {Object} configOverrides - A object of variables to override
+	 */
+	//build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths = []) {
 	build(buildType, whatKind, packageAfterBuild = false, configOverrides = {}) {
 		const configValues = getConfigsForBuild(true);
 
@@ -846,74 +1090,148 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Object} config - The Task's configs
 	 */
 	run(buildType, profile, config) {
-		const configValues = getConfigsForBuild(true);
-		let flexSDKBase = configValues.flexSDKBase;
-		let destDir = configValues.destDir;
-		let appXMLName = configValues.appXMLName;
+		console.log("buildType: " + buildType)
+		let command = "";
+		let args = [];
 
-		var runningOnDevice = false;
-		// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
-		// To launch ADL, we need to point it to the "-app.xml" file
-		var command = flexSDKBase + "/bin/adl";
-		var args = [];
+		if(buildType=="flash") {
+			const configValues = getConfigsForBuild(true);
+			let flexSDKBase = configValues.flexSDKBase;
+			let destDir = configValues.destDir;
+			let appXMLName = configValues.appXMLName;
+			let exportName = configValues.exportName;
 
-		var launchMethod = config.get("as3.task.launchMethod");
-		if(launchMethod=="device") {
-			// @TODO If we don't find devices, ask if they want to continue on desktop or try again?
-		}
+			let fpApp;
+			if(config.get("as3.launch.type")=="browser") {
+				let fpApp = nova.config.get("as3.flashPlayer.browser");
 
-		if(buildType=="airmobile") {
-			var screenSize = config.get("as3.task.deviceToSimulate");
-			if(screenSize==null || screenSize=="none") {
-				nova.workspace.showErrorMessage("ERROR!!!\n\n Please edit the Task to select a screen size to use in the simulator!");
-				return false;
+				command = getExec(fpApp);
+				if(command==null) {
+					nova.workspace.showErrorMessage("Flash Player Run/Debug -> " + (config.get("as3.launch.type")=="ruffle" ? "Ruffle" : "Standalone Flash Player") + " Error\n\nProblem finding executable at " + fpApp);
+					return null;
+				}
+
+				// Make a temp old user
+				const userDataDir = "/tmp/old-chrome-profile"; ////nova.workspace.config.get("flash.chrome.userDataDir") || "/tmp/old-chrome-profile"; // Path to a custom profile
+
+				// Ensure the custom profile directory exists
+				if (!nova.fs.stat(userDataDir)) {
+					nova.fs.mkdir(userDataDir);
+				}
+
+				// Chrome command-line arguments
+			    args = [
+					"--user-data-dir=" + userDataDir, // Use custom profile
+					"--allow-outdated-plugins",      // Allow outdated plugins like Flash
+					"--enable-npapi",                // Enable NPAPI (needed for Flash)
+					//"--disable-web-security",        // Optional: disable web security for testing
+					"--no-first-run",                // Suppress first-run prompts
+					//"--disable-extensions",          // Disable Chrome extensions
+				];
+				args.push(destDir + "/" +  "BounceTest.html");
+
+				if (nova.inDevMode()) {
+					console.log(" *** Attempting to Run a webbrowser with Flash Player with [[" + command + "]] ARG: \n");
+					consoleLogObject(args);
+				}
 			} else {
-				screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
+console.log("config.get(as3.launch.type): " + config.get("as3.launch.type"));
+console.log("config.get(as3.flashPlayer.ruffle): " + nova.config.get("as3.flashPlayer.ruffle"));
+console.log("config.get(as3.flashPlayer.standalone): " + nova.config.get("as3.flashPlayer.standalone"));
+				// Since Flash Player can actually have an executable of Flash Player Debugger or just Flash Player, let's just look in that
+				// .app's Content/MacOS folder! And we can also use that for Ruffle too, that way they user just select's the application!
+				fpApp = (config.get("as3.launch.type")=="ruffle" ? nova.config.get("as3.flashPlayer.ruffle") : nova.config.get("as3.flashPlayer.standalone") )
+console.log("fpApp: " + fpApp);
+
+				command = getExec(fpApp);
+				if(command==null) {
+					nova.workspace.showErrorMessage("Flash Player Run/Debug -> " + (config.get("as3.launch.type")=="ruffle" ? "Ruffle" : "Standalone Flash Player") + " Error\n\nProblem finding executable at " + fpApp);
+					return null;
+				}
+
+				if (nova.inDevMode()) {
+					console.log(" *** Attempting to Run Flash Player application with [[" + command + "]] ARG: \n");
+					consoleLogObject(args);
+				}
+				args.push(destDir + "/" +  exportName);
 			}
-
-			args.push("-screensize");
-			args.push(screenSize);
-		}
-
-		if (nova.inDevMode()) {
-			console.log("CONFIG: " + profile);
-		}
-		// @TODO If default, we should check the -app.xml to see if there is a profile specified
-		if(profile!="default") {
-			args.push("-profile");
-			args.push(profile);
 		} else {
-			// If it's default, make sure to use mobileDevice if were are in a airmobile task. Otherwise, we'll get errors
-			if(profile=="default" && buildType=="airmobile") {
-				args.push("-profile");
-				args.push("mobileDevice");
+			const configValues = getConfigsForBuild(true);
+			let flexSDKBase = configValues.flexSDKBase;
+			let destDir = configValues.destDir;
+			let appXMLName = configValues.appXMLName;
+
+			var runningOnDevice = false;
+			// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
+			// To launch ADL, we need to point it to the "-app.xml" file
+			command = flexSDKBase + "/bin/adl";
+
+			var launchMethod = config.get("as3.task.launchMethod");
+			if(launchMethod=="device") {
+				// @TODO If we don't find devices, ask if they want to continue on desktop or try again?
 			}
-		}
 
-		// ADL wants the directory with the ANEs
-		/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-		//var anes = config.get("as3.packaging.anePaths"); //nova.workspace.config.get("as3.packaging.anes");
+			if(buildType=="airmobile") {
+				var screenSize = config.get("as3.task.deviceToSimulate");
+				if(screenSize==null || screenSize=="none") {
+					nova.workspace.showErrorMessage("ERROR!!!\n\n Please edit the Task to select a screen size to use in the simulator!");
+					return false;
+				} else {
+					screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
+				}
 
-		/** @NOTE Should check if there's a difference in the Workspace config and the packaging */
-		var anes = anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
-		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
-		// ones that to the destination dir.
-		if (nova.inDevMode()) {
-			console.log("anes: " + JSON.stringify(anes));
-		}
-		if(anes && anes.length>0) {
-			args.push("-extdir");
-			args.push(destDir + "/ane");
-		}
+				args.push("-screensize");
+				args.push(screenSize);
+			}
 
-		// The app.xml file
-		args.push(destDir + "/" + appXMLName);
+			if (nova.inDevMode()) {
+				console.log("CONFIG: " + profile);
+			}
+			// @TODO If default, we should check the -app.xml to see if there is a profile specified
+			if(profile!="default") {
+				args.push("-profile");
+				args.push(profile);
+			} else {
+				// If it's default, make sure to use mobileDevice if were are in a airmobile task. Otherwise, we'll get errors
+				if(profile=="default" && buildType=="airmobile") {
+					args.push("-profile");
+					args.push("mobileDevice");
+				}
+			}
 
-		// Root directory goes next
-		// "--" then args go now...
-		if (nova.inDevMode()) {
-			console.log(" *** Attempting to Run ADL with [[" + command + "]] ARG: \n");
-			consoleLogObject(args);
+			// ADL wants the directory with the ANEs
+			/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
+			//var anes = config.get("as3.packaging.anePaths"); //nova.workspace.config.get("as3.packaging.anes");
+
+			/** @NOTE Should check if there's a difference in the Workspace config and the packaging */
+			var anes = anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
+			// If there are ANEs, then we need to include the "ane" folder we made with the extracted
+			// ones that to the destination dir.
+			if (nova.inDevMode()) {
+				console.log("anes: " + JSON.stringify(anes));
+			}
+			if(anes && anes.length>0) {
+				args.push("-extdir");
+				args.push(destDir + "/ane");
+			}
+
+			// The app.xml file
+			args.push(destDir + "/" + appXMLName);
+
+			// Root directory goes next
+			// "--" then args go now...
+			if (nova.inDevMode()) {
+				console.log(" *** Attempting to Run ADL with [[" + command + "]] ARG: \n");
+				consoleLogObject(args);
+			}
+
+			// Possible errors:
+			//
+			// application descriptor not found
+			// Task Terminated with exit code 6
+			// --
+			// error while loading initial content
+			// Task Terminated with exit code 9
 		}
 
 		return new TaskProcessAction(command, {
@@ -921,14 +1239,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			args: args,
 			env: {}
 		});
-
-		// Possible errors:
-		//
-		// application descriptor not found
-		// Task Terminated with exit code 6
-		// --
-		// error while loading initial content
-		// Task Terminated with exit code 9
 	}
 
 	/**
@@ -1381,13 +1691,24 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var buildType = "air";
 		if(data.type=="mobile") {
 			buildType = "airmobile";
+		} else if(data.type=="flash") {
+			buildType = "flash";
 		}
+
+console.log("config: ");
+consoleLogObject(config);
+console.log("data: ");
+consoleLogObject(data);
 
 		// Get the context.config so we can get the Task settings!
 		var whatKind = config.get("actionscript3.request");
 
 		if(action==Task.Build) {
-			return this.build(buildType, whatKind, false);
+			if(buildType=="flash") {
+				return this.buildFlash(buildType, whatKind);
+			} else {
+				return this.build(buildType, whatKind, false);
+			}
 		} else if(action==Task.Run) {
 			// @TODO Check if the output files are there, otherwise prompt to build
 			var profile = config.get("as3.task.profile");

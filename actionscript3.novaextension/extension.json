@@ -291,17 +291,48 @@
 			]
 		},
 		{
-			"title": "Debug",
+			"title": "Flash Player Run/Debug",
 			"type": "section",
 			"children": [
 				{
-					"key": "as3.debug.standalone",
-					"title": "Standalone Flash Player (Debug version)",
+					"key": "as3.flashPlayer.standalone",
+					"title": "Standalone Flash Player",
 					"type": "path",
-					"allowFolders": true,
-					"allowFiles": false,
-					"description": ""
+					"default": "/Applications/Flash Player.app",
+					"placeholder": "/Applications/Flash Player.app",
+					"allowFolders": false,
+					"allowFiles": true,
+					"filetype": ".app",
+					"description": "Location of debug version of Flash Player"
+				},
+				{
+					"key": "as3.flashPlayer.ruffle",
+					"title": "Ruffle",
+					"type": "path",
+					"placeholder": "/Applications/Ruffle.app",
+					"default": "/Applications/Ruffle.app",
+					"allowFolders": false,
+					"allowFiles": true,
+					"filetype": ".app",
+					"description": "Location of Ruffle.app"
+				},
+				{
+					"key": "as3.flashPlayer.browser",
+					"title": "Browser with Flash Player",
+					"type": "path",
+					"allowFolders": false,
+					"allowFiles": true,
+					"filetype": ".app",
+					"description": "A web browser to launch a Flash Player page in (probably an real old version of Chrome or something)"
+				},
+				{
+					"key": "as3.flashPlayer.browserCustomUser",
+					"title": "Use custom data folder for old Chrome",
+					"type": "boolean",
+					"default": true,
+					"description": "Checking this will pass additional options, making an old version of Chrome (prior to 88) use Flash, and a temp folder for user data"
 				}
+
 			]
 		},
 		{
@@ -587,8 +618,11 @@
 							"key": "as3.flash.options",
 							"title": "Use the default SDK",
 							"type": "enum",
-							"values": [ "Use minimum version required by the Flex SDK","Use the specified version below"],
-							"default": "Use minimum version required by the Flex SDK",
+							"values": [
+								[ "sdk" , "Use minimum version required by the Flex SDK" ],
+								[ "specified" ,"Use the specified version below"]
+							],
+							"default": "sdk",
 							"description": "Specifies the minimum version of Adobe Flash Player. If using a specified version, please use the numbers below."
 						},
 						{
@@ -625,9 +659,9 @@
 							"key": "as3.flash.generatorType",
 							"title": "Which type of HTML to generate",
 							"type": "enum",
-							"values": [ "Classic","Ruffle"],
+							"values": [ "Classic", "Ruffle" ],
 							"default": "Classic",
-							"description": "*NOTE Not implemented yet.* Specifies which type of wrapper to generate for the project. Classic will use the default in the SDK. Ruffle will supply a version that will generate a simple page (no history)."
+							"description": "Specifies which type of wrapper to generate for the project. Classic will use the default in the SDK. *NOTE Not implemented yet, a Ruffle will supply a version that will generate a simple page (no history)*. ⚠️ WARNING: If you change the options for the HTML wrapper, all files in the `htmi-template` folder of your project will be overwritten and/or deleted!"
 						},
 						{
 							"key": "as3.flash.generateHTML",
@@ -645,6 +679,7 @@
 							"key": "as3.flash.express",
 							"title": "Use Express Install",
 							"type": "boolean",
+							"description": "If check target is not checked, this will also remove the installer SWF",
 							"default": true
 						},
 						{

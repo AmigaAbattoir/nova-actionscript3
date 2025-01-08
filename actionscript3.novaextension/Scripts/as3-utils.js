@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { getProcessResults, getStringOfFile } = require("./nova-utils.js");
+const { getProcessResults, getStringOfFile, consoleLogObject } = require("./nova-utils.js");
 
 /**
  * Figures out a ProjectUUID for building releases and storing passwords.
@@ -405,3 +405,76 @@ exports.getAIRSDKInfo = function(flexSDKBase) {
 	return { version: version, appVersions: appVersions, extensionNamespaces: extensionNamespaces }
 }
 
+exports.convertAIRSDKToFlashPlayerVersion = function(sdkVersion) {
+	var flashVersion = {};
+	flashVersion.major = 0;
+	flashVersion.minor = 0;
+	flashVersion.revision = 0;
+
+	// Technically, the currentAIRSDKVersion shouldn't be below 11!
+	if(sdkVersion>10) {
+		// And there isn't any Flash version greater than 32.
+		if(sdkVersion>43) {
+			flashVersion.major = 32;
+		} else {
+			// Prior to AIR SDK 23, there was the possibility of varied major/minor values.
+			switch (sdkVersion) {
+				case 22: {
+					flashVersion.major = 11; flashVersion.minor = 9;
+					break;
+				}
+				case 21: {
+					flashVersion.major = 11; flashVersion.minor = 8;
+					break;
+				}
+				case 20: {
+					flashVersion.major = 11; flashVersion.minor = 7;
+					break;
+				}
+				case 19: {
+					flashVersion.major = 11; flashVersion.minor = 6;
+					break;
+				}
+				case 18: {
+					flashVersion.major = 11; flashVersion.minor = 5;
+					break;
+				}
+				case 17: {
+					flashVersion.major = 11; flashVersion.minor = 4;
+					break;
+				}
+				case 16: {
+					flashVersion.major = 11; flashVersion.minor = 3;
+					break;
+				}
+				case 15: {
+					flashVersion.major = 11; flashVersion.minor = 2;
+					break;
+				}
+				case 14: {
+					flashVersion.major = 11; flashVersion.minor = 1;
+					break;
+				}
+				case 13: {
+					flashVersion.major = 11; flashVersion.minor = 0;
+					break;
+				}
+				case 12: {
+					flashVersion.major = 10; flashVersion.minor = 3;
+					break;
+				}
+				case 11: {
+					flashVersion.major = 10; flashVersion.minor = 2;
+					break;
+				}
+				// After AIR SDK 23, only major values change
+				default: {
+					flashVersion.major = sdkVersion - 11;
+					break;
+				}
+			}
+		}
+	}
+
+	return flashVersion;
+}

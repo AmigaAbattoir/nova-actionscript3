@@ -83,13 +83,13 @@ exports.activate = function() {
 	nova.assistants.registerTaskAssistant(taskprovider, { identifier: "actionscript" });
 
 	langserver = new AS3MXMLLanguageServer();
-/*
+
 	//                                          [ Nova stuff...                     ][ Our params to pass]
 	nova.commands.register("as3.clean",(workspace, workspacePath, sourcePath, outputPath) => {
 		//                [ Nova stuff ..           ][ Our params]
 		taskprovider.clean(workspacePath, sourcePath, outputPath);
 	});
-*/
+
 	nova.commands.register("as3.importFlashBuilderSettings",() => {
 		if(hasProjectAndASProperties) {
 			let imported = nova.workspace.config.get("as3.project.importedFB");
@@ -222,6 +222,7 @@ class AS3MXMLLanguageServer {
 			"as3.application.mainApp", "as3.build.source.main", "as3.build.output", "as3.build.source.additional",
 			"as3.build.library.additional", "as3.build.anes", "as3.packaging.anes", "as3.export.folder",
 			"as3.project.asconfigMode",
+			"as3.flash.generatorType", "as3.flash.generateHTML", "as3.flash.checkTarget", "as3.flash.express", "as3.flash.navigation"
 		];
 
 		/** @TODO Figure a way to check the current selected Task what's there */
@@ -243,6 +244,11 @@ class AS3MXMLLanguageServer {
 			"as3.application.mainApp", "as3.build.source.main", "as3.build.output", "as3.build.source.additional",
 			"as3.build.library.additional", "as3.build.anes", "as3.project.asconfigMode"
 			// Probably some task things but we don't know how to get them...
+		];
+
+		// Keys that should trigger HTML Wrapper to change
+		const configsThatTriggersWrapper = [
+			"as3.flash.generatorType", "as3.flash.generateHTML", "as3.flash.checkTarget", "as3.flash.express", "as3.flash.navigation"
 		];
 
 		/* @NOTE Not sure, but unless we do this "isThrottled" check, we end up getting like 7 calls to this function
@@ -283,6 +289,65 @@ class AS3MXMLLanguageServer {
 
 					if(configsThatTriggersRestart.includes(key)) {
 						console.log(" =-=-=-=-= WORKSPACE Should trigger restart");
+					}
+
+					// If Flash project wrapper settings change
+					if(configsThatTriggersWrapper.includes(key)) {
+						var generatorType = nova.workspace.config.get("as3.flash.generatorType");
+						var generateHTML = nova.workspace.config.get("as3.flash.generateHTML");
+						var checkTarget = nova.workspace.config.get("as3.flash.checkTarget");
+						var useExpress = nova.workspace.config.get("as3.flash.express");
+						var useNavigation = nova.workspace.config.get("as3.flash.navigation");
+
+						let flexSDKBase = determineFlexSDKBase();
+						let destPath = nova.workspace.path + "/html-template";
+						let sourcePath = flexSDKBase + "/templates/swfobject";
+
+						/** @TODO show a warning that you'll delete the folder! FB 4.6 says:
+							"Warning: Because you have changed the options for the HTML wrapper or the SDK version, all files in the "htmi-template" folder of your project will be overwritten and/or deleted."
+						*/
+						/** @NOTE It does not seem that Nova supports showing UI when editing the Preferences! */
+
+						try {
+							console.log("Trying to check if it exists, let's delete")
+							// If the file exists, then remove it since nova.fs.copy with throw an error.
+							if (nova.fs.access(destPath, nova.fs.constants.F_OK)) {
+								// console.log(" Removing existing [" + destPath + "]");
+								nova.fs.rmdir(destPath);
+							}
+						} catch (error) {}
+
+						if(generateHTML) {
+							console.log("Generates... let's do stuff [[" + generatorType + "]]")
+							if(generatorType=="Classic") {
+								// Copy template
+								try {
+									nova.fs.copy(sourcePath, destPath);
+								} catch (error) { }
+
+								if(useExpress==false || checkTarget==false) {
+									// Remove code from index.template.html
+									try{
+										nova.fs.remove(nova.workspace.path + "/html-template/expressInstall.swf");
+										nova.fs.remove(nova.workspace.path + "/html-template/playerProductInstall.swf");
+									} catch(error) {}
+								}
+
+								if(useNavigation==false) {
+									// Remove History folder
+									try{
+										nova.fs.rmdir(nova.workspace.path + "/html-template/history");
+									} catch(error) {}
+								}
+							} else {
+								// @TODO Ruffle template
+							}
+						} else {
+							// Remove HTML Template
+							try{
+								nova.fs.rmdir(nova.workspace.path + "/html-template");
+							} catch(error) {}
+						}
 					}
 
 					var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
