@@ -1,7 +1,7 @@
 # Changelog
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.1.0/)
-and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
+and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Also check Flash Builder project for sources file to exclude when building Flash projects
 - If there are more than one Task when Exporting Release Build, it will prompt you for which one to build.
 - Add Timestamp option, so you can specify a different RFC3161-compliant timestamp server to use
+- Added building and running Flash projects.
+- Added options for stand alone Flash Player, Ruffle and an old web browser to use for launching. (Preferably Chrome <88)
 
 ### Changed
 
