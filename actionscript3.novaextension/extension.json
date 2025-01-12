@@ -330,7 +330,7 @@
 					"title": "Use custom data folder for old Chrome",
 					"type": "boolean",
 					"default": true,
-					"description": "Checking this will pass additional options, making an old version of Chrome (prior to 88) use Flash, and a temp folder for user data"
+					"description": "Checking this will pass additional options, making an old version of Chrome or Chromium (prior to 88) use Flash, and a temp folder for user data"
 				}
 
 			]
@@ -661,7 +661,7 @@
 							"type": "enum",
 							"values": [ "Classic", "Ruffle" ],
 							"default": "Classic",
-							"description": "Specifies which type of wrapper to generate for the project. Classic will use the default in the SDK. *NOTE Not implemented yet, a Ruffle will supply a version that will generate a simple page (no history)*. ⚠️ WARNING: If you change the options for the HTML wrapper, all files in the `htmi-template` folder of your project will be overwritten and/or deleted!"
+							"description": "Specifies which type of wrapper to generate for the project. Classic will use the default in the SDK. *NOTE Not implemented yet, a Ruffle will supply a version that will generate a simple page (no history)*.\n\n⚠️ WARNING: If you change the options for the HTML wrapper, all files in the `htmi-template` folder of your project will be overwritten and/or deleted!"
 						},
 						{
 							"key": "as3.flash.generateHTML",

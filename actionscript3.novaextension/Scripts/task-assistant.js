@@ -202,7 +202,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 
 				// This will change later, based on the task's template type
-				var buildType = "air";
+				var projectType = "air";
 
 				// If we have a task file name, then let's process it
 				if(taskFileName!="") {
@@ -223,12 +223,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							case "actionscript-ios":
 							case "actionscript-android":
 							case "actionscript-airmobile": {
-								buildType="airmobile";
+								projectType="airmobile";
 								break;
 							}
 							/*
 							case "actionscript-flash": {
-								buildType="flash";
+								projectType="flash";
 								break;
 							}
 							*/
@@ -273,7 +273,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						configOverrides["appXMLName"] = customApp.appXMLName;
 					}
 
-					this.build(buildType, "release", true, configOverrides).then((resolve) => {
+					this.build(projectType, "release", true, configOverrides).then((resolve) => {
 						const configValues = getConfigsForPacking(taskConfig["as3.task.applicationFile"]);
 						let flexSDKBase = configValues.flexSDKBase;
 						let appXMLName = configValues.appXMLName;
@@ -539,15 +539,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 	/**
 	 * Builds the SWF for the project
-	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
-	 * @param {string} whatKind - What kind of build, either `release`|`debug`
-	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
-	 * @param {Object} configOverrides - A object of variables to override
+	 * @param {string} runMode - What kind of build, either `release`|`debug`
 	 */
-	//build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths = []) {
-	buildFlash(buildType, whatKind) {
-		console.log("BUILD TYPE: " + buildType);
-
+	//build(projectType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, runMode, destDir, exportName, packageAfterBuild = false, anePaths = []) {
+	buildFlash(runMode) {
 		const configValues = getConfigsForBuild(true);
 
 		let flexSDKBase = configValues.flexSDKBase;
@@ -676,7 +671,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var command = flexSDKBase + "/bin/mxmlc";
 		var args = new Array();
 		/*
-		if(whatKind=="debug") {
+		if(runMode=="debug") {
 			args.push("--debug=true");
 		}
 		*/
@@ -684,27 +679,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		args.push("--warnings=true");
 
-		// console.log("buildType: " + buildType);
-		/*
-		if(buildType=="airmobile") {
-			args.push("+configname=airmobile");
-		} else {
-			args.push("+configname=air");
-		}
+		args.push("+configname=flex");
 
-				// If air, we need to add the configname=air, I'm assuming flex would be different?!
-				var isFlex = nova.workspace.config.get("as3.application.isFlex");
-				if(isFlex) {
-		*/
-					args.push("+configname=flex");
-		/*
-				}
-		*/
 		// Push where the final SWF will be outputted
 		args.push("--output=" + destDir + "/" + exportName);
-
-		// Add base, just in case there are Embeds that look for stuff here using relative locations
-		//args.push("--source-path=./");
 
 		// Push args for the source-paths!
 		if(sourceDirs) {
@@ -758,13 +736,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 	/**
 	 * Builds the SWF for the project
-	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
-	 * @param {string} whatKind - What kind of build, either `release`|`debug`
+	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
+	 * @param {string} runMode - What kind of build, either `release`|`debug`
 	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
 	 * @param {Object} configOverrides - A object of variables to override
 	 */
-	//build(buildType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, whatKind, destDir, exportName, packageAfterBuild = false, anePaths = []) {
-	build(buildType, whatKind, packageAfterBuild = false, configOverrides = {}) {
+	//build(projectType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, runMode, destDir, exportName, packageAfterBuild = false, anePaths = []) {
+	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}) {
 		const configValues = getConfigsForBuild(true);
 
 		let flexSDKBase = configValues.flexSDKBase;
@@ -894,7 +872,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var command = flexSDKBase + "/bin/mxmlc";
 		var args = new Array();
 		/*
-		if(whatKind=="debug") {
+		if(runMode=="debug") {
 			args.push("--debug=true");
 		}
 		*/
@@ -902,20 +880,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		args.push("--warnings=true");
 
-		// console.log("buildType: " + buildType);
-		if(buildType=="airmobile") {
+		// console.log("projectType: " + projectType);
+		if(projectType=="airmobile") {
 			args.push("+configname=airmobile");
 		} else {
 			args.push("+configname=air");
 		}
 
-/*
-		// If air, we need to add the configname=air, I'm assuming flex would be different?!
-		var isFlex = nova.workspace.config.get("as3.application.isFlex");
-		if(isFlex) {
-			args.push("+configname=flex");
-		}
-*/
 		// Push where the final SWF will be outputted
 		args.push("--output=" + destDir + "/" + exportName);
 
@@ -1030,11 +1001,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	/**
 	 * @TODO
 	 * Run the project with debugger (Not implemented yet, so it's just running as usual!)
-	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
+	 * @param {string} projectType - Which type of project, "air|airmobile|flex|flash"
 	 * @param {string} profile - Which type of profile to use
 	 * @param {Object} config - The Task's configs
 	 */
-	debugRun(buildType, profile, config) {
+	debugRun(projectType, profile, config) {
 		/*
 		const configValues = getConfigsForBuild(true);
 		let flexSDKBase = configValues.flexSDKBase;
@@ -1072,7 +1043,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		new Promise((resolve) => {
 			console.log("Going to try running...");
-			this.run(buildType, flexSDKBase, profile, destDir, appXMLName, config);
+			this.run(projectType, flexSDKBase, profile, destDir, appXMLName, config);
 			console.log("Run should have happened..");
 			resolve();
 		}).then(() => {
@@ -1080,21 +1051,22 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			return action;
 		});
 */
-		return this.run(buildType, profile, config);
+		return this.run(projectType, profile, config);
 	}
 
 	/**
 	 * Runs the project using Nova's task system
-	 * @param {string} buildType - Which type of build, "air|airmobile|flex"
+	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
 	 * @param {string} profile - Which type of profile to use
 	 * @param {Object} config - The Task's configs
 	 */
-	run(buildType, profile, config) {
-		console.log("buildType: " + buildType)
+	run(projectType, profile, config) {
+		console.log("projectType: " + projectType)
 		let command = "";
 		let args = [];
 
-		if(buildType=="flash") {
+		// If we are running Flash
+		if(projectType=="flash") {
 			const configValues = getConfigsForBuild(true);
 			let flexSDKBase = configValues.flexSDKBase;
 			let destDir = configValues.destDir;
@@ -1111,23 +1083,26 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return null;
 				}
 
-				// Make a temp old user
-				const userDataDir = "/tmp/old-chrome-profile"; ////nova.workspace.config.get("flash.chrome.userDataDir") || "/tmp/old-chrome-profile"; // Path to a custom profile
+				if(nova.config.get("as3.flashPlayer.browserCustomUser")==true) {
+					// Make a temp old user
+					const userDataDir = "/tmp/old-chrome-profile"; ////nova.workspace.config.get("flash.chrome.userDataDir") || "/tmp/old-chrome-profile"; // Path to a custom profile
 
-				// Ensure the custom profile directory exists
-				if (!nova.fs.stat(userDataDir)) {
-					nova.fs.mkdir(userDataDir);
+					// Ensure the custom profile directory exists
+					if (!nova.fs.stat(userDataDir)) {
+						nova.fs.mkdir(userDataDir);
+					}
+
+					// Chrome command-line arguments
+					args = [
+						"--user-data-dir=" + userDataDir, // Use custom profile
+						"--allow-outdated-plugins",       // Allow outdated plugins like Flash
+						"--enable-npapi",                 // Enable NPAPI (needed for Flash)
+						"--no-first-run",                 // Suppress first-run prompts
+						//"--disable-web-security",       // Optional: disable web security for testing
+						"--disable-extensions",           // Disable Chrome extensions
+					];
 				}
 
-				// Chrome command-line arguments
-			    args = [
-					"--user-data-dir=" + userDataDir, // Use custom profile
-					"--allow-outdated-plugins",      // Allow outdated plugins like Flash
-					"--enable-npapi",                // Enable NPAPI (needed for Flash)
-					//"--disable-web-security",        // Optional: disable web security for testing
-					"--no-first-run",                // Suppress first-run prompts
-					//"--disable-extensions",          // Disable Chrome extensions
-				];
 				args.push(destDir + "/" +  "BounceTest.html");
 
 				if (nova.inDevMode()) {
@@ -1135,13 +1110,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					consoleLogObject(args);
 				}
 			} else {
-console.log("config.get(as3.launch.type): " + config.get("as3.launch.type"));
-console.log("config.get(as3.flashPlayer.ruffle): " + nova.config.get("as3.flashPlayer.ruffle"));
-console.log("config.get(as3.flashPlayer.standalone): " + nova.config.get("as3.flashPlayer.standalone"));
+// console.log("config.get(as3.launch.type): " + config.get("as3.launch.type"));
+// console.log("config.get(as3.flashPlayer.ruffle): " + nova.config.get("as3.flashPlayer.ruffle"));
+// console.log("config.get(as3.flashPlayer.standalone): " + nova.config.get("as3.flashPlayer.standalone"));
 				// Since Flash Player can actually have an executable of Flash Player Debugger or just Flash Player, let's just look in that
 				// .app's Content/MacOS folder! And we can also use that for Ruffle too, that way they user just select's the application!
 				fpApp = (config.get("as3.launch.type")=="ruffle" ? nova.config.get("as3.flashPlayer.ruffle") : nova.config.get("as3.flashPlayer.standalone") )
-console.log("fpApp: " + fpApp);
+// console.log("fpApp: " + fpApp);
 
 				command = getExec(fpApp);
 				if(command==null) {
@@ -1155,7 +1130,7 @@ console.log("fpApp: " + fpApp);
 				}
 				args.push(destDir + "/" +  exportName);
 			}
-		} else {
+		} else { // Otherwise, we are running through AIR!
 			const configValues = getConfigsForBuild(true);
 			let flexSDKBase = configValues.flexSDKBase;
 			let destDir = configValues.destDir;
@@ -1171,7 +1146,7 @@ console.log("fpApp: " + fpApp);
 				// @TODO If we don't find devices, ask if they want to continue on desktop or try again?
 			}
 
-			if(buildType=="airmobile") {
+			if(projectType=="airmobile") {
 				var screenSize = config.get("as3.task.deviceToSimulate");
 				if(screenSize==null || screenSize=="none") {
 					nova.workspace.showErrorMessage("ERROR!!!\n\n Please edit the Task to select a screen size to use in the simulator!");
@@ -1193,7 +1168,7 @@ console.log("fpApp: " + fpApp);
 				args.push(profile);
 			} else {
 				// If it's default, make sure to use mobileDevice if were are in a airmobile task. Otherwise, we'll get errors
-				if(profile=="default" && buildType=="airmobile") {
+				if(profile=="default" && projectType=="airmobile") {
 					args.push("-profile");
 					args.push("mobileDevice");
 				}
@@ -1688,11 +1663,11 @@ console.log("fpApp: " + fpApp);
 		var action = context.action;
 
 		/** @TODO Should be part of the Task, or Project */
-		var buildType = "air";
+		var projectType = "air";
 		if(data.type=="mobile") {
-			buildType = "airmobile";
+			projectType = "airmobile";
 		} else if(data.type=="flash") {
-			buildType = "flash";
+			projectType = "flash";
 		}
 
 console.log("config: ");
@@ -1701,13 +1676,13 @@ console.log("data: ");
 consoleLogObject(data);
 
 		// Get the context.config so we can get the Task settings!
-		var whatKind = config.get("actionscript3.request");
+		var runMode = config.get("actionscript3.request");
 
 		if(action==Task.Build) {
-			if(buildType=="flash") {
-				return this.buildFlash(buildType, whatKind);
+			if(projectType=="flash") {
+				return this.buildFlash(runMode);
 			} else {
-				return this.build(buildType, whatKind, false);
+				return this.build(projectType, runMode, false);
 			}
 		} else if(action==Task.Run) {
 			// @TODO Check if the output files are there, otherwise prompt to build
@@ -1716,10 +1691,10 @@ consoleLogObject(data);
 				// @TODO Find it in the XML
 			}
 
-			if(whatKind=="debug") {
-				return this.debugRun(buildType, profile, config);
+			if(runMode=="debug") {
+				return this.debugRun(projectType, profile, config);
 			} else {
-				return this.run(buildType, profile, config)
+				return this.run(projectType, profile, config)
 			}
 		} else if(action==Task.Clean) {
 			const configValues = getConfigsForBuild(true);
