@@ -487,10 +487,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 	/**
 	 * Builds the SWF for the project
+	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
 	 * @param {string} runMode - What kind of build, either `release`|`debug`
+	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
+	 * @param {Object} configOverrides - A object of variables to override
 	 */
 	//build(projectType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, runMode, destDir, exportName, packageAfterBuild = false, anePaths = []) {
-	buildFlash(runMode) {
+	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}) {
 		const configValues = getConfigsForBuild(true);
 
 		let flexSDKBase = configValues.flexSDKBase;
@@ -511,209 +514,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let anePaths = configValues.anePaths;
 		let compilerAdditional = configValues.compilerAdditional;
 
-		// If we are asked to build the HTML Wrapper
-		if(nova.workspace.config.get("as3.flash.generateHTML")) {
-			// Read the application file and look for the [SWF()] block for info.
-			let metadata = {};
-
-			// Load main class, and get any SWF Metadata
-			var mainAppFile = getStringOfWorkspaceFile("src/"+mainApplicationPath);
-
-			// Regex to extract [SWF(...)]
-			const swfRegex = /\[SWF\((.*?)\)\]/;
-			const match = mainAppFile.match(swfRegex);
-
-			// If there is a match, then we may have some useful SWF metadata
-			if (match) {
-				const metadataString = match[1]; // Get content inside [SWF(...)]
-
-				// Regex to extract key-value pairs (e.g., width="800")
-				const keyValueRegex = /(\w+)="(.*?)"/g;
-
-				let keyValueMatch;
-				// Make a object with keys that have the different values so we can grab them later
-				while ((keyValueMatch = keyValueRegex.exec(metadataString)) !== null) {
-					const key = keyValueMatch[1];
-					const value = keyValueMatch[2];
-					metadata[key] = value;
-				}
-			}
-
-			// Set the variables in the index.template.html from any SWF metadata we may have
-			let swf_width = metadata?.width || "550";
-			let swf_height = metadata?.height || "400";
-			let swf_bgcolor = metadata?.backgroundColor || "#FFFFFF";
-			let swf_title = metadata?.pageTitle || mainClass;
-
-			// Figure out the Flash Player version
-			let swf_version_major = 0;
-			let swf_version_minor = 0;
-			let swf_version_revision = 0;
-
-			// If they selected to use a specified version, let's just grab the values from those configs
-			if(nova.workspace.config.get("as3.flash.options")=="specified") {
-				swf_version_major = nova.workspace.config.get("as3.flash.minimum.major");
-				swf_version_minor = nova.workspace.config.get("as3.flash.minimum.minor");
-				swf_version_revision = nova.workspace.config.get("as3.flash.minimum.revision");
-			} else {
-				let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
-				let flashVersion = convertAIRSDKToFlashPlayerVersion(currentAIRSDKVersion);
-				swf_version_major = flashVersion.major;
-				swf_version_minor = flashVersion.minor;
-				// Revision always is 0
-			}
-
-			// Actually, this might be specified in AIRSDK/ide/flashbuilder/flashbuilder-config.xml (at least on Mac, didn't see it on the Windows one I had)
-			let swf_expressInstallSwf = "expressInstall.swf";
-
-			// If we want to use the navigation history, then we need to make this a -- to make the template as an end comment
-			let swf_useBrowserHistory = nova.workspace.config.get("as3.flash.navigation") ? "--" : "";
-
-			let swf_application = mainClass;
-			let swf_swf = exportName.replace(".swf","");
-
-			// Replace the variables in the template
-			let htmlTemplateFile = getStringOfWorkspaceFile("html-template/index.template.html");
-			let newHtml = htmlTemplateFile.replace(/\${(.*?)}/g, (_, variable) => {
-				// Try to replace with variable, otherwise, just return empty string
-				try {
-					return eval("swf_"+variable);
-				}catch(error) {
-					return "";
-				}
-			});
-
-			// Create the html page based on the template
-			try {
-				var newHtmlFile = nova.fs.open(destDir + "/" + swf_title + ".html", "w");
-				newHtmlFile.write(newHtml);
-				newHtmlFile.close();
-			} catch(error) {
-				if(lineCount==0) {
-					nova.workspace.showErrorMessage("Error writing HTML file at " + appXMLLocation + ". Please check it's content that it is valid.");
-					console.log("*** ERROR: Writing HTML file! error: ",error);
-					consoleLogObject(error);
-					return null;
-				}
-			}
-
-			// Copy other files in html-template (except index.template.html!)
-			fileNamesToExclude = [ "index.template.html" ];
-			fileExtensionsToExclude = [];
-
-			this.copyAssetsOf(nova.workspace.path+"/html-template", destDir, false).then(() => {
-				if (nova.inDevMode()) {
-					console.log("All assets copied successfully.");
-				}
-			})
-			.catch(error => {
-				nova.workspace.showErrorMessage("Error during asset copying: " + error);
-				if (nova.inDevMode()) {
-					console.error("Error during asset copying:", error);
-				}
-				return null;
-			});
-		}
-
-		// Let's compile this thing!!
-		var command = flexSDKBase + "/bin/mxmlc";
-		var args = new Array();
-		/*
-		if(runMode=="debug") {
-			args.push("--debug=true");
-		}
-		*/
-		args.push("--debug=true");
-
-		args.push("--warnings=true");
-
-		args.push("+configname=flex");
-
-		// Push where the final SWF will be outputted
-		args.push("--output=" + destDir + "/" + exportName);
-
-		// Push args for the source-paths!
-		if(sourceDirs) {
-			sourceDirs.forEach((sourceDir) => { args.push("--source-path+=" + sourceDir); });
-		}
-
-		// This too should be from settings
-		if(libPaths) {
-			libPaths.forEach((libPath) => { args.push("--library-path+=" + libPath); });
-		}
-
-		// Additional compiler arguments
-		if(compilerAdditional!=null) {
-			/** @NOTE Needs work on parsing the additional args.
-				Should really parse to make sure that there are no spaces or dash spaces
-				Or make sure there's a quote around it if there's paths, or maybe just a
-				space after an equal sign.
-			*/
-			var additional = compilerAdditional;
-			var ops = additional.split(" -");
-			ops.forEach((addition,index) => {
-				additional = (index>0 ? "-" : "") + addition;
-
-				var eqLoc = addition.indexOf("=");
-				var spaceLoc = addition.indexOf(" ");
-
-				// Should handle something like "-locale en_US"
-				if(eqLoc==-1 && spaceLoc!=-1) {
-					var moreArgs = addition.split(" ");
-					args.push(moreArgs[0]); 
-					args.push(moreArgs[1]); 
-				} else {
-					args.push(additional); 
-				}
-			});
-		}
-
-		args.push("--");
-		// We need the active application file to trigger this
-		args.push("src/" + mainApplicationPath);
-		if (nova.inDevMode()) {
-			console.log(" *** COMMAND [[" + command + "]] ARG: \n");
-			consoleLogObject(args);
-		}
-
-		if (nova.inDevMode()) {
-			console.log(" #### Okay, should be playing according to Nova!");
-		}
-		return new TaskProcessAction(command, { args: args });
-	}
-
-	/**
-	 * Builds the SWF for the project
-	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
-	 * @param {string} runMode - What kind of build, either `release`|`debug`
-	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
-	 * @param {Object} configOverrides - A object of variables to override
-	 */
-	//build(projectType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, runMode, destDir, exportName, packageAfterBuild = false, anePaths = []) {
-	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}) {
-		const configValues = getConfigsForBuild(true);
-
-		let flexSDKBase = configValues.flexSDKBase;
-		if(flexSDKBase==null) {
-			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
-			return null;
-		}
-		let destDir = configValues.destDir;
-		let mainApplicationPath =  configValues.mainApplicationPath;
-		let isFlex = configValues.isFlex;
-		let appXMLName = configValues.appXMLName;
-		let mainSrcDir = configValues.mainSrcDir;
-		let exportName = configValues.exportName;
-		let copyAssets = configValues.copyAssets;
-		let sourceDirs = configValues.sourceDirs;
-		let libPaths = configValues.libPaths;
-		let anePaths = configValues.anePaths;
-		let compilerAdditional = configValues.compilerAdditional;
 		// When building, especially for exporting, we may have different values
 		if(configOverrides) {
-			/*
-			console.log(" Config overrides!!!!" ); consoleLogObject(configOverrides);
-			*/
+			// console.log(" Config overrides!!!!" ); consoleLogObject(configOverrides);
 
 			// Building a release is in a different folder
 			if(configOverrides.releasePath!=null) {
@@ -737,39 +540,102 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 		}
 
-		if(copyAssets) { // Copy each source dir to the output folder
-			// console.log("copyAssets Begins!");
-			fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
-			fileNamesToExclude.push(appXMLName);
-			fileExtensionsToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.extensions");
+		// Check if we are building a Flash project
+		if(projectType=="flash") {
+			// If we are asked to build the HTML Wrapper, there's a bunch of stuff we need to do
+			if(nova.workspace.config.get("as3.flash.generateHTML")) {
+				// Read the application file and look for the [SWF()] block for info.
+				let metadata = {};
 
-			// console.log("Copy DIR: [[" + copyDirs + "]]")
-			// consoleLogObject("Copy DIR: " + copyDirs)
+				// Load main class, and get any SWF Metadata
+				var mainAppFile = getStringOfWorkspaceFile("src/"+mainApplicationPath);
 
-			var copyDirs = sourceDirs.concat(mainSrcDir);
-			// console.log("Copy DIR: [[" + copyDirs + "]]")
-			// consoleLogObject("Copy DIR: " + copyDirs)
+				// Regex to extract [SWF(...)]
+				const swfRegex = /\[SWF\((.*?)\)\]/;
+				const match = mainAppFile.match(swfRegex);
 
-			if(copyDirs!=null) {
-				const copyPromises = copyDirs.map(copyDirRaw => {
-					let copyDir = copyDirRaw;
-					if (copyDir.charAt(0) == "~") {
-						copyDir = nova.path.expanduser(copyDir);
-					} else if (copyDir.charAt(0) != "/") {
-						copyDir = nova.path.join(nova.workspace.path, copyDir);
+				// If there is a match, then we may have some useful SWF metadata
+				if (match) {
+					const metadataString = match[1]; // Get content inside [SWF(...)]
+
+					// Regex to extract key-value pairs (e.g., width="800")
+					const keyValueRegex = /(\w+)="(.*?)"/g;
+
+					let keyValueMatch;
+					// Make a object with keys that have the different values so we can grab them later
+					while ((keyValueMatch = keyValueRegex.exec(metadataString)) !== null) {
+						const key = keyValueMatch[1];
+						const value = keyValueMatch[2];
+						metadata[key] = value;
 					}
-					// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
+				}
 
-					ensureFolderIsAvailable(destDir);
-					return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
+				// Set the variables in the index.template.html from any SWF metadata we may have
+				let swf_width = metadata?.width || "550";
+				let swf_height = metadata?.height || "400";
+				let swf_bgcolor = metadata?.backgroundColor || "#FFFFFF";
+				let swf_title = metadata?.pageTitle || mainClass;
+
+				// Figure out the Flash Player version
+				let swf_version_major = 0;
+				let swf_version_minor = 0;
+				let swf_version_revision = 0;
+
+				// If they selected to use a specified version, let's just grab the values from those configs
+				if(nova.workspace.config.get("as3.flash.options")=="specified") {
+					swf_version_major = nova.workspace.config.get("as3.flash.minimum.major");
+					swf_version_minor = nova.workspace.config.get("as3.flash.minimum.minor");
+					swf_version_revision = nova.workspace.config.get("as3.flash.minimum.revision");
+				} else {
+					let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+					let flashVersion = convertAIRSDKToFlashPlayerVersion(currentAIRSDKVersion);
+					swf_version_major = flashVersion.major;
+					swf_version_minor = flashVersion.minor;
+					// Revision always is 0
+				}
+
+				// Actually, this might be specified in AIRSDK/ide/flashbuilder/flashbuilder-config.xml (at least on Mac, didn't see it on the Windows one I had)
+				let swf_expressInstallSwf = "expressInstall.swf";
+
+				// If we want to use the navigation history, then we need to make this a -- to make the template as an end comment
+				let swf_useBrowserHistory = nova.workspace.config.get("as3.flash.navigation") ? "--" : "";
+
+				let swf_application = mainClass;
+				let swf_swf = exportName.replace(".swf","");
+
+				// Replace the variables in the template
+				let htmlTemplateFile = getStringOfWorkspaceFile("html-template/index.template.html");
+				let newHtml = htmlTemplateFile.replace(/\${(.*?)}/g, (_, variable) => {
+					// Try to replace with variable, otherwise, just return empty string
+					try {
+						return eval("swf_"+variable);
+					}catch(error) {
+						return "";
+					}
 				});
 
-				Promise.all(copyPromises).then(() => {
+				// Create the html page based on the template
+				try {
+					var newHtmlFile = nova.fs.open(destDir + "/" + swf_title + ".html", "w");
+					newHtmlFile.write(newHtml);
+					newHtmlFile.close();
+				} catch(error) {
+					if(lineCount==0) {
+						nova.workspace.showErrorMessage("Error writing HTML file at " + appXMLLocation + ". Please check it's content that it is valid.");
+						console.log("*** ERROR: Writing HTML file! error: ",error);
+						consoleLogObject(error);
+						return null;
+					}
+				}
+
+				// Copy the other files in html-template (except index.template.html!)
+				fileNamesToExclude = [ "index.template.html" ];
+				fileExtensionsToExclude = [];
+				this.copyAssetsOf(nova.workspace.path+"/html-template", destDir, false).then(() => {
 					if (nova.inDevMode()) {
 						console.log("All assets copied successfully.");
 					}
-				})
-				.catch(error => {
+				}).catch(error => {
 					nova.workspace.showErrorMessage("Error during asset copying: " + error);
 					if (nova.inDevMode()) {
 						console.error("Error during asset copying:", error);
@@ -777,42 +643,84 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return null;
 				});
 			}
-		}
+		} else { // For AIR Projects
+			if(copyAssets) { // Copy each source dir to the output folder
+				// console.log("copyAssets Begins!");
+				fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
+				fileNamesToExclude.push(appXMLName);
+				fileExtensionsToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.extensions");
 
-		// This loads the app descriptor file and check the version to match the AIR SDK.
-		// FlashBuilder would modify the -app.xml with updated variables, so we will make a copy of the file,
-		// changing what FB would have (and possible VSCode for AS3MXML).  Otherwise, this will write a copy.
-		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
-		let appXML = getStringOfFile(appXMLLocation);
-		if(appXML!=null) {
-			// Read the App XML and make sure the Namespace is the same version!
-			let appXMLNS =  new xmlToJson.ns3x2j(appXML).getAttributeFromNodeByName("application","xmlns");
-			let appVersion = parseFloat(appXMLNS.split("/").pop());
-			let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+				// console.log("Copy DIR: [[" + copyDirs + "]]")
+				// consoleLogObject("Copy DIR: " + copyDirs)
 
-			if(appVersion!=currentAIRSDKVersion) {
-				nova.workspace.showErrorMessage("You app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". Please correct the issue before you can run it.");
+				var copyDirs = sourceDirs.concat(mainSrcDir);
+				// console.log("Copy DIR: [[" + copyDirs + "]]")
+				// consoleLogObject("Copy DIR: " + copyDirs)
+
+				if(copyDirs!=null) {
+					const copyPromises = copyDirs.map(copyDirRaw => {
+						let copyDir = copyDirRaw;
+						if (copyDir.charAt(0) == "~") {
+							copyDir = nova.path.expanduser(copyDir);
+						} else if (copyDir.charAt(0) != "/") {
+							copyDir = nova.path.join(nova.workspace.path, copyDir);
+						}
+						// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
+
+						ensureFolderIsAvailable(destDir);
+						return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
+					});
+
+					Promise.all(copyPromises).then(() => {
+						if (nova.inDevMode()) {
+							console.log("All assets copied successfully.");
+						}
+					})
+					.catch(error => {
+						nova.workspace.showErrorMessage("Error during asset copying: " + error);
+						if (nova.inDevMode()) {
+							console.error("Error during asset copying:", error);
+						}
+						return null;
+					});
+				}
+			}
+
+			// This loads the app descriptor file and check the version to match the AIR SDK.
+			// FlashBuilder would modify the -app.xml with updated variables, so we will make a copy of the file,
+			// changing what FB would have (and possible VSCode for AS3MXML).  Otherwise, this will write a copy.
+			let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
+			let appXML = getStringOfFile(appXMLLocation);
+			if(appXML!=null) {
+				// Read the App XML and make sure the Namespace is the same version!
+				let appXMLNS =  new xmlToJson.ns3x2j(appXML).getAttributeFromNodeByName("application","xmlns");
+				let appVersion = parseFloat(appXMLNS.split("/").pop());
+				let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+
+				if(appVersion!=currentAIRSDKVersion) {
+					nova.workspace.showErrorMessage("You app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". Please correct the issue before you can run it.");
+					return null;
+				}
+			} else {
+				nova.workspace.showErrorMessage("Error opening app descriptor file at " + appXMLLocation);
 				return null;
 			}
-		} else {
-			nova.workspace.showErrorMessage("Error opening app descriptor file at " + appXMLLocation);
-			return null;
-		}
 
-		// Replace content that the IDEs were supposed to and then write the app.xml to the output folder
-		try {
-			var newAppXML = appXML;
-			var newAppXML = appXML.replace(/\[This value will be overwritten by .*? app.xml\]/,exportName);       // Change's Flashbuilder's text
-			newAppXML = newAppXML.replace(/[Path to content will be replaced by Visual Studio Code]/,exportName); // Just incase you used AS3MXML wiki
-			var newAppXMLFile = nova.fs.open(destDir + "/" + appXMLName, "w");
-			newAppXMLFile.write(newAppXML);
-			newAppXMLFile.close();
-		} catch(error) {
-			if(lineCount==0) {
-				nova.workspace.showErrorMessage("Error handling app descriptor at " + appXMLLocation + ". Please check it's content that it is valid.");
-				console.log("*** ERROR: APP XML file! error: ",error);
-				consoleLogObject(error);
-				return null;
+			// Replace content that the IDEs were supposed to and then write the app.xml to the output folder
+			try {
+				var newAppXML = appXML;
+				var newAppXML = appXML.replace(/\[This value will be overwritten by .*? app.xml\]/,exportName);       // Change's Flashbuilder's text
+				newAppXML = newAppXML.replace(/[Path to content will be replaced by Visual Studio Code]/,exportName); // Just incase you used AS3MXML wiki
+				var newAppXMLFile = nova.fs.open(destDir + "/" + appXMLName, "w");
+				newAppXMLFile.write(newAppXML);
+				newAppXMLFile.close();
+			} catch(error) {
+				if(lineCount==0) {
+					nova.workspace.showErrorMessage("Error handling app descriptor at " + appXMLLocation + ". Please check it's content that it is valid.");
+					console.log("*** ERROR: APP XML file! error: ",error);
+					consoleLogObject(error);
+					return null;
+				}
 			}
 		}
 
@@ -829,7 +737,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		args.push("--warnings=true");
 
 		// console.log("projectType: " + projectType);
-		if(projectType=="airmobile") {
+		if(projectType=="flash") {
+			args.push("+configname=flex");
+		} else if(projectType=="airmobile") {
 			args.push("+configname=airmobile");
 		} else {
 			args.push("+configname=air");
@@ -851,51 +761,53 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			libPaths.forEach((libPath) => { args.push("--library-path+=" + libPath); });
 		}
 
-		// If we have ANEs, we will need to unzip them to a folder so that ADL can run and point to those
-		// ANEs so we can run on desktop. But, if it's building for packing, ADT will incorporate that into
-		// the package for us!
-		if(anePaths) {
-			if(anePaths.length>0) {
-				/** @TODO Maybe make this a temp directory */
-				var extdir = destDir + "/ane";
-				if(packageAfterBuild==false) {
-					// If the destination "extdir" exists, delete it then make it!
-					try {
-						if(nova.fs.stat(extdir).isDirectory()) {
-							nova.fs.rmdir(extdir);
-						}
-						nova.fs.mkdir(extdir);
-					} catch(error) {
-						nova.workspace.showErrorMessage("Failed to make ANE temp folder.");
-						console.log("*** ERROR: Failed to make ANE temp folder *** ");
-					}
-				}
-				anePaths.forEach((anePath) => {
-					args.push("--external-library-path+=" + anePath);
-					// Needed?
-					//args.push("--library-path+=" + anePath);
+		if(projectType!="flash") {
+			// If we have ANEs, we will need to unzip them to a folder so that ADL can run and point to those
+			// ANEs so we can run on desktop. But, if it's building for packing, ADT will incorporate that into
+			// the package for us!
+			if(anePaths) {
+				if(anePaths.length>0) {
+					/** @TODO Maybe make this a temp directory */
+					var extdir = destDir + "/ane";
 					if(packageAfterBuild==false) {
-						var aneDest = anePath.substring(anePath.lastIndexOf("/"),anePath.length);
-						//console.log("ANE DEST: [[" + aneDest + "]]");
-						//console.log("ANE PATH: [[" + anePath + "]]");
-						//console.log("/usr/bin/unzip" + " " + anePath + " " + "-d" + " " + extdir + aneDest);
+						// If the destination "extdir" exists, delete it then make it!
 						try {
-							nova.fs.mkdir(extdir + aneDest);
-							var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
-							unzip.then((resolve) => {
-								// console.log("Unzip successful?!");
-							},(reject) => {
-								nova.workspace.showErrorMessage("Failed while trying to unzip ANE " + anePath + " to temp folder.");
-								console.log("Unzip failed?!?!");
-								return null;
-							});
+							if(nova.fs.stat(extdir).isDirectory()) {
+								nova.fs.rmdir(extdir);
+							}
+							nova.fs.mkdir(extdir);
 						} catch(error) {
-							nova.workspace.showErrorMessage("Failed to unzip ANE " + anePath + " to temp folder.");
-							console.log("*** ERROR: Couldn't unzip ANE for test runs ***");
-							return null;
+							nova.workspace.showErrorMessage("Failed to make ANE temp folder.");
+							console.log("*** ERROR: Failed to make ANE temp folder *** ");
 						}
 					}
-				});
+					anePaths.forEach((anePath) => {
+						args.push("--external-library-path+=" + anePath);
+						// Needed?
+						//args.push("--library-path+=" + anePath);
+						if(packageAfterBuild==false) {
+							var aneDest = anePath.substring(anePath.lastIndexOf("/"),anePath.length);
+							//console.log("ANE DEST: [[" + aneDest + "]]");
+							//console.log("ANE PATH: [[" + anePath + "]]");
+							//console.log("/usr/bin/unzip" + " " + anePath + " " + "-d" + " " + extdir + aneDest);
+							try {
+								nova.fs.mkdir(extdir + aneDest);
+								var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
+								unzip.then((resolve) => {
+									// console.log("Unzip successful?!");
+								},(reject) => {
+									nova.workspace.showErrorMessage("Failed while trying to unzip ANE " + anePath + " to temp folder.");
+									console.log("Unzip failed?!?!");
+									return null;
+								});
+							} catch(error) {
+								nova.workspace.showErrorMessage("Failed to unzip ANE " + anePath + " to temp folder.");
+								console.log("*** ERROR: Couldn't unzip ANE for test runs ***");
+								return null;
+							}
+						}
+					});
+				}
 			}
 		}
 
@@ -1506,11 +1418,7 @@ consoleLogObject(data);
 		var runMode = config.get("actionscript3.request");
 
 		if(action==Task.Build) {
-			if(projectType=="flash") {
-				return this.buildFlash(runMode);
-			} else {
-				return this.build(projectType, runMode, false);
-			}
+			return this.build(projectType, runMode, false);
 		} else if(action==Task.Run) {
 			// @TODO Check if the output files are there, otherwise prompt to build
 			var profile = config.get("as3.task.profile");
