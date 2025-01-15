@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile } = require("./nova-utils.js");
+const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, listFilesRecursively, getExec } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 
@@ -18,58 +18,6 @@ function shouldIgnoreFileName(fileName) {
 		return true;
 	}
 	return false;
-}
-
-/**
- * Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
- * @param {string} folderPath - The folder path to look through
- * @param {string} relativePath - The relative path name from this directory
- * @returns {Array} - Files names with path
- */
-function listFilesRecursively(folderPath, relativePath = "") {
-	let fileList = [];
-	try {
-		nova.fs.listdir(folderPath).forEach(filename => {
-			let fullPath = nova.path.join(folderPath, filename);
-			let currentRelativePath = nova.path.join(relativePath, filename);
-
-			if (nova.fs.stat(fullPath).isDirectory()) {
-				// Recurse into subdirectory and add the returned files to the list
-				fileList = fileList.concat(listFilesRecursively(fullPath, currentRelativePath));
-			} else {
-				// Add the relative file path to the list
-				fileList.push(currentRelativePath);
-			}
-		});
-	} catch (error) {
-		console.error(`Error reading folder ${folderPath}: ${error}`);
-	}
-	return fileList;
-}
-
-/**
- * Finds the actual executable file in a Mac App
- * @param {string} appLocation - Location of the Application.app "folder"
- * @returns {string|null} - The location of the first executable in the .app, otherwise null
- */
-function getExec(appLocation) {
-	const exePath = nova.path.join(appLocation,"/Contents/MacOS"); // Path to the MacOS folder
-	let execFiles
-	try {
-		execFiles = nova.fs.listdir(exePath); // List all files in the folder
-		if (!execFiles) {
-			console.error("No files found in " + exePath);
-			return null;
-		}
-		for (const exec of execFiles) {
-			const execCheck = nova.path.join(exePath,exec);
-			if (nova.fs.access(execCheck, nova.fs.F_OK | nova.fs.X_OK)) {
-				return execCheck; // Return the first executable file found
-			}
-		}
-	} catch(error) {
-		return null;
-	}
 }
 
 exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
@@ -294,6 +242,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						if(taskConfig["as3.packaging.customContents"] && taskConfig["as3.packaging.customContents"]==true) {
 							alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
 						}
+
 						if(alsoIgnore) {
 							alsoIgnore.forEach((ignore) => {
 								//console.log("Ignroe: " + ignore);
@@ -435,7 +384,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							let exportLocation = nova.workspace.path;
 							if(taskConfig["as3.export.folder"]) {
 								exportLocation = nova.path.join(nova.workspace.path, taskConfig["as3.export.folder"]);
-								if(this.ensureFolderIsAvailable(exportLocation)==false) {
+								if(ensureFolderIsAvailable(exportLocation)==false) {
 									nova.workspace.showErrorMessage("Export Release Build failed!\n\nCannot export to folder "+exportLocation);
 								}
 							}
@@ -447,7 +396,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							// Usage
 							let baseFolderPath = nova.path.join(nova.workspace.path, releasePath);
 							let files = listFilesRecursively(baseFolderPath);
-
 							files.forEach((file) => {
 								if(file!=appXMLName) {
 									//args.push("-C");
@@ -761,7 +709,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let libPaths = configValues.libPaths;
 		let anePaths = configValues.anePaths;
 		let compilerAdditional = configValues.compilerAdditional;
-
 		// When building, especially for exporting, we may have different values
 		if(configOverrides) {
 			/*
@@ -812,7 +759,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						copyDir = nova.path.join(nova.workspace.path, copyDir);
 					}
 					// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
-					this.ensureFolderIsAvailable(destDir);
+
+					ensureFolderIsAvailable(destDir);
 					return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
 				});
 
@@ -1260,7 +1208,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 										return Promise.resolve();
 									} else {
 										// If it's a symbolic link to a folder, let's copy the real files to our destination path!
-										this.ensureFolderIsAvailable(destPath);
+										ensureFolderIsAvailable(destPath);
 										return this.copyAssetsOf(resolvedPath, destPath, packageAfterBuild);
 									}
 								});
@@ -1281,7 +1229,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							return Promise.resolve();
 						} else if (stats.isDirectory()) {
 							// Make a folder, if it doesn't already exist.
-							this.ensureFolderIsAvailable(destPath);
+							ensureFolderIsAvailable(destPath);
 							// Go and copy this directory of stuff
 							return this.copyAssetsOf(currPath, destPath, packageAfterBuild);
 						} else {
@@ -1517,27 +1465,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * Makes sure that we have  a Task folder so we can generate new tasks
 	 */
 	ensureTaskFolderIsAvailable() {
-		if(nova.fs.access(nova.workspace.path + "/.nova/Tasks", nova.fs.F_OK | nova.fs.X_OK)===false) {
-			nova.fs.mkdir(nova.workspace.path + "/.nova/Tasks/");
-		}
-	}
-
-	/**
-	 * Makes sure that we have a folder so we can put stuff in it
-	 *
-	 * @returns {boolean} - True if the folder is there, otherwise false
-	 */
-	ensureFolderIsAvailable(folder) {
-		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
-			// console.log(" Making folder at " + folder + "!!!");
-			nova.fs.mkdir(folder+"/");
-		}
-		// Double check, do we have the folder?
-		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
-			console.log(" *** ERROR: Failed to make folder at " + folder + "! ***");
-			return false;
-		}
-		return true;
+		return ensureFolderIsAvailable(nova.workspace.path + "/.nova/Tasks");
 	}
 
 	/**
@@ -1550,107 +1478,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var taskFile = nova.fs.open(nova.workspace.path + "/.nova/Tasks/"+taskName+".json","w");
 		taskFile.write(JSON.stringify(taskJson,null,2));
 		taskFile.close();
-	}
-
-	/**
-	 * Gets Android devices connected to the computer
-	 *
-	 * @returns {Promise} - With the resolve being an Array of devices
-	 */
-	getAndroidDevices() {
-		console.log("getAndroidDevices() : ");
-		return new Promise((resolve, reject) => {
-			let devices = [];
-
-			// Get the Android SDK and call ADB since it give more details about devices attached
-			let androidSDKBase = nova.workspace.config.get("as3.sdk.android");
-			if(!androidSDKBase) {
-				androidSDKBase = "~/Library/Android/sdk/";
-			}
-			if(androidSDKBase!=null) {
-				if(androidSDKBase.charAt(0)=="~") {
-					androidSDKBase = nova.path.expanduser(androidSDKBase);
-				}
-			}
-
-			// Call a process to get the output of `adb devices -l`
-			getProcessResults(androidSDKBase + "/platform-tools/adb",["devices","-l"]).then((result) => {
-				const results = result.stdout.split("\n");
-				results.forEach((line) => {
-					// Regex our output, data will come like:
-					// 0123456789ABYX         device usb:#-1 product:panther model:Device_Name_Here device:panther transport_id:#
-					// 0123456789CDWX         device usb:#-1 product:husky model:Other_Device_Name device:husky transport_id:#
-					const match = line.match(/^(\S+).*model:([\w_]+).*transport_id:(\d+)/);
-					if (match) {
-						const [_, uuid, model, transportID] = match;
-						devices.push({ uuid, model, transportID });
-					}
-				});
-				/*
-				// Debug output
-				if(!devices.length) {
-					console.log("getAndroidDevices No DEVICES!");
-				} else {
-					console.log("getAndroidDevices DEVICES! " + devices.length);
-					devices.forEach((device) => console.log("device: " + device.uuid + " is a " + device.model));
-				}
-				*/
-				resolve(devices);
-			}).catch((error) => {
-				console.error("getAndroidDevices: Error fetching Android devices", error);
-				reject([]); // Reject the promise with the error
-			});
-		});
-	}
-
-	/**
-	 * Gets iOS devices connected to the computer
-	 *
-	 * @returns {Promise} - With the resolve being an Array of devices
-	 */
-	getIOSDevices() {
-		return new Promise((resolve, reject) => {
-			let devices = [];
-
-			// Get the Flex SDK base, since ADT will give details about the iOS devices attached
-			const flexSDKBase = determineFlexSDKBase();
-			if(flexSDKBase==null) {
-				console.error("FlexSDK not set, cannot poll for devices without it!");
-				reject([]);
-			}
-
-			// Call a process to get the output of `adt -devices -platform ios`
-			getProcessResults(flexSDKBase + "/bin/adt", ["-devices","-platform","ios"]).then((result) => {
-				if(result!=undefined) {
-					const results = result.stdout.split("\n");
-					results.forEach((line) => {
-						// Regex our match, data will come like:
-						// Handle	DeviceClass	DeviceUUID					DeviceName
-						//   #	iPad    	12345678-0123456789ABCDEF	Actual Device Name
-						const match = line.match(/^\s*(\d+)\s+(\S+)\s+([A-Fa-f0-9\-]+)\s+(.+)$/);
-						if (match) {
-							const [_, transportID, model, uuid, deviceName] = match;
-							devices.push({ transportID, model, uuid, deviceName });
-						}
-					});
-					/*
-					// Debug output
-					if(!devices.length) {
-						console.log("getIOSDevices No DEVICES!");
-					} else {
-						console.log("getIOSDevices DEVICES! " + devices.length);
-						devices.forEach((device) => console.log("device: " + device.uuid + " is an " + device.model));
-					}
-					*/
-					resolve(devices);
-				} else {
-					reject([]);
-				}
-			}).catch((error) => {
-				console.error("getIOSDevices: Error fetching iOS devices",error);
-				reject([]);
-			});
-		});
 	}
 
 	/**
@@ -1669,12 +1496,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		} else if(data.type=="flash") {
 			projectType = "flash";
 		}
-
+/*
 console.log("config: ");
 consoleLogObject(config);
 console.log("data: ");
 consoleLogObject(data);
-
+*/
 		// Get the context.config so we can get the Task settings!
 		var runMode = config.get("actionscript3.request");
 

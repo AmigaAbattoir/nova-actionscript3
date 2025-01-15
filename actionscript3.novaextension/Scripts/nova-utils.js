@@ -245,3 +245,74 @@ exports.getCurrentDateAsSortableString = function() {
 
 	return `${year}${month}${day}_${hours}${minutes}${seconds}`;
 }
+
+/**
+ * Makes sure that we have a folder so we can put stuff in it
+ *
+ * @returns {boolean} - True if the folder is there, otherwise false
+ */
+exports.ensureFolderIsAvailable = function(folder) {
+	console.log("export.ensureFolderIsAvailable  folder is " + folder);
+	if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
+		// console.log(" Making folder at " + folder + "!!!");
+		nova.fs.mkdir(folder+"/");
+	}
+	// Double check, do we have the folder?
+	if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
+		console.log(" *** ERROR: Failed to make folder at " + folder + "! ***");
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
+ * @param {string} folderPath - The folder path to look through
+ * @param {string} relativePath - The relative path name from this directory
+ * @returns {Array} - Files names with path
+ */
+exports.listFilesRecursively = function(folderPath, relativePath = "") {
+	let fileList = [];
+	try {
+		nova.fs.listdir(folderPath).forEach(filename => {
+			let fullPath = nova.path.join(folderPath, filename);
+			let currentRelativePath = nova.path.join(relativePath, filename);
+
+			if (nova.fs.stat(fullPath).isDirectory()) {
+				// Recurse into subdirectory and add the returned files to the list
+				fileList = fileList.concat(exports.listFilesRecursively(fullPath, currentRelativePath));
+			} else {
+				// Add the relative file path to the list
+				fileList.push(currentRelativePath);
+			}
+		});
+	} catch (error) {
+		console.error(`Error reading folder ${folderPath}: ${error}`);
+	}
+	return fileList;
+}
+
+/**
+ * Finds the actual executable file in a Mac App
+ * @param {string} appLocation - Location of the Application.app "folder"
+ * @returns {string|null} - The location of the first executable in the .app, otherwise null
+ */
+exports.getExec = function(appLocation) {
+	const exePath = nova.path.join(appLocation,"/Contents/MacOS"); // Path to the MacOS folder
+	let execFiles
+	try {
+		execFiles = nova.fs.listdir(exePath); // List all files in the folder
+		if (!execFiles) {
+			console.error("No files found in " + exePath);
+			return null;
+		}
+		for (const exec of execFiles) {
+			const execCheck = nova.path.join(exePath,exec);
+			if (nova.fs.access(execCheck, nova.fs.F_OK | nova.fs.X_OK)) {
+				return execCheck; // Return the first executable file found
+			}
+		}
+	} catch(error) {
+		return null;
+	}
+}

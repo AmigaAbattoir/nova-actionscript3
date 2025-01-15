@@ -2,6 +2,8 @@
 
 Is a **Work In Progress** extension for ActionScript 3 & MXML.
 
+The goal was to be able to have a replacement for my old Flash Build projects, where I wouldn't need to change settings and the extension would do all the lifting. Ideally, it will just grab the old Flash Builder settings, and set everything up for me, and it's pretty close to that.
+
 It currently provides:
 
  * **Syntax Highlighting**
@@ -45,13 +47,13 @@ ActionScript 3 requires the following to be installed on your Mac:
 
 ## Optional
 
-* Ruffle
-
- * You can use Ruffle if you want to launch a Flash project, instead of Flash Player
-
 * Flash Player
 
  * You can still use a standalone Flash Player to launch Flash projects
+
+* Ruffle
+
+ * You can use Ruffle if you want to launch a Flash project, instead of Flash Player
 
 * Old version of Chrome and PPAPI Flash Player
 
@@ -77,7 +79,7 @@ Tasks also have a bunch of options too! Don't miss out on **Project â†’ Tasks â†
 
 A lot of the settings from Flash Builder can be imported to the Nova project's workspace settings. It will also generate Tasks for each build target there was in the Flash Builder project and set their preferences.
 
-*NOTE:* Some options like Modules and Workers not implemented
+*NOTE:* Some options like Modules and Workers are currently not implemented
 
 ### .flexProperties
 

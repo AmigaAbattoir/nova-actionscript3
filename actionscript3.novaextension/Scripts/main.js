@@ -4,6 +4,8 @@ const { getAIRSDKInfo } = require("./as3-utils.js");
 const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile, getProcessResults, getCurrentDateAsSortableString } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
+const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
+
 var langserver = null;
 var taskprovider = null;
 
@@ -61,10 +63,10 @@ exports.activate = function() {
 
 	nova.commands.register("as3.devicetester", (workspace) => {
 		return new Promise((resolve) => {
-			var ad = taskprovider.getAndroidDevices().then((androidDevices) => {
+			var ad = getAndroidDevices().then((androidDevices) => {
 				consoleLogObject(androidDevices);
 
-				var dd = taskprovider.getIOSDevices().then((iosDevices) => {
+				var dd = getIOSDevices().then((iosDevices) => {
 					consoleLogObject(iosDevices);
 				});
 			})

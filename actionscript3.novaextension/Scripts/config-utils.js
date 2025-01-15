@@ -70,6 +70,22 @@ exports.determineFlexSDKBase = function() {
 	return flexSDKBase;
 }
 
+exports.determineAndroidSDKBase = function() {
+		// Get the Android SDK and call ADB since it give more details about devices attached
+	let androidSDKBase = nova.workspace.config.get("as3.sdk.android");
+	if(!androidSDKBase) {
+		androidSDKBase = "~/Library/Android/sdk/";
+	}
+	if(androidSDKBase!=null) {
+		if(androidSDKBase.charAt(0)=="~") {
+			androidSDKBase = nova.path.expanduser(androidSDKBase);
+		}
+	}
+
+	//console.log("Using androidSDKBase: " + androidSDKBase);
+	return androidSDKBase;
+}
+
 exports.getConfigsForPacking = function(file) {
 	const flexSDKBase = exports.determineFlexSDKBase();
 	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
