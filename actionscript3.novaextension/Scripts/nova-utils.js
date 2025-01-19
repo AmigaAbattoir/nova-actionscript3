@@ -6,9 +6,9 @@
  * @param {string} closeButtonName - Optional button, if there, it will keep the box open until
  * clicked
  */
-exports.showNotification = function(title, body, closeButtonName = "") {
+exports.showNotification = function(title, body, closeButtonName = "", requestIdAddition = "") {
 	//if (nova.inDevMode()) {
-		let request = new NotificationRequest("as3mxml-nova-message");
+		let request = new NotificationRequest("as3mxml-nova-message"+requestIdAddition);
 
 		request.title = nova.localize(title);
 		request.body = nova.localize(body);

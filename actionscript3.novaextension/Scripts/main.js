@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
 const { getAIRSDKInfo } = require("./as3-utils.js");
-const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile, getProcessResults, getCurrentDateAsSortableString } = require("./nova-utils.js");
+const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
@@ -293,6 +293,8 @@ class AS3MXMLLanguageServer {
 						console.log(" =-=-=-=-= WORKSPACE Should trigger restart");
 					}
 
+					let errorGeneratingHTML = "";
+
 					// If Flash project wrapper settings change
 					if(configsThatTriggersWrapper.includes(key)) {
 						var generatorType = nova.workspace.config.get("as3.flash.generatorType");
@@ -309,46 +311,67 @@ class AS3MXMLLanguageServer {
 							"Warning: Because you have changed the options for the HTML wrapper or the SDK version, all files in the "htmi-template" folder of your project will be overwritten and/or deleted."
 						*/
 						/** @NOTE It does not seem that Nova supports showing UI when editing the Preferences! */
-
 						try {
-							console.log("Trying to check if it exists, let's delete")
+							// console.log("Trying to check if it exists, let's delete")
 							// If the file exists, then remove it since nova.fs.copy with throw an error.
 							if (nova.fs.access(destPath, nova.fs.constants.F_OK)) {
 								// console.log(" Removing existing [" + destPath + "]");
 								nova.fs.rmdir(destPath);
 							}
-						} catch (error) {}
+						} catch (error) {
+							errorGeneratingHTML += "Error removing html-template foldercopying classic template. " + error + "\n";
+						}
 
-						if(generateHTML) {
-							console.log("Generates... let's do stuff [[" + generatorType + "]]")
-							if(generatorType=="Classic") {
-								// Copy template
-								try {
-									nova.fs.copy(sourcePath, destPath);
-								} catch (error) { }
+						// Only if we can remove the html-template should we continue to copy stuff
+						if(errorGeneratingHTML=="") {
+							if(generateHTML) {
+								// console.log("Generates... let's do stuff [[" + generatorType + "]]")
+								if(generatorType=="Classic") {
+									// Copy template
+									try {
+										nova.fs.copy(sourcePath, destPath);
+									} catch (error) {
+										errorGeneratingHTML += "Error copying classic template. " + error + "\n";
+									}
 
-								if(useExpress==false || checkTarget==false) {
-									// Remove code from index.template.html
+									// If we copied the SDK's folder, then should we check for the express and history needs
+									if(errorGeneratingHTML=="") {
+										if(useExpress==false || checkTarget==false) {
+											// Remove code from index.template.html
+											try{
+												nova.fs.remove(nova.workspace.path + "/html-template/expressInstall.swf");
+												nova.fs.remove(nova.workspace.path + "/html-template/playerProductInstall.swf");
+											} catch(error) {
+												errorGeneratingHTML += "Error removing install SWFS. " + error + "\n";
+											}
+										}
+
+										if(useNavigation==false) {
+											// Remove History folder
+											try{
+												nova.fs.rmdir(nova.workspace.path + "/html-template/history");
+											} catch(error) {
+												errorGeneratingHTML += "Error removing history code folder. " + error + "\n";
+											}
+										}
+									}
+								} else {
 									try{
-										nova.fs.remove(nova.workspace.path + "/html-template/expressInstall.swf");
-										nova.fs.remove(nova.workspace.path + "/html-template/playerProductInstall.swf");
-									} catch(error) {}
+										nova.fs.copy(nova.path.join(nova.extension.path, "/Template/Ruffle/"),destPath);
+									} catch(error) {
+										errorGeneratingHTML += "Error copying Ruffle template. " + error + "\n";
+									}
 								}
+							}
+						}
 
-								if(useNavigation==false) {
-									// Remove History folder
-									try{
-										nova.fs.rmdir(nova.workspace.path + "/html-template/history");
-									} catch(error) {}
-								}
-							} else {
-								// @TODO Ruffle template
+						if(errorGeneratingHTML) {
+							showNotification("Error Generating HTML Template", errorGeneratingHTML, "", "-template");
+							if (nova.inDevMode()) {
+								console.log(errorGeneratingHTML);
 							}
 						} else {
-							// Remove HTML Template
-							try{
-								nova.fs.rmdir(nova.workspace.path + "/html-template");
-							} catch(error) {}
+							nova.notifications.cancel("as3mxml-nova-message-template");
 						}
 					}
 

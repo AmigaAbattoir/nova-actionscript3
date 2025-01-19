@@ -2,7 +2,7 @@
 
 Is a **Work In Progress** extension for ActionScript 3 & MXML.
 
-The goal was to be able to have a replacement for my old Flash Build projects, where I wouldn't need to change settings and the extension would do all the lifting. Ideally, it will just grab the old Flash Builder settings, and set everything up for me, and it's pretty close to that.
+The goal was to be able to have a replacement for my old Flash Build projects, where I wouldn't need to change settings and the extension would do all the lifting. Ideally, it will just grab the old Flash Builder settings, and set everything up for me, and it's pretty close to that, but not really complete with all the abilities of Flash Builder.
 
 It currently provides:
 
@@ -26,6 +26,12 @@ It currently provides:
  * **Tasks** - *Note:* Limited support for using Nova's Clean/Build/Run for AIR Desktop and Mobile (through Desktop). Also, limited support for ANEs. Still looking into some mobile, and web (maybe with Ruffle too at some point).
 
  * **Exporting AIR Packages** - *Note:* Currently, limited to desktop/extendedDesktop AIR Bundle and Android projects.
+
+## Todo
+
+ * Building iOS
+ * Launching on device
+ * Building AS3 Libs
 
 ## Notes
 
@@ -61,11 +67,13 @@ ActionScript 3 requires the following to be installed on your Mac:
 
 ## Usage
 
-It should work if you open a files *.as, or *.mxml.
+It should work if you open a files `*.as`, or `*.mxml`.
 
-If you open a folder that contains a Flash Builder project (and has `.actionScriptProperties`, `.flexProperies`, and `.project`), it will ask if you want to import the Flash Builder project and change your project's settings. If you want, you can also change this setting in the **Extensions → Settings → Additional Options...**.
+If you open a folder that contains a Flash Builder project (and has `.actionScriptProperties`, `.flexProperies`, and `.project`), it will ask if you want to import the Flash Builder project and change your Nova project's settings. If you want, you can also change this setting in the **Extensions → Settings → Additional Options...**. Also, you can use the menu option **Extensions → ActionScript 3 → Import FlashBuilder settings...** to change your project's settings to those used by a Flash Builder project at your request.
 
-Since AS3MXML requires requires an `asconfig.json` for most of the code intelligence and completions, the extension will ask if you want to have it generate one and automatically update it. If you select update, it should only change options that are needed in this extension. Building options are not changed and are handled internally by the extension.
+Since the LSP AS3MXML requires requires an `asconfig.json` for most of the code intelligence and completions, the extension will ask if you want to have it generate one and automatically update it. If you select update, it should only change options that are needed in this extension. Building options are not changed in the `asconfig.json` and not used by this extension.
+
+*NOTE:* If building a Flash project, and using the Ruffle template, you will need to use Nova's External Preview since Ruffle does not allow the use of "file:" protocol for loading SWFs.
 
 ## Configuration
 
@@ -79,7 +87,7 @@ Tasks also have a bunch of options too! Don't miss out on **Project → Tasks �
 
 A lot of the settings from Flash Builder can be imported to the Nova project's workspace settings. It will also generate Tasks for each build target there was in the Flash Builder project and set their preferences.
 
-*NOTE:* Some options like Modules and Workers are currently not implemented
+*NOTE:* Some options like Modules and Workers are currently not implemented (I didn't have any projects that used it to test with).
 
 ### .flexProperties
 

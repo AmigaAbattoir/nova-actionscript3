@@ -296,7 +296,7 @@
 			"children": [
 				{
 					"key": "as3.flashPlayer.standalone",
-					"title": "Standalone Flash Player",
+					"title": "Standalone Adobe Flash Player (debug version)",
 					"type": "path",
 					"default": "/Applications/Flash Player.app",
 					"placeholder": "/Applications/Flash Player.app",
@@ -550,7 +550,7 @@
 		{
 			"title": "Compiler",
 			"type": "section",
-			"description": "Selects options for compiling, like which SDK to use as well as other options when building for Flash.",
+			"description": "Selects options for compiling, like which SDK to use as well as other options when building for AIR and Flash projects.",
 			"children": [
 				{
 					"title": "AIR/Flex SDK version",
@@ -652,22 +652,23 @@
 					]
 				},
 				{
-					"title": "HTML wrapper",
+					"title": "Adobe Flash Player HTML wrapper",
 					"type": "section",
+					"description": "Settings for Flash only projects. These are ignored for AIR projects.\n⚠️ WARNING: If you change any of these options for the HTML wrapper, all files in the `htmi-template` folder of your project will be overwritten and/or deleted!",
 					"children": [
+						{
+							"key": "as3.flash.generateHTML",
+							"title": "Generate HTML wrapper file",
+							"type": "boolean",
+							"default": true
+						},
 						{
 							"key": "as3.flash.generatorType",
 							"title": "Which type of HTML to generate",
 							"type": "enum",
 							"values": [ "Classic", "Ruffle" ],
 							"default": "Classic",
-							"description": "Specifies which type of wrapper to generate for the project. Classic will use the default in the SDK. *NOTE Not implemented yet, a Ruffle will supply a version that will generate a simple page (no history)*.\n\n⚠️ WARNING: If you change the options for the HTML wrapper, all files in the `htmi-template` folder of your project will be overwritten and/or deleted!"
-						},
-						{
-							"key": "as3.flash.generateHTML",
-							"title": "Generate HTML wrapper file",
-							"type": "boolean",
-							"default": true
+							"description": "Specifies which type of wrapper to generate for the project.\nClassic will use the default in the SDK.\nRuffle will supply a version that will generate a simple page (no history and the other options below are not used). Also, you will need to preview the page in Nova to run it. "
 						},
 						{
 							"key": "as3.flash.checkTarget",
