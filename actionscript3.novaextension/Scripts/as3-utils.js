@@ -3,22 +3,18 @@ const { getProcessResults, getStringOfFile, consoleLogObject } = require("./nova
 
 /**
  * Figures out a ProjectUUID for building releases and storing passwords.
- * @returns {Promise} The result of trying to call `uuidgen`. If it resolves, it passes
- * back a UUID as a string, otherwise it will return an object with `status`,`stdout`, and `stderr`
+ * May not be needed anymore.
+ * @returns {Promise} Returns the projects UUID or generates one using Nova's crypto.randomUUID()`
  */
 exports.determineProjectUUID = function() {
 	var projectUUID =  nova.workspace.config.get("as3.application.projectUUID");
 	var getUUID = Promise.resolve(projectUUID);
 
 	if(projectUUID==null || projectUUID=="" || projectUUID=="null") {
-		var getUUID = getProcessResults("/usr/bin/uuidgen");
-		getUUID.then((resolve) => {
-			nova.workspace.config.set("as3.application.projectUUID",resolve.stdout.trim());
-			projectUUID = nova.workspace.config.get("as3.application.projectUUID");
-			resolve(projectUUID);
-		}, (reject) => {
-			reject(reject);
-		});
+		var getUUID = nova.crypto.randomUUID();
+		nova.workspace.config.set("as3.application.projectUUID",getUUID);
+		projectUUID = nova.workspace.config.get("as3.application.projectUUID");
+		return Promise.resolve(projectUUID);
 	} else {
 		return Promise.resolve(projectUUID);
 	}
