@@ -1,7 +1,8 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, listFilesRecursively, getExec } = require("./nova-utils.js");
+const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
+const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain } = require("./certificate-utils.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
@@ -58,25 +59,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 		}
 		return result;
-	}
-
-	quickChoicePalette(items, placeholder, addAll = false) {
-		return new Promise((resolve) => {
-			if(addAll) {
-				items.unshift( "All" );
-			}
-
-			nova.workspace.showChoicePalette(items, {
-				placeholder: placeholder,
-			}, (value,index) => {
-				/*
-				nova.workspace.showInformativeMessage(`Got choice: [[${value}]]`);
-				console.log("Got choice:", value);
-				console.log("Got index:", index);
-				*/
-				resolve({ value, index });
-			});
-		})
 	}
 
 	/**
@@ -138,7 +120,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 
 				// Show the choice palette to get the name of the task file
-				taskFileNamePromise = this.quickChoicePalette(tasks,placeholder).then((choice) => choice.value);
+				taskFileNamePromise = quickChoicePalette(tasks,placeholder).then((choice) => choice.value);
 			}
 
 			// Now that we have a task file name, let's try to get the config!
@@ -273,13 +255,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						}
 						var certificateName = certificateLocation.split("/").pop();
 
-						/** @TODO Check if the certificate location is a valid file. Maybe check if it is a .p12?! */
-
 						// Check if we have the password stored in the user's Keychain
-						var passwordCheck = nova.credentials.getPassword("export-with-"+certificateName,certificateLocation);
-						if(passwordCheck==null) {
-							passwordCheck = "";
-						}
+						var passwordCheck = getCertificatePasswordInKeychain(certificateLocation);
 
 						// This will be a promise, I promise!
 						var passwordGet;
@@ -311,8 +288,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								}
 								case 1: { // Save the password
 									password = reply.textInputValue;
-									// @NOTE Should we also tie in the certificate name? Only useful if using different certificates I guess.
-									nova.credentials.setPassword("export-with-"+certificateName,certificateLocation,password);
+									setCertificatePasswordInKeychain(certificateLocation,password);
 									break;
 								}
 								case 0: { // This time

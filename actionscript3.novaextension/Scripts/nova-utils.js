@@ -316,3 +316,28 @@ exports.getExec = function(appLocation) {
 		return null;
 	}
 }
+
+/**
+ * Shows a Choice Palette, with the option of an "All" at the top.
+ * @param {Array} items - The items to show in the list
+ * @param {String} placeholder - The initial item or placeholder
+ * @param {boolean} addAll - Optional: Include an "All" item at the top
+ */
+exports.quickChoicePalette = function(items, placeholder, addAll = false) {
+	return new Promise((resolve) => {
+		if(addAll) {
+			items.unshift( "All" );
+		}
+
+		nova.workspace.showChoicePalette(items, {
+			placeholder: placeholder,
+		}, (value,index) => {
+			/*
+			nova.workspace.showInformativeMessage(`Got choice: [[${value}]]`);
+			console.log("Got choice:", value);
+			console.log("Got index:", index);
+			*/
+			resolve({ value, index });
+		});
+	})
+}

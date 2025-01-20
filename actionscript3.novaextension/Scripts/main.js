@@ -1,10 +1,11 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
 const { getAIRSDKInfo } = require("./as3-utils.js");
-const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable } = require("./nova-utils.js");
+const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
+const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
 
 var langserver = null;
 var taskprovider = null;
@@ -34,29 +35,14 @@ var currentASConfigText = "";
  * When the Extension is activated
  */
 exports.activate = function() {
-	nova.commands.register("as3.packaging.certificateCreate", (workspace) => {
-		return new Promise((resolve) => {
-			console.log("Called... as3.packaging.certificateCreate");
-			nova.workspace.showErrorMessage("Create Certificate\n\nStill need to do...");
-		});
-	});
+	// ---- Certificate Menu Functions ----
+	nova.commands.register("as3.packaging.certificateCreate", (workspace) => { return createCertificate(); });
 
-	nova.commands.register("as3.clearExportPassword", (workspace) => {
-		return new Promise((resolve) => {
-			nova.workspace.showErrorMessage("Clear Password\n\nStill need to do... And we need to get the Task at hand...");
-			// @TODO Ask if you are sure?
-			// If yes, clear..
-		});
-	});
+	nova.commands.register("as3.clearExportPassword", (workspace) => { return clearExportPassword(); });
 
-	nova.commands.register("as3.storeExportPassword", (workspace) => {
-		return new Promise((resolve) => {
-			nova.workspace.showErrorMessage("Store Password\n\nStill need to do... And we need to get the Task at hand...");
-			// @TODO Ask if you are sure?
-			// If yes, clear..
-		});
-	});
+	nova.commands.register("as3.storeExportPassword", (workspace) => { return storeExportPassword(); });
 
+	// ---- Various Menu Functions ----
 	nova.commands.register("as3.tester", (workspace) => {
 		// Placeholder for testing things out without going through an entire process
 	});
