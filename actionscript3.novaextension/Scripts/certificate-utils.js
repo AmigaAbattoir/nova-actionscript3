@@ -276,3 +276,37 @@ exports.removeCertificatePasswordInKeychain = function(certificateLocation) {
 	var certificateName = certificateLocation.split("/").pop();
 	nova.credentials.removePassword("export-with-"+certificateName,certificateLocation);
 }
+
+/**
+ * Checks if there is a session password for a certain certificate using the certificate's path.
+ * @param {String} certificateLocation - The path to the certificate
+ */
+exports.getSessionCertificatePassword = function(certificateLocation) {
+	var value = "";
+	var sessionCertPassJSON = nova.workspace.context.get("as3.sessionCertPass");
+	if(sessionCertPassJSON!=null) {
+		sessionCerts = JSON.parse(sessionCertPassJSON);
+
+		if(sessionCerts[certificateLocation]) {
+			value = sessionCerts[certificateLocation];
+		}
+	}
+	return value;
+}
+
+/**
+ * Stores a password for a session in a workspace context. Have to convert the context to JSON and back.
+ * @param {String} certificateLocation - The path to the certificate
+ * @param {String} value - The password to store
+ */
+exports.setSessionCertificatePassword = function(certificateLocation, value) {
+	var sessionCertPassJSON = nova.workspace.context.get("as3.sessionCertPass");
+	if(sessionCertPassJSON==null) {
+		sessionCerts = {};
+	} else {
+		sessionCerts = JSON.parse(sessionCertPassJSON);
+	}
+
+	sessionCerts[certificateLocation] = value;
+	sessionCertPassJSON = nova.workspace.context.set("as3.sessionCertPass",JSON.stringify(sessionCerts));
+}

@@ -31,6 +31,9 @@ var currentAIRExtensionNamespaces = [];
 var currentASConfigAutomatic = false;
 var currentASConfigText = "";
 
+// Used to store session passwords
+var sessionCertificatePassword = [];
+
 /**
  * When the Extension is activated
  */
@@ -185,7 +188,6 @@ class AS3MXMLLanguageServer {
 			console.log("--- AS3MXML Constructor -----------------------------------------------------");
 			console.log(" *** Constructing AS3MXML Extension with PATH: ",path);
 			console.log(" *** Version: " + nova.extension.version);
-			console.log(" *** RANDOM UUID: " + nova.crypto.randomUUID());
 		}
 		this.start(nova.extension.path)
 	}

@@ -2,7 +2,7 @@ const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
-const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain } = require("./certificate-utils.js");
+const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
@@ -258,41 +258,59 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						// Check if we have the password stored in the user's Keychain
 						var passwordCheck = getCertificatePasswordInKeychain(certificateLocation);
 
+						// If not, then check if we saved for the session
+						if(passwordCheck=="") {
+							passwordCheck = getSessionCertificatePassword(certificateLocation);
+						}
+
 						// This will be a promise, I promise!
 						var passwordGet;
 
 						// If password is empty, let's try to get it.
-						// @TODO We should do something like FB where when you enter the password, it tries to verify it. Once it's correct, you can continue.
 						if(passwordCheck=="") {
-							var request = new NotificationRequest("Export Release Build...");
-							request.title = "Digital Signature ";
-							request.body = "Enter the password for the certificate " + certificateLocation;
-							request.textInputValue = passwordCheck;
-							request.type = "input";
-							request.actions = ["This time", "Save", "Cancel"];
+							// Need to get password
+							passwordGet = promptForPassword(certificateLocation,false).then((password) => {
+								if(password!=undefined) {
+									// Return a new Promise with the results of the how to save window
+									return new Promise((resolve) => {
+										// Ask to save, use one time, or for session?
+										let saveButtons = ["This time","Save to Keychain","Use this session","Abort"];
+										nova.workspace.showActionPanel("Password accecpted. How would you like to use it? You can use this one time, or choose to save until you quit Nova, or store it in your Keychain.",
+										{ buttons: saveButtons }, (saveType) => {
+											resolve({ saveType: saveButtons[saveType], password: password });
+										});
 
-							passwordGet = nova.notifications.add(request);
+									});
+								}
+							}).catch((error) => {
+								passwordGet = Promise.resolve({ saveType: "Abort", password: "" });
+							});
 						} else {
-							// We have a password, fulfill the promise
-							passwordGet = Promise.resolve( { identifier: "Export Release Build...", actionIdx: 0, textInputValue: passwordCheck });
+							// We have a password stored already, so we can say this time..,, fulfill the promise
+							passwordGet = Promise.resolve( { saveType: "This time", password: passwordCheck });
 						}
 
 						passwordGet.then((reply) => {
 							var password;
-							switch(reply.actionIdx) {
-								case 2: { // Cancel
-									console.log("Cancel");
-									// @TODO Ask to remove build?
-									return;
+							switch(reply.saveType) {
+								case "This time": {
+									password = reply.password;
 									break;
 								}
-								case 1: { // Save the password
-									password = reply.textInputValue;
+								case "Save to Keychain": {
+									password = reply.password;
 									setCertificatePasswordInKeychain(certificateLocation,password);
 									break;
 								}
-								case 0: { // This time
-									password = reply.textInputValue;
+								case "Use this session": {
+									password = reply.password;
+									setSessionCertificatePassword(certificateLocation,password);
+									// @TODO Set context variable to track password.
+									break;
+								}
+								case "Abort": {
+									// @TODO Ask to remove build?
+									return;
 									break;
 								}
 							}
@@ -441,12 +459,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									nova.workspace.showErrorMessage(title + "\n\n" + message);
 								}
 							})
-						}, error => {
-							console.log("passwordGet.then((error): ");
-							nova.workspace.showErrorMessage("Password failed!\n\nSomething happened when trying to use or save the pasword!");
 						},(reject) => {
-							console.log("passwordGet.then((reject): ");
-							nova.workspace.showErrorMessage("Password failed!\n\n", "rej" + reject);
+							// console.log("passwordGet.then((reject): ");
+							nova.workspace.showErrorMessage("Password failed!\n\n" + reject);
 						});
 					}, (reject) => {
 						// To make this a little neater, remove the workspace's path from the stderr messages
