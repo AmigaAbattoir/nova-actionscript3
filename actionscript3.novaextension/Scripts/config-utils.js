@@ -1,5 +1,9 @@
 const { consoleLogObject, showNotification, isWorkspace } = require("./nova-utils.js");
 
+/**
+ * Returns a config, first checking for the extension, then if there is a Workspace value
+ * @param {String} configName - The key of the configuration to get
+ */
 exports.getWorkspaceOrGlobalConfig = function(configName) {
 	var config = nova.config.get(configName);
 	//console.log("*** getWorkspaceOrGlobalConfig() Config " + configName + " is [" + config + "]");
@@ -32,6 +36,11 @@ exports.isWorkspace = function() {
 	}
 }
 
+/**
+ * Figures out what the AIR/Flex SDK location is. It checks to see if it's set at the extension
+ * level, then the default SDK to use, and finally if the Workspace has a specific SDK to use
+ * @returns {String} - The location of the SDK
+ */
 exports.determineFlexSDKBase = function() {
 	// Check if user setup the location of the SDK for this project
 	var flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3.sdk.framework");
@@ -70,6 +79,11 @@ exports.determineFlexSDKBase = function() {
 	return flexSDKBase;
 }
 
+/**
+ * Figures out the location of the Android SDK. Checking if there is a preference set, otherwise
+ * it defaults to where Android SDKs are usually stored.
+ * @returns {String} - The location of the Android SDK
+ */
 exports.determineAndroidSDKBase = function() {
 		// Get the Android SDK and call ADB since it give more details about devices attached
 	let androidSDKBase = nova.workspace.config.get("as3.sdk.android");
@@ -86,6 +100,12 @@ exports.determineAndroidSDKBase = function() {
 	return androidSDKBase;
 }
 
+/**
+ * Get a bunch of configurations that are needed to export a package
+ * @param {String} file - The name of the main application file (if different than the Workspace's
+ * configuration)
+ * @returns {Object} - Various configs that are needed when packaging a build
+ */
 exports.getConfigsForPacking = function(file) {
 	const flexSDKBase = exports.determineFlexSDKBase();
 	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
@@ -119,6 +139,11 @@ exports.getConfigsForPacking = function(file) {
 	return configData;
 }
 
+/**
+ * Figures out the export and appXMLName based on the file given.
+ * @param {String} file - The name of the main file that is being built
+ * @returns {Object} - An object with the exportName and appXMLName
+ */
 exports.getAppXMLNameAndExport = function(file) {
 	/* @TODO Strip to last part, remove any src/ or path prior to it */
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
@@ -139,6 +164,12 @@ exports.getAppXMLNameAndExport = function(file) {
 	return configData;
 }
 
+/**
+ * Checks settings and generates a bunch of options that are needed for building a project
+ * @param {boolean} appendWorkspacePath - If we need to append the Workspace's path to items
+ * Generally, false for the `asconfig.json`.
+ * @returns {Object} - Loads of settings that are needed for building the project
+ */
 exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	// console.log("appendWorkspacePath: " + appendWorkspacePath);
 	const flexSDKBase = exports.determineFlexSDKBase();

@@ -145,6 +145,11 @@ exports.resolveSymLink = function(folder) {
 	});
 }
 
+/**
+ * (NOT USED) Convert's a document's selected range to
+ * @param {TextDocument} document - The text document that's open
+ * @param {Range} range - The selected range?
+ */
 exports.rangeToLspRange = function(document, range) {
 	const fullContents = document.getTextInRange(new Range(0, document.length));
 

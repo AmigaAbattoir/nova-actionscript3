@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
 const { getAIRSDKInfo } = require("./as3-utils.js");
-const { showNotification, consoleLogObject, rangeToLspRange, getStringOfFile, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
+const { showNotification, consoleLogObject, getStringOfFile, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
@@ -10,29 +10,54 @@ const { clearExportPassword, storeExportPassword, createCertificate } = require(
 var langserver = null;
 var taskprovider = null;
 
-/**
- * Extension context variables.
- * Remmember to  us `nova.workspace.context.set()` when changing them so we can update the menu options.
- */
+// ------------------------------------------------------------------------
+// ---- Extension context variables ----
+// ------------------------------------------------------------------------
 
-// Keeps track if the as3mxml is ready to do code intelligence.
+/**
+ * Extension context to keep track if the as3mxml is ready to do code intelligence.
+ * @type {boolean}
+ */
 var as3mxmlCodeIntelligenceReady = false;
 
-// Keeps track if we have a .project file and .actionScriptProperties file. If so, Import Flash Builder can happen.
+/**
+ * Extension context that keeps track if we have a `.project` file and `.actionScriptProperties`
+ * file. If so, `Import Flash Builder` menu option can be enabled or disabled.
+ * @type {boolean}
+ */
 var hasProjectAndASProperties = false;
 
-// Keeps track of the version of the AIRSDK
+//
+/**
+ * Extension context that keeps track of the version of the AIRSDK
+ * @type {number}
+ */
 var currentAIRSDKVersion = 0;
 
 // @TODO Use later to validate SWF version for Flash builds and for ANEs
 var currentAIRAppVersions = [];
 var currentAIRExtensionNamespaces = [];
 
+/**
+ * Extension context to keep track of needing to generate the `asconfig.json`
+ * @type {boolean}
+ */
 var currentASConfigAutomatic = false;
+
+/**
+ * Extension context which is the JSON for the `asconfig.json`. Has to be stored as stringified text!
+ * @type {string}
+ */
 var currentASConfigText = "";
 
 // Used to store session passwords
-var sessionCertificatePassword = [];
+/**
+ * Extension context that stores certificate passwords for building, but are asked to only keep
+ * for the current session. Once the Workspace is closed, it will be forgotten. Has to be stored
+ * as stringified text!
+ * @type {string}
+ */
+var sessionCertificatePassword = "";
 
 /**
  * When the Extension is activated
@@ -168,6 +193,9 @@ exports.activate = function() {
 */
 }
 
+/**
+ * When the Extension is deactivate
+ */
 exports.deactivate = function() {
 	// Clean up state before the extension is deactivated
 	if (nova.inDevMode()) { console.log("<<<< AS3MXML Deactivated"); }
@@ -179,6 +207,9 @@ exports.deactivate = function() {
 	taskprovider = null;
 }
 
+/**
+ * The Language Server!
+ */
 class AS3MXMLLanguageServer {
 	languageClient = null;
 
@@ -192,8 +223,14 @@ class AS3MXMLLanguageServer {
 		this.start(nova.extension.path)
 	}
 
+	/**
+	 * What to do when activating the extension
+	 */
 	activate() { }
 
+	/**
+	 * What to do when deactivating the extension
+	 */
 	deactivate() {
 		if (nova.inDevMode()) {
 			console.log(" *** AS3MXML Deactivated");
@@ -201,6 +238,10 @@ class AS3MXMLLanguageServer {
 		this.stop();
 	}
 
+	/**
+	 * Used to configure which configs should trigger events, like restarting the LSP or generating an
+	 * `asconfig.json` file.
+	 */
 	setupConfigurationWatchers() {
 		// Extension configs we need to watch
 		const watchedConfigs = [
@@ -378,6 +419,10 @@ class AS3MXMLLanguageServer {
 		}
 	}
 
+	/**
+	 * WHen the LSP should start
+	 * @param {string} path - The location of the extension
+	 */
 	start(path) {
 		if (nova.inDevMode()) {
 			console.log("--- AS3MXML Start(path)-----------------------------------------------------");
@@ -727,6 +772,9 @@ class AS3MXMLLanguageServer {
 		}
 	}
 
+	/**
+	 * When the LSP is being stopped
+	 */
 	stop() {
 		if (nova.inDevMode()) {
 			console.log("AS3MXML stop() called!");

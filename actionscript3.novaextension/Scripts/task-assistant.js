@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, rangeToLspRange, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
+const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
@@ -21,6 +21,9 @@ function shouldIgnoreFileName(fileName) {
 	return false;
 }
 
+/**
+ * The Task Assistant that handles all the things for Task.
+ */
 exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	/** @TODO Make this an extension preference, like in Flash Builder > File Exclusions */
 	// These files should be ignored when copying assets. The "-app.xml" gets processed,

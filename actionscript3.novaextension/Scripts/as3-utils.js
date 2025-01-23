@@ -401,6 +401,11 @@ exports.getAIRSDKInfo = function(flexSDKBase) {
 	return { version: version, appVersions: appVersions, extensionNamespaces: extensionNamespaces }
 }
 
+/**
+ * Used to help figure out the minimum  Flash Player version based upon the AIR SDK
+ * @param {Number} sdkVersion - The version of the AIR/Flex SDK
+ * @returns {Object} - An object with the major, minor and revision numbers
+ */
 exports.convertAIRSDKToFlashPlayerVersion = function(sdkVersion) {
 	var flashVersion = {};
 	flashVersion.major = 0;

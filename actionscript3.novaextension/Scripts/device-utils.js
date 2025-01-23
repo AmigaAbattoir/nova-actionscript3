@@ -3,7 +3,6 @@ const { getProcessResults, consoleLogObject } = require("./nova-utils.js");
 
 /**
  * Gets Android devices connected to the computer
- *
  * @returns {Promise} - With the resolve being an Array of devices
  */
 exports.getAndroidDevices = function() {
@@ -45,7 +44,6 @@ exports.getAndroidDevices = function() {
 
 /**
  * Gets iOS devices connected to the computer
- *
  * @returns {Promise} - With the resolve being an Array of devices
  */
 exports.getIOSDevices = function() {
