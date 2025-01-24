@@ -61,7 +61,7 @@
 	"taskTemplates": {
 		"actionscript-flash": {
 			"name": "Flash",
-			"image": "Adobe_Flash_Player_SVG.svg.png",
+			"image": "as3-flash.png",
 			"description": "Build and run a Flash or Flex project.",
 			"persistent": true,
 			"tasks": {
@@ -82,7 +82,7 @@
 		},
 		"actionscript-air": {
 			"name": "AIR",
-			"image": "Adobe_AIR_logo.svg.png",
+			"image": "as3-air.png",
 			"description": "Build and run AS3 or MXML project with AIR for desktops.",
 			"persistent": true,
 			"tasks": {
@@ -103,7 +103,7 @@
 		},
 		"actionscript-android": {
 			"name": "AIR - Android",
-			"image": "Android-Adobe_AIR_logo.svg.png",
+			"image": "as3-android.png",
 			"description": "Build and run AS3 or MXML project with AIR for Android devices.",
 			"persistent": true,
 			"tasks": {
@@ -123,7 +123,7 @@
 		},
 		"actionscript-ios": {
 			"name": "AIR - iOS",
-			"image": "iOS-Adobe_AIR_logo.svg.png",
+			"image": "as3-ios.png",
 			"description": "Build and run AS3 or MXML project with AIR for iOS devices.",
 			"persistent": true,
 			"tasks": {
@@ -146,7 +146,7 @@
 			"COMMENT": "Probably not needed now since we're using separate iOS and Android files.",
 			"deprecated": "Please select either the \"AS3 - iOS\" or \"AS3 - Android\" task!",
 			"name": "AIR - Mobile",
-			"image": "Adobe Device Central.png",
+			"image": "as3-mobile.png",
 			"description": "Build and run AS3 or MXML project with AIR for mobile.",
 			"persistent": true,
 			"tasks": {
