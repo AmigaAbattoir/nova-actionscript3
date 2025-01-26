@@ -346,3 +346,62 @@ exports.quickChoicePalette = function(items, placeholder, addAll = false) {
 		});
 	})
 }
+
+/**
+ * Represents the objects that are used for the `collectInput` function
+ * @typedef {Object} CollectInputPrompt
+ * @property {string} message - What text will be displayed as the panel body
+ * @property {string} label - Optional: Label to display before the input field
+ * @property {string} value - Default value to display, default is blank
+ * @property {string} placeholder - Text to display if no value is present or empty
+ * @property {Boolean} isRequired - If set to true, the textfield will display as dots
+ * @property {string} prompt - Text to display instead for the “OK” button
+ * value is empty.
+ * @property {string} isSecure - Optional: if the input should be masked out
+ */
+
+/**
+ * Asks several text prompts and then resolves with all the answers
+ * @param {Array<CollectInputPrompt>} prompts - An Array of CollectInputPrompt to be asked.
+ * @returns {Array<String>} - An array containing the text values that were entered
+ */
+exports.collectInput = function(prompts) {
+	return new Promise((resolve) => {
+		let results = [];
+		let index = 0;
+
+		function askNext(additionalMessage = "") {
+			if (index < prompts.length) {
+				const prompt = prompts[index];
+				nova.workspace.showInputPanel(
+					prompt.message + additionalMessage,
+					{
+						label: prompt.label || "",
+						placeholder: prompt.placeholder || "",
+						value: prompt.value || "",
+						isSecure: prompt.isSecure || false,
+						prompt: prompt.prompt || ""
+					},
+					(result) => {
+						if (result===null || result===undefined) {
+							// User canceled the input, resolve early with null
+							resolve(null);
+						} else if (prompt.isRequired && result.trim() === "") {
+							// If input is required and empty, show the same prompt again
+							askNext("\nInput cannot be empty. Please try again.");
+						} else {
+							results.push(result);
+							index++;
+							// Ask the next question
+							askNext();
+						}
+					}
+				);
+			} else {
+				// All prompts completed, resolve with the collected results
+				resolve(results);
+			}
+		}
+		askNext();
+	});
+}
