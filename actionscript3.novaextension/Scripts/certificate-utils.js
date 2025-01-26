@@ -1,4 +1,4 @@
-const { getProcessResults, consoleLogObject, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
+const { getProcessResults, consoleLogObject, getStringOfWorkspaceFile, quickChoicePalette, collectInput } = require("./nova-utils.js");
 const { determineFlexSDKBase } = require("./config-utils.js");
 
 /**
@@ -210,6 +210,46 @@ exports.promptForPassword = function(certificateLocation, storedPasswordExists =
 }
 
 /**
+ * Prompting for creating a new password for the certificate. Initial password cannot be empty and
+ * it will repeat until the passwords match.
+ */
+exports.createNewCertificatePassword = function() {
+	return new Promise((resolve) => {
+		let newPass = "";
+		function askNewPassword(confirm = false, retry = false) {
+			let message = "";
+			if(retry) {
+				message += "❗️Password" + (confirm ? " did not match." : "s cannot be empty!") + "\n\n";
+			}
+			message += "Create new certificate\n\nStep " + (confirm ? "7: Re-enter the " : "6: Enter a ");
+			message += "password for the certificate.";
+			nova.workspace.showInputPanel(message,
+				{ label: "Password", prompt: "Store", secure: true }, (result) => {
+				if(result===undefined) {
+					resolve(result);
+				} else {
+					if(confirm) {
+						if(newPass==result) {
+							resolve(result);
+						} else {
+							askNewPassword(true, true);
+						}
+					} else {
+						if(result.trim()!="") {
+							newPass = result;
+							askNewPassword(true);
+						} else {
+							askNewPassword(false, true);
+						}
+					}
+				}
+			});
+		}
+		askNewPassword();
+	});
+}
+
+/**
  * Calls ADT to check if a certificate's password is correct
  * @param {String} certificateLocation - Location of the certificate file
  * @param {String} password - The password (hopefully) for the certificate
@@ -235,10 +275,88 @@ exports.checkCertificatePassword = function(certificateLocation, password) {
 	});
 }
 
+/**
+ * Uses ADT to generate a new certificate to package an AIR package with
+ */
 exports.createCertificate = function() {
 	return new Promise((resolve) => {
 		console.log("Called... as3.packaging.certificateCreate");
-		nova.workspace.showErrorMessage("Create Certificate\n\nStill need to do... " + msg);
+
+		nova.workspace.showFileChooser(
+			"Select where to save the new P12 certificate",
+			{ prompt: "Save in here", allowFiles: true, allowFolders: true, allowMultiple: false, filetype: ".p12" },
+			(location) => {
+				if(location) {
+					const prefix = "Create new certificate\n\n";
+					const prompts = [
+						{ message: prefix + "Step 1: Enter the file name for the certificate. An extension of \".p12\" will be added", placeholder: "Required", isRequired: true },
+						{ message: prefix + "Step 2: Enter the Publisher name/common name for the certificate. If added to Keychain, this will be the name that shows up. ", placeholder: "Required", isRequired: true },
+						{ message: prefix + "Step 3: Enter the organizational unit" },
+						{ message: prefix + "Step 4: Enter the organizational name" },
+						{ message: prefix + "Step 5: Enter the country of origin. Please use a 2 letter abbreviation, or the certificate will not generate" }
+					];
+
+					collectInput(prompts).then((responses) => {
+						if(responses!==null) {
+							consoleLogObject(responses);
+
+							let [certFileName, certName, orgUnit, orgName, country] = responses;
+
+							if(certFileName.endsWith(".p12")==false) {
+								certFileName += ".p12";
+							}
+
+							// Force contry code to capitals, and only 2 letters.
+							// country = country.toUpperCase().substring(0,2);
+
+							exports.createNewCertificatePassword().then((password) => {
+								console.log(" WE GOT A PASSWORD... alsmost there  " + password);
+
+								let flexSDKBase = determineFlexSDKBase();
+								var command = flexSDKBase + "/bin/adt";
+								var args = [];
+
+								args.push("-certificate");
+								args.push("-cn");
+								args.push(certName);
+
+								// Organizational Unit is optional
+								if(orgUnit!="") {
+									args.push("-ou");
+									args.push(orgUnit);
+								}
+
+								// Organizational Name is optional
+								if(orgName!="") {
+									args.push("-o");
+									args.push(orgName);
+								}
+
+								// Country is also optional
+								if(country!="") {
+									args.push("-c");
+									args.push(country);
+								}
+
+								args.push("2048-RSA");
+								args.push(nova.path.join(location[0],certFileName));
+								args.push(password);
+
+								// This command will resolve if good, otherwise reject. But there was an issue where my Promise wouldn't get the `reject`
+								getProcessResults(command, args).then((r) => {
+									resolve(true);
+								}).catch((error) => {
+									if(error.stderr.indexOf("Invalid country code: ")!=-1) {
+										nova.workspace.showErrorMessage("Error Creating certificate. \"" + country + "\" is an invalid code. You can try to regenerate a certificate leaving the country code empty.");
+									}
+									resolve(error);
+								});
+							});
+						}
+					});
+				}
+			}
+		);
 	});
 }
 
