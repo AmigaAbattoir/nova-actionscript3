@@ -7,22 +7,28 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 ### Added
 
-- Started added clips and completions
-- Added some more modern device options (made Google Sheet https://docs.google.com/spreadsheets/d/1RlsuMwYp-ANTerziv12LxxH47GIsoeeBSdaEUdCDY5E/edit?gid=0#gid=0)
 - More work on getting AS3MXML integrated
+- Added "Clips" for completion of AS3/MXML content (would have liked to do it through Completions XMLs, but they would not show up properly)
 - Prompts to import Flash Builder projects when opening
 - If extension preference is set, opening a project will ask if you want to Import Flash Builder project.
-- Also check Flash Builder project for sources file to exclude when building Flash projects
+- Checks Flash Builder project for sources file to exclude when building Flash projects
+- Prompts to automatically update an existing `asconfig.json` file
+- Will generate an `asconfig.json` file if one is not in the project
 - If there are more than one Task when Exporting Release Build, it will prompt you for which one to build.
 - Add Timestamp option, so you can specify a different RFC3161-compliant timestamp server to use
 - Added building and running Flash projects.
 - Added options for stand alone Flash Player, Ruffle and an old web browser to use for launching. (Preferably Chrome <88)
+- Added some more modern device options (made Google Sheet https://docs.google.com/spreadsheets/d/1RlsuMwYp-ANTerziv12LxxH47GIsoeeBSdaEUdCDY5E/edit?gid=0#gid=0)
+- Can store or clear stored passwords for certificates from menu
+- Can store certificate password for just the session
+- When exporting a release package, it will verify the password before trying to build the package
 
 ### Changed
 
 - Using AS3MXML V 1.21.1
 - Make Exporting Release rely more on values in Tasks, making them different tasks per device
-- Changed to a format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+- Changed images to adhere to Panic's sizing and folder layout
+- Changed this changelog to a format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and that this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.7.2] - 2024-10-06
 

@@ -1,98 +1,754 @@
 {
 	"clips": [
 		{
-			"name": "ActionScript 3",
+			"name": "FB ActionScript",
 			"children": [
 				{
 					"syntax": "actionscript",
-					"trigger": "if",
-					"name": "ifelse",
-					"description": "Basic if else statement",
-					"content": "if (${0:condition}) {\n\t$1\n} else {\n\n}"				},
-				{
-					"syntax": "actionscript",
-					"description": "Creates a Vector instance with type",
-					"name": "Vector",
-					"content": "var ${0:name}:Vector.<${1:type}> = new Vector.<${1:type}>();$2\n"
+					"name": "cast expression",
+					"description": "Creates cast statement",
+					"content": "var ${0:member_name}:${1:type} = ${2:expression} as ${1:type};"
 				},
 				{
 					"syntax": "actionscript",
-					"name": "",
-					"description": "",
-					"content": ""
+					"name": "event handler",
+					"description": "Creates an event handler",
+					"content": "${0:namespace} ${1:modifiers} function ${2:event_name}Handler(${3:event}:${4:event_type}):${5:return_type}\n{\n\t// TODO Auto-generated method stub\n\t$6\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "function",
+					"description": "Creates a method",
+					"content": "${0:namespace} ${1:modifiers} function ${2:method_name}(${4:params}):${5:return_type}\n{\n\t// TODO Auto Generated method stub\n\t${body_statement}${cursor}\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "getter",
+					"description": "Code generated in getters",
+					"content": "${0:metadata}\n${2:asdoc}${3:namespace} ${4:modifiers} function get ${5:method_name}()${6:return_type}\n{\n\treturn ${7:property};\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "if else",
+					"description": "Creates if-else statement",
+					"content": "if (${0:expression})\n{\n\t${1:condition1};\n}\nelse\n{\n\t${2:condition2};\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "override method",
+					"description": "Code generated in override methods",
+					"content": "${0:namespace} ${1:modifiers} function ${2:method_name}(${3:params})${4:return_type}\n{\n\t// TODO Auto Generated method stub\n\t$5\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "setter",
+					"description": "Code generated in setters",
+					"content": "${0:asdoc}\n${1:namespace} ${2:modifiers} function set ${3:method_name}(value:${4:type}):void\n{\n\t${5:property} = value;\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "setter with custom event",
+					"description": "Code generated in setter with custom event",
+					"content": "${0:asdoc}\n${1:namespace} ${2:modifiers} function set ${3:method_name}(value:${4:type}):void\n{\n\tif( ${5:property} !== value)\n\t{\n\t\t${5:property} = value;\n\t\tdispatchEvent(new Event(\"${6:event_name}\"));\n\t}\n}\n"
+				}
+			]
+		},
+		{
+			"name": "FB ActionScript",
+			"children": [
+				{
+					"syntax": "actionscript",
+					"name": "class",
+					"description": "Creates a class",
+					"content": "/**\n * @author ${AUTHOR_NAME}\n */\n${0:public|private|protected} class ${1:enclosing_type}\n{\n\t$2\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "constructor",
+					"description": "Creates a constructor for a class",
+					"content": "public function ${0:enclosing_type}() \n{\n\t$1\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "createWorker",
+					"description": "Inserts a function that instantiates a worker from a ByteArray",
+					"content": "${0:import flash.system.Worker,flash.system.WorkerDomain;}\nvar ${1:worker}:Worker = WorkerDomain.current.createWorker(${2:worker_manager_class_name}$3);"
 				},
 				{
 					"syntax": "actionscript",
 					"name": "do",
-					"description": "do-while",
-					"content": "do {\n\t$1\n} while (${0:condition});\n"
+					"description": "Creates a do-while loop",
+					"content": "do \n{\n\t$1\n} while(${0:condition:local_var(Boolean)});"
 				},
 				{
 					"syntax": "actionscript",
-					"name": "for",
-					"description": "Simple loop",
-					"content": "for(var ${0:index}:int=0; ${0:index}&lt;${1:array}.length; ${0:index}++) {\n\t${2}\n}"
+					"name": "event body",
+					"description": "Creates the body for a custom event class",
+					"content": "public static const ${0:TYPE_CONST}:String = \"${1:TYPE_CONST_VALUE}\";\n\npublic function ${2:enclosing_type}(type:String, bubbles:Boolean = ${3:false|true}, cancelable:Boolean = ${4:false|true})\n{\n\tsuper(type, bubbles, cancelable);\n}\noverride public function clone():Event\n{\n\treturn new ${2:enclosing_type}(type, bubbles, cancelable);\n}\noverride public function toString():String\n{\n\treturn formatToString(\"${2:enclosing_type}\", \"type\", \"bubbles\", \"cancelable\",\"eventPhase\");\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "fore",
+					"description": "Iterate over value of an array using enumeration",
+					"content": "for each (var ${0:index}:${1:type} in ${2:array}) \n{\n\t$3\n}\n"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "fori",
+					"description": "Iterate over an array",
+					"content": "for (var ${0:index}:int = 0; ${0:index} < ${1:array}.length; ${0:index}++) \n{\n\t$2\n}\n"
 				},
 				{
 					"syntax": "actionscript",
 					"name": "forin",
 					"description": "For in loop",
-					"content": "for (var ${key}:String in ${collection}) {\n\t${line_selection}${cursor}\n}"
+					"content": "for (var ${0:key}:String in ${1:collection}) {\n\t$2\n}"
 				},
 				{
 					"syntax": "actionscript",
 					"name": "foreach",
 					"description": "For each loop",
-					"content": "for each (var ${value}:${type} in ${collection}) {\n\t${line_selection}${cursor}\n}"
+					"content": "for each (var ${0:value}:${1:type} in ${2:collection}) {\n\t$3\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "function",
+					"description": "Creates a function",
+					"content": "${0:private|public|protected} function ${1:fname}():${2:void|String|Number|Boolean|Object}\n{\n\t$3\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "getter",
+					"description": "Creates a getter function",
+					"content": "${0:private|public|protected} function get ${1:property}():${2:type} \n{\n\t$4\n\treturn ${3:return_type};\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "HTTPService",
+					"description": "Creates an HTTPService call with parameter object",
+					"content": "${0:mx.rpc.http.HTTPService|mx.rpc.events.ResultEvent|mx.rpc.events.FaultEvent}\nvar ${1:service}:HTTPService = new HTTPService();\n${1:service}.addEventListener(ResultEvent.RESULT,${2:onResult});\n${1:service}.addEventListener(FaultEvent.FAULT,${3:onFault});\n${1:service}.destination = \"${4:destination}\";\n${1:service}.resultFormat = \"${5:object|array|xml|e4x|flashvars|text}\";\nvar ${6:parms}:Object = {};\n${6:parms}[\"${7:parm1}\"] = \"${8:parm}\";\n${1:service}.send(${6:parms});\n${1:service}.showBusyCursor = ${9:true|false};\n$10"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "if",
+					"description": "Creates an if statement",
+					"content": "if (${0:condition}) \n{\n\t$1\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "if else if",
+					"description": "Creates an if else if code block",
+					"content": "if (${0:condition1})\n{\n\t$2\n}\nelse if (${1:condition2})\n{\n\t\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "loadWorker",
+					"description": "Inserts a function to load a worker from a SWF and instantiates it",
+					"content": "${0:import flash.events.Event,flash.net.URLLoader,flash.net.URLLoaderDataFormat,flash.net.URLRequest,flash.system.Worker,flash.system.WorkerDomain}\nprivate var ${1:urlLoader}:URLLoader;\nprivate var ${2:worker}:Worker;\n\npublic function ${3:loadWorker}():void\n{\n\t${1:urlLoader} = new URLLoader();\n\t${1:urlLoader}.dataFormat = URLLoaderDataFormat.BINARY;\n\t${1:urlLoader}.addEventListener(Event.COMPLETE, ${4:loadCompleteHandler});\n\t${1:urlLoader}.load(new URLRequest(\"${5:BackgroundWorker}.swf\"));\n}\nprivate function ${4:loadCompleteHandler}(event:Event):void\n{\n\t${2:worker} = WorkerDomain.current.createWorker(event.target.data);\n\t$3\n}\n"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "package",
+					"description": "Creates a package",
+					"content": "package ${0:enclosing_package}\n{\n\t/**\n \t * @author ${AUTHOR_NAME}\n \t */\n\tpublic class ${1:enclosing_type}\n\t{\n\t\tpublic function ${1:enclosing_type}()\n\t\t{\n\t\t\t$2\n\t\t}\n\t}\t\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "property",
+					"description": "Creates a property including variable definition, getter and setter methods",
+					"content": "private var _${0:name}:${1:type};\npublic function get ${0:name}():${1:type} { return _${0:name}; }\n\npublic function set ${0:name}(${2:value}:${1:type}):void\n{\n\tif (_${0:name} == ${2:value})\n\t\treturn;\n\t_${0:name} = value;\n}\n$3"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "RemoteObject",
+					"description": "Creates a RemoteObject",
+					"content": "${0:mx.rpc.remoting.RemoteObject|mx.rpc.remoting.Operation|mx.rpc.events.ResultEvent|mx.rpc.events.FaultEvent}\n${1:remote_object} = new RemoteObject();\n${1:remote_object}.destination = \"${2:myService}\";\n${1:remote_object}.addEventListener(FaultEvent.FAULT,${3:onFault});\n\nvar ${4:operation}:Operation = new Operation(${1:remote_object}, \"${5:myOperation}\");\n${3:operation}.addEventListener(ResultEvent.RESULT, ${6:onOpResult});\n${3:operation}.addEventListener(FaultEvent.FAULT,${7:onOpFault});\n$8"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "RemoteObject with CF Endpoint",
+					"description": "Creates a RemoteObject with a ColdFusion endpoint",
+					"content": "${0:mx.rpc.remoting.RemoteObject|mx.rpc.remoting.Operation|mx.rpc.events.ResultEvent|mx.rpc.events.FaultEvent}\n${1:remote_object} = new RemoteObject();\n${1:remote_object}.endpoint=\"${2:http://localhost:8500/flex2gateway}\";\n${1:remote_object}.source = \"${3:myCFservice}\";\n${1:remote_object}.destination = \"ColdFusion\";\n${1:remote_object}.addEventListener(FaultEvent.FAULT, ${4:onFault});\n\nvar ${5:operation}:Operation = new Operation(${1:remote_object}, \"${6:myOperation}\");\n${5:operation}.addEventListener(ResultEvent.RESULT, ${7:onOpResult});\n${5:operation}.addEventListener(FaultEvent.FAULT, ${8:onOpFault});\n$9\n"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "RemoteObject with Java Endpoint",
+					"description": "Creates a RemoteObject with a Java endpoint",
+					"content": "${0:mx.rpc.remoting.RemoteObject|mx.rpc.remoting.Operation|mx.rpc.events.ResultEvent|mx.rpc.events.FaultEvent}\n${1:remote_object} = new RemoteObject();\n${1:remote_object}.endpoint=\"${2:http://localhost:8080/mywebapp/messagebroker/amf}\";\n${1:remote_object}.destination = \"${3:myService}\";\n${1:remote_object}.addEventListener(FaultEvent.FAULT,${2:onFault});\n\nvar ${4:operation}:Operation = new Operation(${1:remote_object}, \"${5:myOperation}\");\n${4:operation}.addEventListener(ResultEvent.RESULT,${6:onOpResult});\n${4:operation}.addEventListener(FaultEvent.FAULT,${7:onOpFault});\n$8\n"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "RemoteObject with PHP endpoint",
+					"description": "Creates a RemoteObject with a PHP endpoint",
+					"content": "${0:mx.rpc.remoting.RemoteObject|mx.rpc.remoting.Operation|mx.rpc.events.ResultEvent|mx.rpc.events.FaultEvent}\n${1:remote_object} = new RemoteObject();\n${1:remote_object}.endpoint = \"${2:http://localhost/amfphp/gateway.php}\";\n${1:remote_object}.source = \"${3:myPHPservice}\";\n${1:remote_object}.destination = \"amfphp\";\n${1:remote_object}.addEventListener(FaultEvent.FAULT,${2:onFault});\n\nvar ${4:operation}:Operation = new Operation(${1:remote_object}, \"${5:myOperation}\");\n${4:operation}.addEventListener(ResultEvent.RESULT, ${6:onOpResult});\n${4:operation}.addEventListener(FaultEvent.FAULT, ${7:onOpFault});\n$8\n"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "setter",
+					"description": "Creates a setter function",
+					"content": "${specifier:values(public, protected, private)} function set ${property}(${value}:${Type:values(String,Number,Boolean)}):void \n{\n\t${cursor}\n}"
 				},
 				{
 					"syntax": "actionscript",
 					"name": "switch",
-					"description": "switch",
-					"content": "switch (${key}) {\n\tcase ${value}:\n\t\t${cursor}\n\t\tbreak;\n\n\tdefault:\n\t\tbreak;\n}"
+					"description": "Creates a switch block",
+					"content": "switch(${0:expression})\n{\n\tcase ${1:result}:\n\t{\n\t\t$2\n\t\tbreak;\n\t}\n\t\n\tdefault:\n\t{\n\t\tbreak;\n\t}\n}"
 				},
 				{
 					"syntax": "actionscript",
-					"name": "try",
-					"description": "try catch",
-					"content": "try {\n\t${line_selection}${cursor}\n} catch (e) {\n\t// TODO: handle exception\n}"
+					"name": "toString",
+					"description": "Creates a toString function",
+					"content": "override public function toString() : String \n{\n\treturn \"${0:enclosing_package_and_type}\";\n}\n$1"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "trace current method",
+					"description": "Trace the current method",
+					"content": "trace(\"${0:enclosing_type}.${1:enclosing_method}(${2:enclosing_method_arguments})\");\n$3"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "try/catch",
+					"description": "Creates a try/catch block",
+					"content": "try\n{\n\t$2\n} \ncatch(${0:error}:${1:Error}) \n{\n\t\n}"
+				},
+				{
+					"syntax": "actionscript",
+					"name": "vector",
+					"description": "Creates a Vector instance with type",
+					"content": "var ${0:name}:Vector.<${1:type}> = new Vector.<${1:type}>();$2\n"
 				},
 				{
 					"syntax": "actionscript",
 					"name": "while",
 					"description": "while loop",
-					"content": "while (${condition}) {\n\t${line_selection}${cursor}\n}"
-				},
-				{
-					"syntax": "actionscript",
-					"name": "",
-					"description": "",
-					"content": ""
+					"content": "while (${0:condition})\n{\n\t$1\n}"
 				}
 			]
 		},
 		{
-			"name": "MXML Elements",
+			"name": "FB 4.6 CSS Elements",
+			"children": [
+				{
+					"syntax": "css",
+					"content": "s|ActionBar #titleDisplay\n{\n\tcolor: #${0:FFFFFF};\n\tfontSize: ${1:30};\n\tfontWeight: ${2:bold|normal};\n\ttextShadowColor: #${3:000000};\n\t$4\n}\n",
+					"name": "ActionBar titleDisplay",
+					"description": "Creates an ActionBar titleDisplay style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "mx|AdvancedDataGrid\n{\n\talternatingItemColors: #${0:F7F7F7}, #${1:FFFFFF};\n\tcolumnDropIndicatorSkin: ClassReference(\"mx.skins.halo.DataGridColumnDropIndicator\");\n\tcolumnResizeSkin: ClassReference(\"mx.skins.halo.DataGridColumnResizeSkin\");\n\theaderColors: #${2:FFFFFF}, #${3:E6E6E6};\n\theaderDragProxyStyleName: \"${4:headerDragProxyStyle}\";\n\theaderBackgroundSkin: ClassReference(\"mx.skins.halo.DataGridHeaderBackgroundSkin\");\n\theaderSeparatorSkin: ClassReference(\"mx.skins.halo.DataGridHeaderSeparator\");\n\theaderHorizontalSeparatorSkin: ClassReference(\"mx.skins.halo.AdvancedDataGridHeaderHorizontalSeparator\");\n\theaderStyleName: \"${5:advancedDataGridStyles}\";\n\tsortArrowSkin: ClassReference(\"mx.skins.halo.DataGridSortArrow\");\n\tstretchCursor: Embed(source=\"${6:sourceFile}\",symbol=\"cursorStretch\");\n\tverticalGridLineColor: #${7:CCCCCC};\n\tdisclosureClosedIcon: Embed(source=\"${8:sourceFile}\",symbol=\"TreeDisclosureClosed\");\n\tdisclosureOpenIcon: Embed(source=\"${9:sourceFile}\",symbol=\"TreeDisclosureOpen\");\n\tdefaultLeafIcon: Embed(source=\"${10:sourceFile}\",symbol=\"TreeNodeIcon\");\n\tfolderClosedIcon: Embed(source=\"${11:sourceFile}\",symbol=\"TreeFolderClosed\");\n\tfolderOpenIcon: Embed(source=\"${12:sourceFile}\",symbol=\"TreeFolderOpen\");\n\tpaddingLeft: ${13:2};\n\tpaddingRight: ${14:0};\n\t/* sort item renderer's font styles */\n\tsortFontFamily: \"${15:Verdana}\";\n\tsortFontSize: ${16:10};\n\tsortFontStyle: \"${17:FontStyle:values(normal,italic)}\";\n\tsortFontWeight: \"${18:FontWeight:values(normal,bold)}\";\n\t$19\n}\n",
+					"name": "AdvancedDataGrid",
+					"description": "Creates an MX AdvancedDataGrid style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|Application\n{\n\tbackgroundColor: #${0:AAB2B7};\n\t$1\n}\n",
+					"name": "Application",
+					"description": "Creates a Spark Application style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|Application\n{\n\tskinClass: ClassReference(\"${0:skin:values('skins.ApplicationSkin')}\");\n\tbackgroundColor: #${1:AAB2B7};\n\t$2\n}\n",
+					"name": "Application with custom skin",
+					"description": "Creates a Spark Application style with a custom skin"
+				},
+				{
+					"syntax": "css",
+					"content": "s|BorderContainer\n{\n\tborderColor:  #${0:000000};\n\tborderAlpha:  ${1:1};\n\tcornerRadius: ${2:4};\n\tborderWeight: ${3:1};\n\t$4\n}\n",
+					"name": "BorderContainer",
+					"description": "Creates a BorderContainer style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|Button\n{\n\tbaseColor: ${0:000000};\n\tfontWeight: ${1:normal|bold|heavy};\n\tcolor: #${2:FFFFFF};\n\t$3\n}\n",
+					"name": "Button",
+					"description": "Creates a Spark Button style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|Button\n{\tskinClass: ClassReference(\"${0:'skins.ButtonSkin'}\");\t$1\n}\n",
+					"name": "Button with custom skin",
+					"description": "Creates a Spark Button style definition with custom skin"
+				},
+				{
+					"syntax": "css",
+					"content": "s|Button:up\n{\n\tbaseColor: ${0:000000};\n\tfontWeight: ${1:normal|bold|heavy};\n\tcolor: #${2:FFFFFF};\n}\ns|Button:over\n{\n\tbaseColor: ${3:EEEEEE};\n\tfontWeight: ${4:normal|bold|heavy};\n\tcolor: #${5:323232};\n}\ns|Button:down\n{\n\tbaseColor: ${6:0000FF};\n\tfontWeight: ${7:normal|bold|heavy};\n\tcolor: #${8:FFFF66};\n}\n$9\n",
+					"name": "Button with states",
+					"description": "Creates a Spark Button style definition with states"
+				},
+				{
+					"syntax": "css",
+					"content": "s|ComboBox\n{\n\trollOverColor: #${0:666666};\n\tselectionColor: #${1:333333};\n\t$2\n}\n",
+					"name": "ComboBox",
+					"description": "Creates a Spark ComboBox style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "mx|DataGrid\n{\n\talternatingItemColors: #${0:464646}, #${1:4f4f4f};\n\tverticalGridLineColor: #${2:454545};\n\trollOverColor: #${3:666666};\n\tselectionColor: #${4:333333};\n\tfontSize: ${5:12};\n\t$6\n}\n",
+					"name": "DataGrid",
+					"description": "Creates an MX DataGrid style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|DropDownList\n{\n\tcontentBackgroundColor: #${0:464646};\n\trollOverColor: #${1:666666};\n\tselectionColor: #${2:333333};\n\tdropShadowVisible: ${3:true|false};\n\t$4\n}\n",
+					"name": "DropDownList",
+					"description": "Creates a Spark DropDownList style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "@font-face\n{\n\tsrc: url(\"${0:font_path}.ttf\");\n\tfontFamily: ${1:Verdana};\n\tfontStyle: ${2:normal|italic|oblique};\n\tfontWeight: ${3:normal|bold|heavy};\n\tembedAsCFF: ${4:true|false};\n\tadvancedAntiAliasing: ${5:true|false};\n\t$6\n}\n",
+					"name": "font-face",
+					"description": "Creates a font-face style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "global\n{\n\tchromeColor: #${0:294867};\n\tcolor: #${1:CEE7F4};\n\tcontentBackgroundColor: #${2:39628C};\n\tsymbolColor: #${3:000000};\n\trollOverColor: #${4:355D89};\n\tselectionColor: #${5:selColor:values(294867)};\n\tfocusColor: #${6:333300};\n\taccentColor: #${7:6589AD};\n\t$8\n}\n",
+					"name": "global with cobalt theme",
+					"description": "Creates a global style of blue shades"
+				},
+				{
+					"syntax": "css",
+					"content": "s|List\n{\n\tcontentBackground-color: #${0:464646};\n\trollOverColor: #${1:666666};\n\tselectionColor: #${2:333333};\n\ttextAlign: ${3:left|center|right|justify|start|end};\n\t${4\n}\n",
+					"name": "List",
+					"description": "Creates a Spark List style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|IconItemRenderer\n{\n\thorizontalGap: ${0:15};\n\tverticalGap: ${1:15};\n\tfontWeight: ${2:normal|bold};\n\tmessageStyleName: \"mobileIconItemRendererMessageStyle\";\n}\n\n.mobileIconItemRendererMessageStyle\n{\n\tfontWeight: ${3:normal|bold};\n\tfontSize: ${4:20};\n\tcolor: #${5:DDDDDD};\n}\n$6\n",
+					"name": "MobileItemIconRenderer",
+					"description": "Creates a mobile IconItemRenderer style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|LabelItemRenderer\n{\n\tpaddingBottom: ${0:15};\n\tpaddingLeft: ${1:15};\n\tpaddingRight: ${2:15};\n\tpaddingTop: ${3:15};\n\tverticalAlign: \"${4:middle|left|right|justify|contentJustify}\";\n\t$5\n}\n",
+					"name": "MobileItemRenderer",
+					"description": "Creates a LabelItemRenderer style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|Panel\n{\n\tfontSize: ${0:11pt};\n\ttextAlign: ${1:left|center|right|justify|start|end};\n\tcolor: #${2:323232};\n\ttitleStyleName: \"panelTitleStyle\";\n\tborderAlpha: ${3:1};\n\tcornerRadius:${4:12};\n\tborderWeight: ${5:3};\n\tborderColor: #${6:333333};\n\tbackgroundColor: #${7:262626};\n\tdropShadowVisible: ${8:true|false};\n}\n\n.panelTitleStyle\n{\n\ttextAlign: ${9:left|center|right|justify|start|end};\n}\n$10\n",
+					"name": "Panel",
+					"description": "Creates a Spark Panel style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "RichEditableText",
+					"name": "s|RichEditableText\n{\n\tfocusedTextSelectionColor: #${0:323232};\n\tunfocusedTextSelectionColor: #${1:333333};\n\t$2\n}\n",
+					"description": "Creates a Spark RichEditableText style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|SkinnableContainer\n{\n\tskinClass: ClassReference(\"${0:'skin.SkinnableContainerSkin'}\");\n\t$1\n}\n",
+					"name": "SkinnableContainer with custom skin",
+					"description": "Creates a SkinnableContainer style definition with a custom skin"
+				},
+				{
+					"syntax": "css",
+					"content": "s|TabbedMobileApplication\n{\n\tbackgroundColor: #${0:464646};\n\tskinClass: ClassReference(\"${1:'skins.TabbedViewNavigatorApplicationSkin'}\");\n\t$2\n}\n",
+					"name": "TabbedViewNavigatorApplication with custom skin",
+					"description": "Creates a TabbedViewNavigatorApplication style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|TabbedViewNavigator\n{\n\tskinClass: ClassReference(\"${0:'skins.TabbedViewNavigatorSkin'}\");\n\tanimationDuration: ${1:250};\n\t$2\n}\n",
+					"name": "TabbedViewNavigator with custom skin",
+					"description": "Creates a TabbedViewNavigator style definition with custom skin"
+				},
+				{
+					"syntax": "css",
+					"content": "s|TextArea\n{\n\tcolor: #${0:000000};\n\tcornerRadius:${1:4};\n\tfocusColor: ${2:haloBlue};\n\t$3\n}\n",
+					"name": "TextArea",
+					"description": "Creates a Spark TextArea style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|TextArea\n{\n\tskinClass: ClassReference(\"${0:'skins.TextAreaSkin'}\");\n\tcolor: #${1:000000};\n\tcornerRadius:${2:4};\n\t$3\n}\n",
+					"name": "TextArea with custom skin",
+					"description": "Creates a Spark TextArea style definition with custom skin"
+				},
+				{
+					"syntax": "css",
+					"content": "s|TextInput\n{\n\tfocusColor: ${0:haloBlue};\n\tcolor: #${1:323232};\n\tborderColor: #${2:000000};\n\t$3\n}\n",
+					"name": "TextInput",
+					"description": "Creates a Spark TextInput style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|TitleWindow\n{\n\tborderAlpha: ${0:1};\n\tborderColor: #${1:323232};\n\tcornerRadius: ${2:9};\n\tdropShadowVisible: ${3:true|false};\n\t$4\n}\n",
+					"name": "TitleWindow",
+					"description": "Creates a Spark TitleWindow style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|ToggleButton:upAndSelected, ToggleButton:overAndSelected\n{\n\tbaseColor: #${0:000000};\n\tcolor: #${1:FFFFFF};\n}\ns|ToggleButton:downAndSelected\n{\n\tbaseColor: #${2:336699};\n\tcolor: #${3:FFFFFF};\n}\ns|ToggleButton:disabledAndSelected\n{\n\tbaseColor: #${4:E2E2E2};\n\tcolor: #${5:212799)};\n}\ns|ToggleButton:up {\n\tbaseColor: #${6:C0C0C0};\n\tcolor: #${7:323232)};\n}\ns|ToggleButton:over\n{\n\tbaseColor: #${8:FFFFFF)};\n\tcolor: #${9:000000)};\n}\ns|ToggleButton:down\n{\n\tbaseColor: #${10:014f9f)};\n\tcolor: #${11:FFFFFF)};\n}\n$12\n",
+					"name": "ToggleButton",
+					"description": "Creates a ToggleButton style definition with states"
+				},
+				{
+					"syntax": "css",
+					"content": "s|MobileApplication\n{\n\tselectionColor: #${0:881313};\n\tchromeColor: #${1:2F6796};\n\tbackgroundAlpha: ${2:1};\n\tbackgroundColor: #${3:333333};\n\tskinClass: ClassReference(\"${4:'skins.ViewNavigatorApplicationSkin'}\");\n\t$5\n}\n",
+					"name": "ViewNavigatorApplication with custom skin",
+					"description": "Creates a ViewNavigatorApplication style definition with a custom skin"
+				},
+				{
+					"syntax": "css",
+					"content": "s|ViewNavigator\n{\n\tskinClass: ClassReference(\"${0:'spark.skins.mobile.TabbedViewNavigatorSkin'}\");\n\tanimationDuration: ${1:250};\n\t$2\n}\n",
+					"name": "ViewNavigator with custom skin",
+					"description": "Creates a ViewNavigator style definition with custom skin"
+				},
+				{
+					"syntax": "css",
+					"content": "s|WindowedApplication\n{\n\tbackgroundColor: #${0:333333};\n\tbackgroundAlpha: ${1:1};\n\tresizeAffordanceWidth: ${2:6};\n\t$3\n}\n",
+					"name": "WindowedApplication",
+					"description": "Creates a WindowedApplication style definition"
+				},
+				{
+					"syntax": "css",
+					"content": "s|WindowedApplication\n{\n\tskinClass: ClassReference('${0'skins.WindowedApplicationSkin'}');\n\tbackgroundColor: #${1:333333};\n\tbackgroundAlpha: ${2:1};\n\tresizeAffordanceWidth: ${3:6};\n\t$4\n}\n",
+					"name": "WindowedApplication with custom skin",
+					"description": "Creates a WindowedApplication style definition with custom skin"
+				}
+			]
+		},
+		{
+			"name": "FB 4.6 MXML",
 			"children": [
 				{
 					"syntax": "mxml",
-					"content": "<${0:mx:}AdvancedDataGrid id=\"${1:adg}\" width=\"${2:200}\" height=\"${3:200}\" dataProvider=\"{${4:dataprovider}}\">\n \t \t <${0:mx:}groupedColumns>\n\t\t<${0:mx:}AdvancedDataGridColumn dataField=\"${5:fieldName}\"/>\n\t\t</${0:mx:}groupedColumns>\n\t\t</${0:mx}AdvancedDataGrid>$6",
-					"name": "mx:AdvancedDataGrid",
-					"trigger": "<mx:",
-					"description": "Creates an Advanced DataGrid"
+					"name": "AdvancedDataGrid",
+					"description": "Creates an Advanced DataGrid",
+					"content": "<${0:mx:}AdvancedDataGrid id=\"${1:adg}\" \n\t\t\t\t\t   width=\"${2:200}\" height=\"${3:200}\" \n\t"
 				},
 				{
 					"syntax": "mxml",
+					"name":"BorderContainer",
+					"description": "Creates a BorderContainer",
+					"content": "<${0:s:}BorderContainer backgroundColor=\"#${1:FFFFFF}\"\n\t\t\t\t\t width=\"${2:200}\" height=\"${3:200}\"\n\t\t\t\t\t cornerRadius=\"${4:4}\"\n\t\t\t\t\t borderStyle=\"${5:inset|solid}\" borderWeight=\"${6:2}\">\n\t<s:layout>\n    \t<s:HorizontalLayout paddingLeft=\"${7:5}\" paddingRight=\"${8:5}\" paddingTop=\"${9:5}\" paddingBottom=\"${10:5}\"/>\n\t</s:layout>\n\t$11\n</${0:s|}BorderContainer>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Box",
+					"description": "Creates a Box",
+					"content": "<${0:mx:}Box width=\"${1:200}\" height=\"${2:200}\"\n\t\t  direction=\"${3:vertical|horizontal}\"\n\t\t  paddingTop=\"${4:0}\" paddingBottom=\"${5:0}\" paddingLeft=\"${6:0}\" paddingRight=\"${7:0}\"\n\t\t  borderStyle=\"${8:solid|none|inset|outset}\">\n\t$9\n</${0:mx:}Box>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Button",
 					"description": "Creates a MX Button",
-					"trigger": "<mx:b",
-					"name": "mx:button",
-					"content": "<mx:Button id=\"${0:button}\" label=\"${2:myButton}\" click=\"${3:onClick}\">"
+					"content": "<${0:mx:}Button id=\"${1:button}\" label=\"${2:myButton}\" click=\"${3:onClick}(${4:event})\"/>$5"
 				},
 				{
 					"syntax": "mxml",
-					"content": "only in MXLM...",
-					"name": "MX Component",
-					"description": "Makes an MX Component!"
+					"name":"Button",
+					"description": "Creates a Spark Button",
+					"content": "<${0:s:}Button id=\"${1:button}\" label=\"${2:myButton}\" click=\"${3:onClick}(${4:event})\"/>$5"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Canvas",
+					"description": "Creates a Canvas",
+					"content": "<${0:mx:}Canvas width=\"${1:200}\" height=\"${2:200}\"\n\t\t\t borderStyle=\"${3:solid|none|inset|outset}\">\n\t$4\n</${0:mx:}Canvas>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Checkbox",
+					"description": "Creates a MX Checkbox",
+					"content": "<${0:mx:}CheckBox id=\"${1:checkBox}\" label=\"${2:myCheckBox}\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Checkbox",
+					"description": "Creates a Spark CheckBox",
+					"content": "<${0:s:}CheckBox id=\"${1:checkBox}\" label=\"${2:myCheckBox}\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"ComboBox",
+					"description": "Creates a MX Combobox",
+					"content": "<${0:mx:}ComboBox id=\"${1:comboBox}\"\n\t\t\t   rowCount=\"${2:5}\" selectedIndex=\"${3:0}\"\n\t\t\t   dataProvider=\"{${4:dataProvider}}\"/>$5"
+				},
+				{
+					"syntax": "mxml",
+					"name":"ComboBox ",
+					"description": "Creates a Spark ComboBox",
+					"content": "<${0:s:}ComboBox id=\"${1:comboBox}\" \n\t\t\t  selectedIndex=\"${2:0}\"\n\t\t\t  dataProvider=\"{${3:dataProvider}}\"/>$4"
+				},
+				{
+					"syntax": "mxml",
+					"name":"mx:DataGrid",
+					"description": "Creates a MX DataGrid",
+					"content": "<${0:mx:}DataGrid id=\"${1:dataGrid}\"\n\t\t\t   width=\"${2:200}\" height=\"${3:200}\"\n\t\t\t   rowCount=\"${4:10}\"\n\t\t\t   dataProvider=\"{${5:dataProvider}}\">\n\t<${0:mx:}columns>\n\t\t<${0:mx:}DataGridColumn headerText=\"${6:Column1}\" dataField=\"${7:col1}\"/>\n\t\t<${0:mx:}DataGridColumn headerText=\"${8:Column2}\" dataField=\"${9:col2}\"/>\n\t\t<${0:mx:}DataGridColumn headerText=\"${10:Column3}\" dataField=\"${11:col3}\"/>\n\t\t$12\n\t</${0:mx:}columns>\n</${0:mx:}DataGrid>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"DataGrid",
+					"description": "Creates a Spark DataGrid",
+					"content": "<${0:s:}DataGrid id=\"${1:dataGrid}\" requestedRowCount=\"${2:4}\">\n\t<${0:s:}columns>\n\t\t<${0:s:}ArrayList>\n\t\t\t<${0:s:}GridColumn dataField=\"${3:dataField1}\" headerText=\"${4:Column1}\"></${0:s:}GridColumn>\n\t\t\t<${0:s:}GridColumn dataField=\"${5:dataField2}\" headerText=\"${6:Column2}\"></${0:s:}GridColumn>\n\t\t\t<${0:s:}GridColumn dataField=\"${7:dataField3}\" headerText=\"${8:Column3}\"></${0:s:}GridColumn>\n\t\t</${0:s:}ArrayList>\n\t</${0:s:}columns>\n\t<${0:s:}typicalItem>\n\t\t<${9:fx:}Object ${10:dataField1}=\"Sample Data\" ${11:dataField2}=\"Sample Data\" ${12:dataField3}=\"Sample Data\"></${9:fx:}Object>\n\t</${0:s:}typicalItem>\n\t<${0:s:}ArrayList>\n\t\t<${9:fx:}Object ${10:dataField1}=\"data1\" ${11:dataField2}=\"data1\" ${12:dataField3}=\"data1\"></${9:fx:}Object>\n\t\t<${9:fx:}Object ${10:dataField1}=\"data2\" ${11:dataField2}=\"data2\" ${12:dataField3}=\"data2\"></${9:fx:}Object>\n\t\t<${9:fx:}Object ${10:dataField1}=\"data3\" ${11:dataField2}=\"data3\" ${12:dataField3}=\"data3\"></${9:fx:}Object>\n\t\t<${9:fx:}Object ${10:dataField1}=\"data4\" ${11:dataField2}=\"data4\" ${12:dataField3}=\"data4\"></${9:fx:}Object>\n\t</${0:s:}ArrayList>\n\t$13\n</${0:s:}DataGrid>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"DataGroup",
+					"description": "Creates a DataGroup",
+					"content": "<${0:s:}DataGroup id=\"${dataGroup}\"\n\t\t\t   width=\"${width:values(200)}\" height=\"${height:values(200)}\"\n\t\t\t   dataProvider=\"{${dataProvider}}\"\n\t\t\t   itemRenderer=\"${ir:values(spark.skins.spark.DefaultItemRenderer,spark.skins.spark.DefaultComplexItemRenderer)}\">\n\t<${0:s:}layout>\n\t\t<${0:s:}VerticalLayout paddingTop=\"${5}\" paddingBottom=\"${5}\" paddingLeft=\"${5}\" paddingRight=\"${5}\" gap=\"${gap:values(5)}\"\n\t\t\thorizontalAlign=\"${hAlign:values(left,center,right)}\" verticalAlign=\"${vAlign:values(top,middle,bottom,justify,contentJustify)}\"/>\n\t</${0:s:}layout>\n\t${line_selection}${cursor}\n</${0:s:}DataGroup>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"DateFormatter",
+					"description": "Creates a DateFormatter",
+					"content": "<${0:mx:}DateFormatter id=\"${dateFormatter}\" formatString=\"${format:values('DD/MM/YYYY')}\"/>${cursor}"
+				},
+				{
+					"syntax": "mxml",
+					"name":"DateValidator",
+					"description": "Creates a DateValidator",
+					"content": "<mx:DateValidator id=\"${dateValidator}\"\n\t\t\t\t  source=\"{${textInput}}\" property=\"${text}\"\n\t\t\t\t  allowedFormatChars=\"${chars:values('/')}\"\n\t\t\t\t  trigger=\"{${button}}\"\n\t\t\t\t  triggerEvent=\"${click}\"\n\t\t\t\t  valid=\"${ifValid}(${event})\"\n\t\t\t\t  invalid=\"${ifInvalid}(${event})\"/>${cursor}"
+				},
+				{
+					"syntax": "mxml",
+					"name":"DropDownList",
+					"description": "Creates a DropDownList",
+					"content": "<${0:s:}DropDownList id=\"${dropDownList}\" \n\t\t\t\t  prompt=\"${promt:values('Select One')}\" \n\t\t\t\t  dataProvider=\"{${dataProvider}}\" \n\t\t\t\t  change=\"${onChange}(${event})\"/>${cursor}"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Ellipse",
+					"description": "Creates an Ellipse",
+					"content": "<${0:s:}Ellipse width=\"${200}\" height=\"${100}\">\n\t<${0:s:}stroke>\n\t\t<${0:s:}SolidColorStroke color=\"#${000000}\" weight=\"${1}\"/>\n\t</${0:s:}stroke>\t\t\n</${0:s:}Ellipse>${cursor}"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Form",
+					"description": "Creates a MX Form",
+					"content": "<${0:mx:}Form id=\"${form}\" width=\"${width:values(200)}\" height=\"${height:values(200)}\">\n\t<${0:mx:}FormHeading label=\"${headerLabel}\"/>\n\t<${0:mx:}FormItem label=\"${itemLabel}\" width=\"${100}%\" required=\"${req:values(false, true)}\">\n\t\t${cursor}\n\t</${0:mx:}FormItem>\n</${0:mx:}Form>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Form",
+					"description": "Creates a Spark Form",
+					"content": "<${0:s:}Form id=\"${form}\" width=\"${width:values(200)}\" height=\"${height:values(200)}\" defaultButton=\"{${submitButton}}\">\n\t<${0:s:}FormHeading label=\"${headingLabel}\"/>\n\t<${0:s:}FormItem label=\"${itemLabel}\" width=\"${100}%\" required=\"${req:values(false,true)}\">\n\t\t${cursor}\n\t</${0:s:}FormItem>\n\t<${0:s:}Button id=\"${submitButton}\" label=\"${Submit}\"/>\n</${0:s:}Form>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Group",
+					"description": "Creates a Group",
+					"content": "<${0:s:}Group width=\"${width:values('100')}%\" height=\"${height:values('100')}%\" >\n\t${line_selection}${cursor}\n</${0:s:}Group>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"HBox",
+					"description": "Creates a HBox",
+					"content": "<${0:mx:}HBox width=\"${width:values(200)}\" height=\"${height:values(200)}\" \n\t\t   paddingTop=\"${0}\" paddingBottom=\"${0}\" paddingLeft=\"${0}\" paddingRight=\"${0}\" \n\t\t   borderStyle=\"${border:values(solid,none,inset,outset)}\">\n\t${cursor}\n</${0:mx:}HBox>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"HGroup",
+					"description": "Creates a HGroup",
+					"content": "<${0:s:}HGroup width=\"${width:values('100')}%\" height=\"${height:values('100')}%\" >\n\t${line_selection}${cursor}\n</${0:s:}HGroup>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"HorizontalLayout",
+					"description": "Creates a HorizontalLayout with padding ,gap and align properties",
+					"content": "<${0:s:}HorizontalLayout paddingTop=\"${top:values(5)}\" paddingBottom=\"${bottom:values(5)}\" paddingLeft=\"${left:values(5)}\" paddingRight=\"${right:values(5)}\" gap=\"${gap:values(5)}\"\n\t\t\t\t\t  horizontalAlign=\"${hAlign:values(left,center,right)}\" verticalAlign=\"${vAlign:values(top,middle,bottom)}\"/>${cursor}"
+				},
+				{
+					"syntax": "mxml",
+					"name":"HTTPService",
+					"description": "Creates a HTTPService",
+					"content": "<${0:mx:}HTTPService id=\"${1:service}\"\n\t\turl=\"${2:url}\"\n\t\tfault=\"${3:onFault}(${4:event})\"\n\t\tresult=\"${5:onResult}(${6:event})\"\n\t\tresultFormat=\"${7:object|array|xml|e4x|flashvars|text}\"\n\t\tshowBusyCursor=\"${8:true|false}\"/>$9"
+				},
+				{
+					"syntax": "mxml",
+					"name":"IconItemRenderer",
+					"description": "Creates an IconItemRenderer for a List",
+					"content": "<${0:s:}itemRenderer>\n    <${1:fx:}Component>\n        <${0:s:}IconItemRenderer iconField=\"${2:iconField}\" iconWidth=\"${3:64}\" iconHeight=\"${4:64}\"/>\r\t</${1:fx:}Component>\n</${0:s:}itemRenderer>$5"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Image",
+					"description": "Creates a MX Image",
+					"content": "<${0:mx:}Image id=\"${1:image}\" source=\"${2:imageSource}\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Image",
+					"description": "Creates a Spark Image",
+					"content": "<${0:s:}Image id=\"${1:image}\" source=\"${2:imageSource}\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Image wth embedded source",
+					"description": "Creates a Spark Image with embedded source",
+					"content": "<${0:s:}Image id=\"${1:image}\" source=\"@Embed(source='${2:imageSource}')\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Label",
+					"description": "Creates a MX Label",
+					"content": "<${0:mx:} id=\"${1:label}\" text=\"${2:myLabel}\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Label",
+					"description": "Creates a Spark Label",
+					"content": "<${0:s:} id=\"${1:label}\" text=\"${2:myLabel}\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"layout with HorizontalLayout",
+					"description": "Creates a layout tag with HorizontalLayout having padding, gap and align properties",
+					"content": "<${0:s:}layout>\n\t<${0:s:}HorizontalLayout paddingTop=\"${1:5}\" paddingBottom=\"${2:5}\" paddingLeft=\"${3:5}\" paddingRight=\"${4:5}\" gap=\"${5:5}\"\n\t\t\t\t\t\t  horizontalAlign=\"${6:left|center|right}\" verticalAlign=\"${7:top|middle|bottom}\"/>\n</${0:s:}layout>$8"
+				},
+				{
+					"syntax": "mxml",
+					"name":"layout with VerticalLayout",
+					"description": "Creates a layout tag with VerticalLayout having padding, gap and align properties",
+					"content": "<${0:s:}layout>\n\t<${0:s:}VerticalLayout paddingTop=\"${1:5}\" paddingBottom=\"${2:5}\" paddingLeft=\"${3:5}\" paddingRight=\"${4:5}\" gap=\"${6:5}\"\n\t\t\t\t\t\thorizontalAlign=\"${7:left|center|right}\" verticalAlign=\"${8:top|middle|bottom}\"/>\n</${0:s:}layout>$9"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Library",
+					"description": "Creates a Library",
+					"content": "<${0:fx:}Library>\n  <${0:fx:}Definition name=\"${1:definitionName}\">\n    $2\n  </${0:fx:}Definition>\n</${0:fx:}Library>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Line",
+					"description": "Creates a Line",
+					"content": "<${0:s:}Line xFrom=\"${1:0}\" xTo=\"${2:100}\" yFrom=\"${3:0}\" yTo=\"${4:100}\" >\n\t<${0:s:}stroke>\n\t\t<${0:s:}SolidColorStroke color=\"#${5:000000}\" weight=\"${6:1}\"/>\n\t</${0:s:}stroke>\n</${0:s:}Line>$7"
+				},
+				{
+					"syntax": "mxml",
+					"name":"List",
+					"description": "Creates a Spark List",
+					"content": "<${0:s:}List id=\"${1:myList}\" dataProvider=\"{${2:arrayColl}}\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"List with inline dataProvider",
+					"description": "Creates a MX List with inline dataProvider",
+					"content": "<${0:mx:}List id=\"${1:myList}\">\n\t<${2:dataProvider}>\n\t\t<${3:arraycollection}>\n\t\t\t$5\n\t\t</${3:arraycollection}>\n\t</${2:dataProvider}>\n</${4:list}>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"List with inline dataProvider",
+					"description": "Creates a Spark List with inline dataProvider",
+					"content": "<${0:s:}List id=\"${1:myList}\">\n\t<${2:dataProvider}>\n\t\t<${3:arraycollection}>\n\t\t\t$5}\n\t\t</${3:arraycollection}>\n\t</${2:dataProvider}>\n</${4:list}>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"MultiDPIBitmapSource",
+					"description": "Creates an instance of MultiDPIBitmapSource",
+					"content": "<${0:s:}MultiDPIBitmapSource\n\tsource160dpi=\"@Embed('${1:source160dpi}')\"\n\tsource240dpi=\"@Embed('${2:source240dpi}')\"\n\tsource320dpi=\"@Embed('${3:source320dpi}')\"/>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"NumberFormatter",
+					"description": "Creates a NumberFormatter",
+					"content": "<${0:mx:}NumberFormatter id=\"${1:numberFormatter}\" \n\t\t\t\t\t  precision=\"${2:4}\" \n\t\t\t\t\t  useThousandsSeparator=\"${3:true|false}\" \n\t\t\t\t\t  useNegativeSign=\"${4:true|false}\"/>$5"
+				},
+				{
+					"syntax": "mxml",
+					"name":"NumberValidator",
+					"description": "Creates a NumberValidator",
+					"content": "<${0:mx:}NumberValidator id=\"${1:numberValidator}\"\n\t\t\t\t\t  source=\"{${2:textInput}}\" property=\"${3:text}\" \n\t\t\t\t\t  allowNegative=\"${4:true|false}\" \n\t\t\t\t\t  domain=\"${6:real|int}\"\n\t\t\t\t\t  trigger=\"{${7:button}}\"\n\t\t\t\t\t  triggerEvent=\"${8:click}\"\n\t\t\t\t\t  valid=\"${9:ifValid}(${10:event})\"\n\t\t\t\t\t  invalid=\"${11:ifInvalid}(${12:event})\"/>$13"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Panel with HorizontalLayout",
+					"description": "Creates a Spark Panel with a HorizontalLayout",
+					"content": "<${0:s:}Panel id=\"${1:panel}\" title=\"${2:Title}\"\n\t\t   width=\"${3:200}\" height=\"${4:200}\">\n\t<${0:s:}layout>\n\t\t<${0:s:}HorizontalLayout/>\n\t</${0:s:}layout>\n\t${cursor}\n</${0:s:}Panel>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Panel with VerticalLayout",
+					"description": "Creates a Spark Panel with a VerticalLayout",
+					"content": "<${0:s:}Panel id=\"${1:panel}\" title=\"${2:Title}\"\n\t\t   width=\"${3:200}\" height=\"${4:200}\">\n\t<${0:s:}layout>\n\t\t<${0:s:}VerticalLayout/>\n\t</${0:s:}layout>\n\t${cursor}\n</${0:s:}Panel>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"PhoneFormatter",
+					"description": "Creates a PhoneFormatter",
+					"content": "<${0:mx:}PhoneFormatter id=\"${1:phoneFormatter}\" formatString=\"${2:'(###) ###-####'}\" validPatternChars=\"${3:' #-()'}\"/>$4"
+				},
+				{
+					"syntax": "mxml",
+					"name":"PhoneNumberValidator",
+					"description": "Creates a PhoneNumberValidator",
+					"content": "<${0:mx:}PhoneNumberValidator id=\"${1:phoneNumberValidator}\"\n\t\t\t\t\t\t   source=\"{${2:textInput}}\" property=\"${3:text}\"\n\t\t\t\t\t\t   allowedFormatChars=\"${4:allowedChars:values(' #-()')}\"\n\t\t\t\t\t\t   minDigits=\"${5:10}\"\n\t\t\t\t\t\t   trigger=\"{${6:button}}\"\n\t\t\t\t\t\t   triggerEvent=\"${7:click}\"\n\t\t\t\t\t       valid=\"${8:ifValid}(${9:event})\"\n\t\t\t\t\t       invalid=\"${10:ifInvalid}(${11:event})\"/>$12"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Rect",
+					"description": "Creates a Rectangle",
+					"content": "<${0:s:}Rect width=\"${1:200}\" height=\"${2:100}\">\n\t<${0:s:}stroke>\n\t\t<${0:s:}SolidColorStroke color=\"#${3:000000}\" weight=\"${4:1}\"/>\n\t</${0:s:}stroke>\n</${0:s:}Rect>$5"
+				},
+				{
+					"syntax": "mxml",
+					"name":"RemoteObject",
+					"description": "Creates a MX RemoteObject",
+					"content": "<${0:mx:}RemoteObject id=\"${1:remoteObject}\"\n\t\t\t\t   source=\"${2:roSource}\"\n\t\t\t\t   destination=\"${3:dest}\"\n\t\t\t\t   endpoint=\"${4:url}\"\n\t\t\t\t   fault=\"${5:onFault}(${6:event})\"\n\t\t\t\t   showBusyCursor=\"${6:true|false}\">\n \t<${0:mx:}method name=\"${7:roMethod}\" result=\"${8:onResult}(${9:event})\" fault=\"${10:onFault}(${11:event})\">\n\t\t<${0:mx:}arguments>\n\t\t\t<arg1>{${12:text}}</arg1>\n        </${0:mx:}arguments>\n    </${0:mx:}method>\n\t$13\n</${0:mx:}RemoteObject>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"RemoteObject",
+					"description": "Creates a Spark RemoteObject",
+					"content": "<${0:s:}RemoteObject id=\"${1:remoteObject}\"\n\t\t\t\t   source=\"${2:roSource}\"\n\t\t\t\t   destination=\"${3:dest}\"\n\t\t\t\t   endpoint=\"${4:url}\"\n\t\t\t\t   fault=\"${5:onFault}(${6:event})\"\n\t\t\t\t   showBusyCursor=\"${6:true|false}\">\n \t<${0:s:}method name=\"${7:roMethod}\" result=\"${8:onResult}(${9:event})\" fault=\"${10:onFault}(${11:event})\">\n\t\t<${0:s:}arguments>\n\t\t\t<arg1>{${12:text}}</arg1>\n        </${0:s:}arguments>\n    </${0:s:}method>\n\t$13\n</${0:s:}RemoteObject>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Script",
+					"description": "Creates a MX Script/CDATA section",
+					"content": "<${0:mx:}Script>\n\t<![CDATA[\n\t\t$1\n\t]]>\n</${0:mx:}Script>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"Script",
+					"description": "Creates a Spark Script/CDATA section",
+					"content": "<${0:fx:}Script>\n\t<![CDATA[\n\t\t$1\n\t]]>\n</${0:fx:}Script>\n"
+				},
+				{
+					"syntax": "mxml",
+					"name":"StringValidator",
+					"description": "Creates a StringValidator",
+					"content": "<${0:mx:}StringValidator id=\"${1:stringValidator}\"\n\t\t\t\t\t  source=\"{${1:textInput}}\" property=\"${2:text}\"\n\t\t\t\t\t  minLength=\"${3:1}\"\n\t\t\t\t\t  maxLength=\"${4:25}\"\n\t\t\t\t\t  tooShortError=\"This string is shorter than the minimum allowed length of ${5:1}.\"\n\t\t\t\t\t  tooLongError=\"This string is longer than the maximum allowed length of ${6:25}.\"\n\t\t\t\t\t  trigger=\"{${7:button}}\"\n\t\t\t\t\t  triggerEvent=\"${8:click}\"\n\t\t\t\t\t  valid=\"${9:ifValid}(${10:event})\"\n\t\t\t\t\t  invalid=\"${11:ifInvalid}(${12:event})\"/>$13"
+				},
+				{
+					"syntax": "mxml",
+					"name":"VBox",
+					"description": "Creates a VBox",
+					"content": "<${0:mx:}VBox width=\"${1:200}\" height=\"${2:200}\" \n\t\t   paddingTop=\"${3:0}\" paddingBottom=\"${4:0}\" paddingLeft=\"${5:0}\" paddingRight=\"${6:0}\" \n\t\t   borderStyle=\"${7:solid|none|inset|outset}\">\n\t$8\n</${0:mx:}VBox>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"VerticalLayout ",
+					"description": "Creates a VerticalLayout with padding ,gap and align properties",
+					"content": "<${0:s:}VerticalLayout paddingTop=\"${1:5}\" paddingBottom=\"${2:5}\" paddingLeft=\"${3:5}\" paddingRight=\"${4:5}\" gap=\"${5:5}\" \n\t\t\t\t\thorizontalAlign=\"${6:left|center|right}\" verticalAlign=\"${7:top|middle|bottom}\"/>$8"
+				},
+				{
+					"syntax": "mxml",
+					"name":"VGroup",
+					"description": "Creates a VGroup",
+					"content": "<${0:s:}VGroup width=\"${1:'100'}%\" height=\"${2:'100'}%\" >\n\t$3\n</${0:s:}VGroup>"
+				},
+				{
+					"syntax": "mxml",
+					"name":"WebService",
+					"description": "Creates a WebService",
+					"content": "<${0:mx:}WebService id=\"${1:service}\"\n\t\twsdl=\"${2:wsdl}\"\n\t\tuseProxy=\"${3:false|true}\"\n\t\tshowBusyCursor=\"${4:true|false}\"\n\t\tresult=\"${5:onResult}(${6:event})\"\n        fault=\"${7:onFault}(${8:event})\">\n</${9:webservice}>$10"
+				},
+				{
+					"syntax": "mxml",
+					"name":"ZipCodeFormatter",
+					"description": "Creates a ZipCodeFormatter",
+					"content": "<${0:mx:}ZipCodeFormatter id=\"${1:zipCodeFormatter}\" formatString=\"${2:'#####-####'}\"/>$3"
+				},
+				{
+					"syntax": "mxml",
+					"name":"ZipCodeValidator",
+					"description": "Creates a ZipCodeValidator",
+					"content": "<${0:mx:}ZipCodeValidator id=\"${1:zipCodeValidator}\"\n\t\t\t\t\t   source=\"{${2:textInput}}\" property=\"${3:text}\"\n\t\t\t\t\t   allowedFormatChars=\"${4:' -'}\"\n\t\t\t\t\t   trigger=\"{${5:button}}\"\n\t\t\t\t\t   triggerEvent=\"${6:click}\"\n\t\t\t\t\t   valid=\"${7:ifValid}(${8:event})\"\n\t\t\t\t\t   invalid=\"${9:ifInvalid}(${10:event})\"/>$11"
 				}
 			]
 		}
