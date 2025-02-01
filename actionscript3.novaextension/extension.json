@@ -396,18 +396,6 @@
 					"description": "Select the .p12 file to build your AIR app with"
 				},
 				{
-					"key": "as3.packaging.type",
-					"title": "Export as",
-					"default": "Signed AIR package",
-					"type":  "enum",
-					"values": [
-						["Signed AIR package"],
-						["Signed native installer"],
-						["Signed application with captive runtime"],
-						["Intermediate AIRI package that must be manually signed later"]
-					]
-				},
-				{
 					"key": "as3.packaging.timestamp",
 					"title": "Timestamp",
 					"type": "boolean",

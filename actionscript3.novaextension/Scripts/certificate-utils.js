@@ -369,7 +369,8 @@ exports.getCertificatePasswordInKeychain = function(certificateLocation) {
 
 	// Check if we have the password stored in the user's Keychain
 	var passwordCheck = nova.credentials.getPassword("export-with-"+certificateName,certificateLocation);
-	if(passwordCheck==null) {
+
+	if(passwordCheck===undefined || passwordCheck==null) {
 		passwordCheck = "";
 	}
 

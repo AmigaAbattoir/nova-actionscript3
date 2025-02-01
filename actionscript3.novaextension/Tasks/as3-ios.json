@@ -199,6 +199,7 @@
 						"placeholder": "Your project's certificate",
 						"allowFolders": false,
 						"allowFiles": true,
+						"filetype": "com.rsa.pkcs-12",
 						"description": "You will need to convert your Apple iOS developer certificate into P12 format",
 						"link": "http://www.adobe.com/go/fb_ios_cert"
 					},
@@ -206,6 +207,7 @@
 						"key": "as3.packaging.provisioningFile",
 						"title": "Provisioning file",
 						"type": "path",
+						"filetype": "com.apple.mobileprovision",
 						"allowFolders": false,
 						"allowFiles": true
 					},

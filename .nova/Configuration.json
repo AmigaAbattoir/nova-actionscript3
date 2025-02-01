@@ -1,6 +1,7 @@
 {
   "as3.project.asconfigMode" : "manual",
   "as3.project.importedFB" : "done",
+  "com.tommasonegri.novatypes.isNovaExtension" : true,
   "workspace.art_style" : 0,
   "workspace.color" : 0,
   "workspace.name" : "ActionScript 3 Extension",

@@ -206,6 +206,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						configOverrides["appXMLName"] = customApp.appXMLName;
 					}
 
+					var provisioningProfile;
+					// If we are packaing for iOS, we want to make sure that the provisioning profile is set before attempting to build
+					if(taskConfig["as3.target"]=="ios") {
+						provisioningProfile = taskConfig["as3.packaging.provisioningFile"];
+						if(provisioningProfile==undefined || provisioningProfile==null) {
+							nova.workspace.showErrorMessage("When exporting a package for iOS, you must set a provisioningProfile in the Task!");
+							return;
+						}
+					}
+
 					this.build(projectType, "release", true, configOverrides).then((resolve) => {
 						const configValues = getConfigsForPacking(taskConfig["as3.task.applicationFile"]);
 						let flexSDKBase = configValues.flexSDKBase;
@@ -322,58 +332,100 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							var args = [];
 							var env = {};
 
-							args.push("-package");
-
-							// Only for Android building
-							if(taskConfig["as3.target"]=="android") {
-								// Check if we want to disable AIR Flair. I know I do!
-								var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];								if(noAndroidAirFlair!=undefined) {
-									// console.log("AIR FLAIR: " + noAndroidAirFlair);								} else {
-									noAndroidAirFlair = false;
-									// console.log("AIR FLAIR undefined, so now it'll be false!");								}
-
-								if(noAndroidAirFlair) {
-									env = { AIR_NOANDROIDFLAIR: "true" };
-								}
-
-								args.push("-target");
-								var targetType = taskConfig["as3.deployment.target"];
-								if(targetType==null) {
-									targetType = "apk"
-								}
-								args.push(targetType);
-								if(targetType.indexOf("aab")!=-1) {
-									packageName = packageName.replace(/\.air$/, ".aab");
-								} else {
-									// @NOTE Not sure what the android-studio packages should be...
-									packageName = packageName.replace(/\.air$/, ".apk");
-								}
-								args.push("-arch");
-								// console.log("taskConfig: ");
-								// consoleLogObject(taskConfig);
-								// console.log("taskConfig[as3.deployment.arch]: " + taskConfig["as3.deployment.arch"]);
-								var archType = taskConfig["as3.deployment.arch"];
-								if(archType==null) {
-									archType = "armv7";
-								}
-								args.push(archType);
-							}
-
-							args.push("-storetype");
-							args.push("pkcs12");
-							args.push("-keystore");
-							args.push(certificateLocation);
-
-							args.push("-storepass");
-							args.push(password);
-
-							if(doTimestamp==false) {
-								args.push("-tsa");
-								args.push("none");
+							if(taskConfig["as3.packaging.type"]=="intermediate") {
+								args.push("-prepare");
+								packageName = packageName.replace(/\.air$/, ".airi");
 							} else {
-								if(timestampURL!=null && timestampURL!="") {
+								args.push("-package");
+
+								// Only for Android building
+								if(taskConfig["as3.target"]=="android") {
+									// Check if we want to disable AIR Flair. I know I do!
+									var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];									if(noAndroidAirFlair!=undefined) {
+										// console.log("AIR FLAIR: " + noAndroidAirFlair);									} else {
+										noAndroidAirFlair = false;
+										// console.log("AIR FLAIR undefined, so now it'll be false!");									}
+
+									if(noAndroidAirFlair) {
+										env = { AIR_NOANDROIDFLAIR: "true" };
+									}
+
+									args.push("-target");
+									var targetType = taskConfig["as3.deployment.target"];
+									if(targetType==null) {
+										targetType = "apk"
+									}
+									args.push(targetType);
+									if(targetType.indexOf("aab")!=-1) {
+										packageName = packageName.replace(/\.air$/, ".aab");
+									} else {
+										// @NOTE Not sure what the android-studio packages should be...
+										packageName = packageName.replace(/\.air$/, ".apk");
+									}
+									args.push("-arch");
+									// console.log("taskConfig: ");
+									// consoleLogObject(taskConfig);
+									// console.log("taskConfig[as3.deployment.arch]: " + taskConfig["as3.deployment.arch"]);
+									var archType = taskConfig["as3.deployment.arch"];
+									if(archType==null) {
+										archType = "armv7";
+									}
+									args.push(archType);
+								}else if(taskConfig["as3.target"]=="ios") {
+									args.push("-target");
+									args.push("ipa-debug");
+
+									packageName = packageName.replace(/\.air$/, ".ipa");
+								}
+
+								args.push("-storetype");
+								args.push("pkcs12");
+
+								args.push("-keystore");
+								args.push(certificateLocation);
+
+								args.push("-storepass");
+								args.push(password);
+
+
+								if(taskConfig["as3.target"]=="ios") {
+									args.push("-provisioning-profile");
+									args.push(provisioningProfile);
+								}
+
+								if(doTimestamp==false) {
 									args.push("-tsa");
-									args.push(timestampURL);
+									args.push("none");
+								} else {
+									if(timestampURL!=null && timestampURL!="") {
+										args.push("-tsa");
+										args.push(timestampURL);
+									}
+								}
+
+								// In order to build a native app installer or an app with captive runtime, the `-target`
+								// needs to be after the SIGNING_OPTIONS or it will fails saying "Native signing not supported on mac"
+								if(taskConfig["as3.target"]!="android" && taskConfig["as3.target"]!="ios") {
+									switch(taskConfig["as3.packaging.type"]) {
+										case "signed-native": {
+											nova.workspace.showErrorMessage("Signed native installers not supported (yet)!");
+											args.push("-target");
+											args.push("native");
+
+											packageName = packageName.replace(/\.air$/, ".dmg");
+											break;
+										}
+										case "signed-captive": {
+											args.push("-target");
+											args.push("bundle");
+
+											packageName = packageName.replace(/\.air$/, ".app");
+											break;
+										}
+										default: {
+											break;
+										}
+									}
 								}
 							}
 
@@ -403,6 +455,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								}
 							});
 
+							// For Android, add the platform SDK
+							// @TODO Check which version of the SDK this became an option
 							if(taskConfig["as3.target"]=="android") {
 								args.push("-platformsdk");
 								var platformSdk = taskConfig["as3.deployment.platfromsdk"];
@@ -702,9 +756,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			// Replace content that the IDEs were supposed to and then write the app.xml to the output folder
 			try {
-				var newAppXML = appXML;
-				var newAppXML = appXML.replace(/\[This value will be overwritten by .*? app.xml\]/,exportName);       // Change's Flashbuilder's text
-				newAppXML = newAppXML.replace(/[Path to content will be replaced by Visual Studio Code]/,exportName); // Just incase you used AS3MXML wiki
+				var newAppXML = appXML.replace(/\[This value will be overwritten by .*? app.xml\]/,exportName);         // Change's Flash Builder's placeholder
+ 				newAppXML = newAppXML.replace(/\[Path to content will be replaced by Visual Studio Code\]/,exportName); // Just incase you used AS3MXML wiki
 				var newAppXMLFile = nova.fs.open(destDir + "/" + appXMLName, "w");
 				newAppXMLFile.write(newAppXML);
 				newAppXMLFile.close();
@@ -856,10 +909,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @TODO
 	 * Run the project with debugger (Not implemented yet, so it's just running as usual!)
 	 * @param {string} projectType - Which type of project, "air|airmobile|flex|flash"
-	 * @param {string} profile - Which type of profile to use
 	 * @param {Object} config - The Task's configs
 	 */
-	debugRun(projectType, profile, config) {
+	debugRun(projectType, config) {
 		/*
 		const configValues = getConfigsForBuild(true);
 		let flexSDKBase = configValues.flexSDKBase;
@@ -905,16 +957,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			return action;
 		});
 */
-		return this.run(projectType, profile, config);
+		return this.run(projectType, config);
 	}
 
 	/**
 	 * Runs the project using Nova's task system
 	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
-	 * @param {string} profile - Which type of profile to use
 	 * @param {Object} config - The Task's configs
 	 */
-	run(projectType, profile, config) {
+	run(projectType, config) {
 		console.log("projectType: " + projectType)
 		let command = "";
 		let args = [];
@@ -988,6 +1039,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			const configValues = getConfigsForBuild(true);
 			let flexSDKBase = configValues.flexSDKBase;
 			let destDir = configValues.destDir;
+			let mainSrcDir = configValues.mainSrcDir;
 			let appXMLName = configValues.appXMLName;
 
 			var runningOnDevice = false;
@@ -1013,20 +1065,35 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				args.push(screenSize);
 			}
 
-			if (nova.inDevMode()) {
-				console.log("CONFIG: " + profile);
-			}
-			// @TODO If default, we should check the -app.xml to see if there is a profile specified
-			if(profile!="default") {
-				args.push("-profile");
-				args.push(profile);
-			} else {
-				// If it's default, make sure to use mobileDevice if were are in a airmobile task. Otherwise, we'll get errors
-				if(profile=="default" && projectType=="airmobile") {
-					args.push("-profile");
-					args.push("mobileDevice");
+			args.push("-profile");
+			// Check if the Task set's the profile or if we need to check in the app-xml
+			var profileType = config["as3.task.profile"];
+			if(profileType===undefined || profileType=="default") {
+				try {
+					let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
+					let appXML = getStringOfFile(appXMLLocation);
+					if(appXML!=null) {
+						// Read the App XML and make sure the Namespace is the same version!
+						let supportedProfile =  new xmlToJson.ns3x2j(appXML).findNodesByName("supportedProfiles");
+						profileType = supportedProfile[0].textContent.split(" ")[0];
+					}
+				}catch(error) {
+					// If there's an error, we'll figure it out later.
+					if (nova.inDevMode()) {
+						console.log("There was an error trying to read the app-xml for which profile to user: " + error);
+					}
 				}
 			}
+
+			// If we still don't have a profile, then we will assume which one to use!
+			if(profileType===undefined || profileType=="default") {
+				if(projectType=="airmobile") {
+					profileType = "mobileDevice";
+				} else {
+					profileType = "desktop";
+				}
+			}
+			args.push(profileType);
 
 			// ADL wants the directory with the ANEs
 			/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
@@ -1414,16 +1481,10 @@ consoleLogObject(data);
 		if(action==Task.Build) {
 			return this.build(projectType, runMode, false);
 		} else if(action==Task.Run) {
-			// @TODO Check if the output files are there, otherwise prompt to build
-			var profile = config.get("as3.task.profile");
-			if(profile=="default") {
-				// @TODO Find it in the XML
-			}
-
 			if(runMode=="debug") {
-				return this.debugRun(projectType, profile, config);
+				return this.debugRun(projectType, config);
 			} else {
-				return this.run(projectType, profile, config)
+				return this.run(projectType, config)
 			}
 		} else if(action==Task.Clean) {
 			const configValues = getConfigsForBuild(true);
