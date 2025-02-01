@@ -2,7 +2,7 @@
 
 Is a **Work In Progress** extension for ActionScript 3 & MXML.
 
-The goal was to be able to have a replacement for all my old Adobe Flash Build projects, so that I didn't need to build an new file to handle building or running, but that the extension would do all the lifting. Ideally, it will just read the old Flash Builder settings, and set everything up for me, and it's getting pretty close to that.
+The goal was to be able to have a replacement for all my old Adobe Flash Build projects, so that I didn't need to build an new file to handle building or running, but that the extension would do all the lifting. Ideally, it will just read the old Flash Builder settings, and set everything up for me. And it's getting pretty close to that.
 
 It currently provides:
 
@@ -25,7 +25,7 @@ It currently provides:
 
  * **Tasks** - Use Nova's Clean/Build/Run for AIR desktop project, mobile project (currently, only through Desktop simulator), and Flash web based project (using either SWFObject from the AIR SDK or a basic page using Ruffle). Also, limited support for ANEs.
 
- * **Exporting AIR Packages** - AIR, AIRI, Captive bundles, and native installer for Mac should work (have not tested submitting to app store for Mac apps). Android and iOS packaging should work, but have not tested submitting them to app stores.
+ * **Exporting AIR Packages** - AIR, AIRI, Captive bundles, and native installer for Mac should work (have not tested submitting to app store for Mac apps). Android and iOS packaging should work (again, I have not tested submitting them to app stores).
 
 ## Todo
 
@@ -74,7 +74,7 @@ If you open a folder that contains a Flash Builder project (and has `.actionScri
 
 Since the LSP AS3MXML requires requires an `asconfig.json` for most of the code intelligence and completions, the extension will ask if you want to have it generate one and automatically update it. If you select update, it should only change options that are needed in this extension. Building options are not changed in the `asconfig.json` and not used by this extension.
 
-*NOTE:* If building a Flash project, and using the Ruffle template, you will need to use Nova's External Preview since Ruffle does not allow the use of "file:" protocol for loading SWFs.
+*NOTE:* If building a Flash project and using the Ruffle template, you will need to use Nova's External Preview since Ruffle does not allow the use of "file:" protocol for loading SWFs.
 
 ## Configuration
 
@@ -88,17 +88,18 @@ Tasks also have a bunch of options too! Don't miss out on **Project â†’ Tasks â†
 
 Task play an important role in build/run as well as exporting of packages. There are different ones available, based on how you plan to package your project. Each project can also include multiple Task, so you can easily switch between building one project for multiple devices. The option to Export Release Build will ask which Task to export.
 
-* ![](Images/as3-air/as3-air.png) **AIR** - Use this to be able to build/run/export Adobe AIR project for desktop
+* ![](Images/as3-air/as3-air.png) **AIR** - Use this to be able to build/run/export Adobe AIR project for desktop. You should be able to generate AIR packages, Mac Apps, and Mac installers with this Task type.
 
-* ![](Images/as3-android/as3-android.png)  **AIR - Android** - Use this for packaging for Android devices
+* ![](Images/as3-android/as3-android.png)  **AIR - Android** - Use this for packaging for Android devices.
 
-* ![](Images/as3-ios/as3-ios.png)  **AIR - iOS** - Use this to allow for packaging for iOS devices
+* ![](Images/as3-ios/as3-ios.png)  **AIR - iOS** - Use this to allow for packaging for iOS devices.
 
 * ![](Images/as3-flash/as3-flash.png)  **Flash** - Use this to be able build for web. There are options to make it for web using old style SWFObject and a light-weight Ruffle html page.
 
 ## Flash Builder migration
 
-This extension allows for the reading of configuration files from Adobe Flash Builder. While Flash Builder is no longer supported by Adobe, this extension allows users to migrate their existing project for use in Panic Nova.
+This extension allows for the reading of configuration files from Adobe Flash Builder project files (`.flexProperties`,`.actionScriptProperties`,`.project`). While Flash Builder is no longer supported by Adobe, this extension allows users to migrate their existing project for use in Panic Nova.
+
 If you have Flash Builder projects, a lot of the settings from those projects can be imported to the Nova project's workspace settings. It will also generate Tasks for each build target that there was in the Flash Builder project and set their preferences.
 
 *NOTES:*
