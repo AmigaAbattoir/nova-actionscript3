@@ -990,7 +990,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 				if(nova.config.get("as3.flashPlayer.browserCustomUser")==true) {
 					// Make a temp old user
-					const userDataDir = "/tmp/old-chrome-profile"; ////nova.workspace.config.get("flash.chrome.userDataDir") || "/tmp/old-chrome-profile"; // Path to a custom profile
+					const userDataDir = "/tmp/old-chrome-profile";
 
 					// Ensure the custom profile directory exists
 					if (!nova.fs.stat(userDataDir)) {
@@ -1004,24 +1004,20 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						"--enable-npapi",                 // Enable NPAPI (needed for Flash)
 						"--no-first-run",                 // Suppress first-run prompts
 						//"--disable-web-security",       // Optional: disable web security for testing
-						"--disable-extensions",           // Disable Chrome extensions
+						//"--disable-extensions",           // Disable Chrome extensions
 					];
 				}
 
-				args.push(destDir + "/" +  "BounceTest.html");
+				args.push(destDir + "/" +  exportName.replace(".swf",".html"));
 
 				if (nova.inDevMode()) {
 					console.log(" *** Attempting to Run a webbrowser with Flash Player with [[" + command + "]] ARG: \n");
 					consoleLogObject(args);
 				}
 			} else {
-// console.log("config.get(as3.launch.type): " + config.get("as3.launch.type"));
-// console.log("config.get(as3.flashPlayer.ruffle): " + nova.config.get("as3.flashPlayer.ruffle"));
-// console.log("config.get(as3.flashPlayer.standalone): " + nova.config.get("as3.flashPlayer.standalone"));
 				// Since Flash Player can actually have an executable of Flash Player Debugger or just Flash Player, let's just look in that
 				// .app's Content/MacOS folder! And we can also use that for Ruffle too, that way they user just select's the application!
 				fpApp = (config.get("as3.launch.type")=="ruffle" ? nova.config.get("as3.flashPlayer.ruffle") : nova.config.get("as3.flashPlayer.standalone") )
-// console.log("fpApp: " + fpApp);
 
 				command = getExec(fpApp);
 				if(command==null) {
