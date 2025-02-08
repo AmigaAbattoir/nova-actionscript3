@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 - Can store or clear stored passwords for certificates from menu
 - Can store certificate password for just the session
 - When exporting a release package, it will verify the password before trying to build the package
+- Added building of Library projects.
 
 ### Changed
 

@@ -2,7 +2,7 @@
 	"identifier": "com.abattoirsoftware.actionscript3",
 	"name": "ActionScript 3",
 	"organization": "",
-	"description": "ActionScript & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, or Apache Royale.",
+	"description": "ActionScript 3 & MXML language extension for Panic Nova. LSP powered directly from Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player, and maybe Apache Royale.",
 	"version": "0.7.3",
 	"keywords": ["actionscript 3","flash","air","adobe air","mxml" ],
 	"categories": [
@@ -88,15 +88,15 @@
 			"tasks": {
 				"build": {
 					"resolve": "actionscript",
-					"data": { "type": "actionscript" }
+					"data": { "type": "air" }
 				},
 				"clean": {
 					"resolve": "actionscript",
-					"data": { "type": "actionscript" }
+					"data": { "type": "air" }
 				},
 				"run": {
 					"resolve": "actionscript",
-					"data": { "type": "actionscript" }
+					"data": { "type": "air" }
 				}
 			},
 			"config": "Tasks/as3-air.json"
@@ -109,15 +109,15 @@
 			"tasks": {
 				"build": {
 					"resolve": "actionscript",
-					"data": { "type": "mobile", "os": "android" }
+					"data": { "type": "airmobile", "os": "android" }
 				},
 				"clean": {
 					"resolve": "actionscript",
-					"data": { "type": "mobile", "os": "android" }
+					"data": { "type": "airmobile", "os": "android" }
 				},
 				"run": {
 					"resolve": "actionscript",
-					"data": { "type": "mobile", "os": "android" }
+					"data": { "type": "airmobile", "os": "android" }
 				}			},
 			"config": "Tasks/as3-android.json"
 		},
@@ -129,41 +129,35 @@
 			"tasks": {
 				"build": {
 					"resolve": "actionscript",
-					"data": { "type": "mobile", "os": "ios" }
+					"data": { "type": "airmobile", "os": "ios" }
 				},
 				"clean": {
 					"resolve": "actionscript",
-					"data": { "type": "mobile", "os": "ios" }
+					"data": { "type": "airmobile", "os": "ios" }
 				},
 				"run": {
 					"resolve": "actionscript",
-					"data": { "type": "mobile", "os": "ios" }
+					"data": { "type": "airmobile", "os": "ios" }
 				}
 			},
 			"config": "Tasks/as3-ios.json"
 		},
-		"actionscript-airmobile": {
-			"COMMENT": "Probably not needed now since we're using separate iOS and Android files.",
-			"deprecated": "Please select either the \"AS3 - iOS\" or \"AS3 - Android\" task!",
-			"name": "AIR - Mobile",
-			"image": "as3-mobile",
-			"description": "Build and run AS3 or MXML project with AIR for mobile.",
+		"actionscript-lib": {
+			"name": "AS3 Library",
+			"image": "as3-lib",
+			"description": "Build an AS3 library.",
 			"persistent": true,
 			"tasks": {
 				"build": {
 					"resolve": "actionscript",
-					"data": { "type": "mobile" }
+					"data": { "type": "library" }
 				},
 				"clean": {
 					"resolve": "actionscript",
-					"data": { "type": "mobile" }
-				},
-				"run": {
-					"resolve": "actionscript",
-					"data": { "type": "mobile" }
+					"data": { "type": "library"}
 				}
 			},
-			"config": "Tasks/as3-mobile.json"
+			"config": "Tasks/as3-lib.json"
 		}
 	},
 

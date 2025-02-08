@@ -1,0 +1,67 @@
+[
+	{
+		"title": "Library Build Options",
+		"type": "section",
+		"description": "Options to set when building libraries\n\nNOTE: Autmoation of it is not implemented. You will have to manually add all the classes, resources and namespaces accordingly.",
+		"children": [
+			{
+				"title": "Automatically generate Class Entries",
+				"description": "*NOT IMPLEMENTED* Enable this so that when you build, the extension will populate the Class Entries below will all the classes in the project",
+				"type": "boolean",
+				"key": "as3.lib.includeAllClasses",
+				"default": false
+			},
+			{
+				"title": "Class Entries",
+				"description": "List of all the classes that should be available in the built library. Remember, it needs to include the package identity if the class is in a package!",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.lib.classEntries",
+						"title": "Class Entries",
+						"type": "stringArray"
+					}
+				]
+			},
+			{
+				"title": "Resources",
+				"description": "What resources should be copied to your library. NOTE: You need to have a 1:1 of the source and destination! Also, due to the way Nova handles path arrays, if the source items or destination items include the main source directory, they will be removed when packaging",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.lib.resource.dest",
+						"title": "Destination",
+						"type": "stringArray"
+					},
+					{
+						"key": "as3.lib.resource.source",
+						"title": "Source",
+						"allowFile": true,
+						"allowPath": false,
+						"type": "pathArray",
+						"relative": true
+					}
+				]
+			},
+			{
+				"title": "Namespace",
+				"description": "If your library wants to reference MXML from a custom namespace, you need to set these values. There needs to be a 1:1 of Manifests and Namespaces if you use this!!",
+				"type": "section",
+				"children": [
+					{
+						"key": "as3.lib.nsm.manifest",
+						"title": "manifest",
+						"description": "This should be the location of the manifest XML, like `META-INF/manifest.xml`",
+						"type": "stringArray"
+					},
+					{
+						"key": "as3.lib.nsm.namespace",
+						"title": "Namespace",
+						"description": "This should be the namespace used like `http://www.example.com/2009`",
+						"type": "stringArray"
+					}
+				]
+			}
+		]
+	}
+]

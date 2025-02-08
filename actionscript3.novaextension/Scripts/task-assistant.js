@@ -533,6 +533,110 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		}
 	}
 
+	buildLibrary(classEntries, resourceDestPathEntries, resourceSourcePathEntries, namespaceManifestEntryManifests, namespaceManifestEntryNamespaces) {
+		const configValues = getConfigsForBuild();
+
+		/** @TODO / @NOTE. Looks like FB stores the resources and namespace stuff relative to the main source folder!
+		Should this code be refactored to do the same?
+		Should it CD into the main source dir, and then have everything relative to that, and then check the assets to see
+		if we need to remove the main source dir content?
+
+		Do we need to have an option to include all classes? and then a function to generate
+
+		*/
+
+		let flexSDKBase = configValues.flexSDKBase;
+		if(flexSDKBase==null) {
+			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
+			return null;
+		}
+		let destDir = configValues.destDir;
+		let mainClass = configValues.mainClass;
+		let mainSrcDir = configValues.mainSrcDir;
+
+		var command = flexSDKBase + "/bin/compc";
+		var args = new Array();
+		/*
+		if(runMode=="debug") {
+			args.push("--debug=true");
+		}
+		*/
+		args.push("-source-path");
+		args.push(mainSrcDir);
+
+		args.push("-output");
+		args.push(destDir + "/" + mainClass + ".swc");
+
+		args.push("-library-path+=" + flexSDKBase + "/frameworks/libs");
+
+		let sameCount;
+
+		// Add Class entries, if there are any
+		if(classEntries) {
+			console.log(" Go through these! classEntries");
+			consoleLogObject(classEntries)
+
+			args.push("-include-classes");
+
+			classEntries.forEach((classEntry) => { args.push(classEntry); });
+		}
+
+		// Add Resources
+		if(resourceDestPathEntries && resourceSourcePathEntries) {
+			sameCount = (resourceDestPathEntries.length == resourceSourcePathEntries.length ? true : false);
+			if(sameCount && resourceDestPathEntries.length>0) {
+				// console.log(" Go through these! resourceDestPathEntries & resourceSourcePathEntries");
+				// consoleLogObject(resourceDestPathEntries)
+				// consoleLogObject(resourceSourcePathEntries)
+
+				for(let i = 0; i<resourceDestPathEntries.length; i++) {
+					args.push("-include-file");
+					args.push(resourceDestPathEntries[i]);
+					// @NOTE should this check if this is on the main source before appending??
+					args.push(mainSrcDir + "/" + resourceSourcePathEntries[i]);
+				}
+			} else if(sameCount==false) {
+				nova.workspace.showErrorMessage("Sorry, but the amount of resourceDestPathEntries and resourceSourcePathEntries do not match. Please make sure these align in the preferences!");
+				return null;
+			}
+		}
+
+		// Add Namespace
+		let namespaces = [];
+		if(namespaceManifestEntryManifests && namespaceManifestEntryNamespaces) {
+			sameCount = (namespaceManifestEntryManifests.length == namespaceManifestEntryNamespaces.length ? true : false);
+			if(sameCount && namespaceManifestEntryManifests.length>0) {
+				// console.log(" Go through these! namespaceManifestEntryManifests & namespaceManifestEntryNamespaces");
+				// consoleLogObject(namespaceManifestEntryManifests)
+				// consoleLogObject(namespaceManifestEntryNamespaces)
+
+				for(let i = 0; i<resourceDestPathEntries.length; i++) {
+					args.push("-namespace");
+					args.push(namespaceManifestEntryNamespaces[i]);
+					// @NOTE should this check if this is on the main source before appending??
+					args.push(mainSrcDir + "/" + namespaceManifestEntryManifests[i]);
+
+					// We need to keep track of these for later
+					namespaces.push(namespaceManifestEntryNamespaces[i]);
+				}
+
+				// Now, tell it to include the namespaces!
+				args.push("-include-namespaces");
+				namespaces.forEach((namespace) => { args.push(namespace) });
+			} else if(sameCount==false) {
+				nova.workspace.showErrorMessage("Sorry, but the amount of namespaceManifestEntryManifests and namespaceManifestEntryNamespaces do not match. Please make sure these align in the preferences!");
+				return null;
+			}
+		}
+
+		if (nova.inDevMode()) {
+			console.log(" *** Attempting to Run COMPC with [[" + command + "]] ARG: \n");
+			consoleLogObject(args);
+		}
+		return new TaskProcessAction(command, { args: args });
+	}
+
+
 	/**
 	 * Builds the SWF for the project
 	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
@@ -588,7 +692,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 		}
 
-		// Check if we are building a Flash project
+		// Check if we are building a Flash project or an AIR one now
 		if(projectType=="flash") {
 			// If we are asked to build the HTML Wrapper, there's a bunch of stuff we need to do
 			if(nova.workspace.config.get("as3.flash.generateHTML")) {
@@ -783,7 +887,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		args.push("--warnings=true");
 
-		// console.log("projectType: " + projectType);
 		if(projectType=="flash") {
 			args.push("+configname=flex");
 		} else if(projectType=="airmobile") {
@@ -1243,6 +1346,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// Check if there is a ".flexProperties"
 		// @NOTE Not sure what else we would need from this file
 		var isFlex = false;
+		var isLibrary = false;
 		var flexProperties = getStringOfWorkspaceFile(".flexProperties");
 		if(flexProperties!=null) {
 //			var flexPropertiesXml = pjXML.parse(flexProperties);
@@ -1256,6 +1360,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		} else {
 			nova.workspace.config.set("editor.default_syntax","ActionScript 3");
 			nova.workspace.config.set("as3.application.isFlex",false);
+			isLibrary = true;
+		}
+
+		// If this is a library project, then it will have a .flexLibProperties file!!
+		var flexLibProperties = getStringOfWorkspaceFile(".flexLibProperties");
+		if(flexLibProperties!=null) {
+			nova.workspace.config.set("editor.default_syntax","ActionScript 3");
+			nova.workspace.config.set("as3.application.isFlex",true);
+			isFlex = true;
 		}
 
 		// Check ".actionScriptProperties"
@@ -1317,113 +1430,152 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// @NOTE Modules and Workers. Never used them, not sure how they get setup here.
 
-		var buildTargets = actionscriptPropertiesXml.findNodesByName("buildTarget");
-		// If there are build targets, then we are dealing with AIR, otherwise it's Flash
-		if(buildTargets.length>0) {
-			// Packaging, make separate tasks for it
-			buildTargets.forEach((buildTarget) => {
-				var taskName = "";
-				var taskJson = this.baseTaskJson;
+		// Let's get to making Tasks!
+		let taskName = "";
+		let taskJson = this.baseTaskJson;
 
-// console.log("buildTarget[@][platformId]: " + buildTarget["@"]["platformId"]);
+		if(isLibrary) {
+			taskName = "AS3 Library";
+			taskJson["extensionTemplate"] = "actionscript-lib";
 
-				switch(buildTarget["@"]["platformId"]) {
-					case "com.adobe.flexide.multiplatform.ios.platform": {
-						taskName = "AIR - iOS";
-						taskJson["extensionTemplate"] = "actionscript-ios";
-						taskJson.extensionValues["as3.target"] = "ios";
-						break;
-					}
-					case "com.qnx.flexide.multiplatform.qnx.platform": {
-						taskName = "AIR - BlackBerry Tablet OS";
-						taskJson["extensionTemplate"] = "actionscript-airmobile";
-						taskJson.extensionValues["as3.target"] = "blackberry";
-						console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
-						break;
-					}
-					case "com.adobe.flexide.multiplatform.android.platform": {
-						taskName = "AIR - Android";
-						taskJson["extensionTemplate"] = "actionscript-android";
-						taskJson.extensionValues["as3.target"] = "android";
-						break;
-					}
-					case "default":
-					default: {
-						taskName = "AIR";
-						taskJson["extensionTemplate"] = "actionscript-air";
-						taskJson.extensionValues["as3.target"] = "default";
-						break;
-					}
-				}
+			var flexLibPropertiesXml = new xmlToJson.ns3x2j(flexLibProperties);
 
-				if(taskJson!={}) {
-					var airSettings = actionscriptPropertiesXml.findChildNodeByName(buildTarget["children"], "airSettings");
-				//	consoleLogObject(airSettings);
-					//console.log("airCertificatePath: " + airSettings["@"]["airCertificatePath"]);
-					if(airSettings["@"]["airCertificatePath"]!="") {
-						taskJson.extensionValues["as3.packaging.certificate"] = airSettings["@"]["airCertificatePath"];
-					}
-					//console.log("airTimestamp: " + airSettings["@"]["airTimestamp"]);
-					if(airSettings["@"]["airTimestamp"]!="") {
-						taskJson.extensionValues["as3.packaging.timestamp"] = airSettings["@"]["airTimestamp"];
-					}
+			var includeAllClasses = flexLibPropertiesXml.getAttributeFromNodeByName("flexLibProperties", "includeAllClasses")
+			taskJson.extensionValues["as3.lib.includeAllClasses"] = includeAllClasses
 
-					// @NOTE Not sure what to do here...
-					//console.log("newLaunchParams: " + airSettings["@"]["newLaunchParams"]);
-					//console.log("modifiedLaunchParams: " + airSettings["@"]["modifiedLaunchParams"]);
-					//console.log("newPackagingParams: " + airSettings["@"]["newPackagingParams"]);
-					//console.log("modifiedPackagingParams: " + airSettings["@"]["modifiedPackagingParams"]);
-
-					var airExcludes = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "airExcludes");
-					var excludedInPackage = []
-
-					airExcludes["children"].forEach((excludes) => {
-						//console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
-						excludedInPackage.push(excludes["@"]["path"]);
-					});
-					if(excludedInPackage.length>0) {
-						taskJson.extensionValues["as3.packaging.excludedFiles"] = excludedInPackage;
-					}
-
-					var anePaths = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "anePaths");
-					var anePathsInPackage = [];
-
-				//	consoleLogObject(anePaths);
-					anePaths["children"].forEach((anePath) => {
-				//		consoleLogObject(anePath);
-						//console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
-						anePathsInPackage.push(anePath["@"]["path"]);
-					});
-					if(anePathsInPackage.length>0) {
-						taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
-					}
-
-					// Ensure Tasks folder is available and then write this Task!
-					this.ensureTaskFolderIsAvailable();
-					this.writeTaskFile(taskName, taskJson);
-
-				}
+			var classEntries = [];
+			flexLibPropertiesXml.findNodesByName("classEntry").forEach((classEntry) => {
+				classEntries.push(classEntry["@"]["path"]);
 			});
-		} else {
-			// Grab boilerplate for a Task
-			var flashTaskJson = this.baseTaskJson;
-			// Change the template to the Flash one
-			flashTaskJson["extensionTemplate"] = "actionscript-flash";
+			taskJson.extensionValues["as3.lib.classEntries"] = classEntries
 
-			// See if there are any source file to exclude
-			var sourceExcludes = [];
-			actionscriptPropertiesXml.findNodesByName("exclude").forEach((excludeFile) => {
-				sourceExcludes.push(excludeFile["@"]["path"]);
+			var resourceDestPathEntries = [];
+			var resourceSourcePathEntries = [];
+			flexLibPropertiesXml.findNodesByName("resourceEntry").forEach((resourceEntry) => {
+				resourceDestPathEntries.push(resourceEntry["@"]["destPath"]);
+				resourceSourcePathEntries.push(resourceEntry["@"]["sourcePath"]);
 			});
+			taskJson.extensionValues["as3.lib.resource.dest"] = resourceDestPathEntries
+			taskJson.extensionValues["as3.lib.resource.source"] = resourceSourcePathEntries
 
-			flashTaskJson.extensionValues["as3.packaging.excludedSourceFiles"] = sourceExcludes;
-
-			// @TODO ? Do we tell the user there are source excludes. I can't figure how FB determines if it should include source or not
-			//flashTaskJson.extensionValues["as3.packaging.includeSource"] = true;
+			var namespaceManifestEntryManifests = [];
+			var namespaceManifestEntryNamespaces = [];
+			flexLibPropertiesXml.findNodesByName("namespaceManifestEntry").forEach((namespaceManifestEntry) => {
+				namespaceManifestEntryManifests.push(namespaceManifestEntry["@"]["manifest"]);
+				namespaceManifestEntryNamespaces.push(namespaceManifestEntry["@"]["namespace"]);
+			});
+			taskJson.extensionValues["as3.lib.nsm.manifest"] = namespaceManifestEntryManifests;
+			taskJson.extensionValues["as3.lib.nsm.namespace"] = namespaceManifestEntryNamespaces;
 
 			// Ensure Tasks folder is available and then write this Task!
 			this.ensureTaskFolderIsAvailable();
-			this.writeTaskFile("Flash", flashTaskJson);
+			this.writeTaskFile("AS3 Library", taskJson);
+		} else {
+			var buildTargets = actionscriptPropertiesXml.findNodesByName("buildTarget");
+			// If there are build targets, then we are dealing with AIR, otherwise it's Flash
+			if(buildTargets.length>0) {
+				// Packaging, make separate tasks for it
+				buildTargets.forEach((buildTarget) => {
+					taskName = "";
+					taskJson = this.baseTaskJson;
+					// console.log("buildTarget[@][platformId]: " + buildTarget["@"]["platformId"]);
+					switch(buildTarget["@"]["platformId"]) {
+						case "com.adobe.flexide.multiplatform.ios.platform": {
+							taskName = "AIR - iOS";
+							taskJson["extensionTemplate"] = "actionscript-ios";
+							taskJson.extensionValues["as3.target"] = "ios";
+							break;
+						}
+						case "com.qnx.flexide.multiplatform.qnx.platform": {
+							taskName = "AIR - BlackBerry Tablet OS";
+							taskJson["extensionTemplate"] = "actionscript-airmobile";
+							taskJson.extensionValues["as3.target"] = "blackberry";
+							console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
+							break;
+						}
+						case "com.adobe.flexide.multiplatform.android.platform": {
+							taskName = "AIR - Android";
+							taskJson["extensionTemplate"] = "actionscript-android";
+							taskJson.extensionValues["as3.target"] = "android";
+							break;
+						}
+						case "default":
+						default: {
+							taskName = "AIR";
+							taskJson["extensionTemplate"] = "actionscript-air";
+							taskJson.extensionValues["as3.target"] = "default";
+							break;
+						}
+					}
+
+					if(taskJson!={}) {
+						var airSettings = actionscriptPropertiesXml.findChildNodeByName(buildTarget["children"], "airSettings");
+					//	consoleLogObject(airSettings);
+						//console.log("airCertificatePath: " + airSettings["@"]["airCertificatePath"]);
+						if(airSettings["@"]["airCertificatePath"]!="") {
+							taskJson.extensionValues["as3.packaging.certificate"] = airSettings["@"]["airCertificatePath"];
+						}
+						//console.log("airTimestamp: " + airSettings["@"]["airTimestamp"]);
+						if(airSettings["@"]["airTimestamp"]!="") {
+							taskJson.extensionValues["as3.packaging.timestamp"] = airSettings["@"]["airTimestamp"];
+						}
+
+						// @NOTE Not sure what to do here...
+						//console.log("newLaunchParams: " + airSettings["@"]["newLaunchParams"]);
+						//console.log("modifiedLaunchParams: " + airSettings["@"]["modifiedLaunchParams"]);
+						//console.log("newPackagingParams: " + airSettings["@"]["newPackagingParams"]);
+						//console.log("modifiedPackagingParams: " + airSettings["@"]["modifiedPackagingParams"]);
+
+						var airExcludes = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "airExcludes");
+						var excludedInPackage = []
+
+						airExcludes["children"].forEach((excludes) => {
+							//console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
+							excludedInPackage.push(excludes["@"]["path"]);
+						});
+						if(excludedInPackage.length>0) {
+							taskJson.extensionValues["as3.packaging.excludedFiles"] = excludedInPackage;
+						}
+
+						var anePaths = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "anePaths");
+						var anePathsInPackage = [];
+
+					//	consoleLogObject(anePaths);
+						anePaths["children"].forEach((anePath) => {
+					//		consoleLogObject(anePath);
+							//console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
+							anePathsInPackage.push(anePath["@"]["path"]);
+						});
+						if(anePathsInPackage.length>0) {
+							taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
+						}
+
+						// Ensure Tasks folder is available and then write this Task!
+						this.ensureTaskFolderIsAvailable();
+						this.writeTaskFile(taskName, taskJson);
+					}
+				});
+			} else {
+				// Grab boilerplate for a Task
+				var flashTaskJson = this.baseTaskJson;
+				// Change the template to the Flash one
+				flashTaskJson["extensionTemplate"] = "actionscript-flash";
+
+				// See if there are any source file to exclude
+				var sourceExcludes = [];
+				actionscriptPropertiesXml.findNodesByName("exclude").forEach((excludeFile) => {
+					sourceExcludes.push(excludeFile["@"]["path"]);
+				});
+
+				flashTaskJson.extensionValues["as3.packaging.excludedSourceFiles"] = sourceExcludes;
+
+				// @TODO ? Do we tell the user there are source excludes. I can't figure how FB determines if it should include source or not
+				//flashTaskJson.extensionValues["as3.packaging.includeSource"] = true;
+
+				// Ensure Tasks folder is available and then write this Task!
+				this.ensureTaskFolderIsAvailable();
+				this.writeTaskFile("Flash", flashTaskJson);
+			}
 		}
 
 		// Add a value to keep track that we imported the project, so it doesn't keep asking everytime the project is opened
@@ -1454,33 +1606,27 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {class} context - What's coming from the build options
 	 */
 	resolveTaskAction(context) {
-		var data = context.data;
-		var config = context.config;
-		var action = context.action;
-
-		/** @TODO Should be part of the Task, or Project */
-		var projectType = "air";
-		if(data.type=="mobile") {
-			projectType = "airmobile";
-		} else if(data.type=="flash") {
-			projectType = "flash";
-		}
-/*
-console.log("config: ");
-consoleLogObject(config);
-console.log("data: ");
-consoleLogObject(data);
-*/
-		// Get the context.config so we can get the Task settings!
-		var runMode = config.get("actionscript3.request");
+		let data = context.data;
+		let config = context.config;
+		let action = context.action;
 
 		if(action==Task.Build) {
-			return this.build(projectType, runMode, false);
-		} else if(action==Task.Run) {
-			if(runMode=="debug") {
-				return this.debugRun(projectType, config);
+			if(data.type=="library") {
+				return this.buildLibrary(
+					config.get("as3.lib.classEntries"),
+					config.get("as3.lib.resource.dest"),
+					config.get("as3.lib.resource.source"),
+					config.get("as3.lib.nsm.manifest"),
+					config.get("as3.lib.nsm.namespace")
+				);
 			} else {
-				return this.run(projectType, config)
+				return this.build(data.type, config.get("actionscript3.request"), false);
+			}
+		} else if(action==Task.Run) {
+			if(config.get("actionscript3.request")=="debug") {
+				return this.debugRun(data.type, config);
+			} else {
+				return this.run(data.type, config)
 			}
 		} else if(action==Task.Clean) {
 			const configValues = getConfigsForBuild(true);
