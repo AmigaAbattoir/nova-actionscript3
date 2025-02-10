@@ -2,7 +2,7 @@
 
 Is a **Work In Progress** extension for ActionScript 3 & MXML.
 
-The goal was to be able to have a replacement for all my old Adobe Flash Build projects, so that I didn't need to build an new file to handle building or running, but that the IDE's extension would do all the lifting. Ideally, it will just read the old Flash Builder settings, and set everything up for me which is  getting pretty close to that.
+The goal was to be able to have a replacement for all my old Adobe Flash Build projects, so that I didn't need to create an new file to handle building or running, but that the IDE's extension would do all the lifting. Ideally, it will just read the old Flash Builder settings and set everything up for me (which is getting pretty close to that).
 
 ![](assets/screenshot.png)
 
@@ -21,17 +21,17 @@ It currently provides:
  * **Completions** for the following:
    * **ActionScript 3**
    * **MXML** - *Note:* Still a little wonky
-   * **AIR Descriptor XML** - Include descriptions on most of the AIR Descriptors tags.
+   * **AIR Descriptor XML** - Include descriptions on most of the AIR Descriptors tags!
 
  * **Clips**
 
- * **Tasks** - Use Nova's Clean/Build/Run for AIR desktop project, mobile project (currently, only through Desktop simulator), and Flash web based project (using either SWFObject from the AIR SDK or a very basic page using Ruffle). Also, limited support for packaing with ANEs.
+ * **Tasks** - Use Nova's Clean/Build/Run for AIR desktop project, mobile project (currently, only through Desktop simulator), and Flash web based project (using either SWFObject from the AIR SDK or a very basic page using Ruffle). Also, limited support for packaging with ANEs.
 
  * **Exporting AIR Packages** - AIR, AIRI, Captive bundles, and native installer for Mac should work (have not tested submitting to app store for Mac apps). Android and iOS packaging should work (again, I have not tested submitting them to app stores).
 
 ## Todo
 
- * Automatically managing libary builds
+ * Automatically managing library builds
  * Launching AIR projects on actual devices (Android and iOS)
  * Workers
  * Modules
@@ -40,7 +40,7 @@ It currently provides:
 
 The LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.21.1 but Cleaning/Building/Running and Export Packaging are done by this extension using `mxmlc` for compiling of Flash and AIR project and packaging, `compc` is used for compiling libraries, and the running is done with `adt` from an (Harman) Adobe Air or Flex SDK.
 
-For the Issues, language intelligence and completions to work, it requires an `asconfig.json` in the project folder. The extension will attempt to auto-generate one. If you have used the VSCode extension, you can disable the automatic generation in the configurations (and the propt when first opening the project).
+For the Issues, language intelligence and completions to work, it requires an `asconfig.json` in the project folder. The extension will attempt to auto-generate one. If you have used the VSCode extension, you can disable the automatic generation in the configurations (and the prompt when first opening the project).
 
 ## Requirements
 

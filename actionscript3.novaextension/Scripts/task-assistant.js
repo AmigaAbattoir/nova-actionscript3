@@ -553,6 +553,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let destDir = configValues.destDir;
 		let mainClass = configValues.mainClass;
 		let mainSrcDir = configValues.mainSrcDir;
+		let frameworkLinkage = configValues.linkage;
+		let componentSet = configValues.componentSet;
 
 		var command = flexSDKBase + "/bin/compc";
 		var args = new Array();
@@ -567,28 +569,62 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		args.push("-output");
 		args.push(destDir + "/" + mainClass + ".swc");
 
-		args.push("-library-path+=" + flexSDKBase + "/frameworks/libs");
+		/// If merging, then we need to do this:!
+		if(frameworkLinkage=="merged") {
+			args.push("-runtime-shared-library-path=");
+			args.push("-static-link-runtime-shared-libraries=false");
+		}
 
-		let sameCount;
+		// Figure playerglobal.sec version and location
+		let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+		let flashVersion = convertAIRSDKToFlashPlayerVersion(currentAIRSDKVersion);
+		// consoleLogObject(flashVersion);
+		var playerGlobal = "player/" + flashVersion.major + "." + flashVersion.minor + "/playerglobal";
 
+		// Push the PlayerGlobal to external library
+		args.push("-external-library-path=" + flexSDKBase + "/frameworks/libs/" + playerGlobal + ".swc" );
+
+		let compLibs = [];
+		// Depending on what component sets to include, we need to add some library's to the compilation.
+		switch(componentSet) {
+			case "both": {
+				compLibs = [ "framework", "textLayout", "spark", "sparkskins", "rpc", "charts", "spark_dmv", "mx/mx", "osmf", "advancedgrids", "authoringsupport", "core", "flash-integration" ];
+				break;
+			}
+			case "spark": {
+				compLibs = [ "framework", "textLayout", "spark", "sparkskins", "rpc", "charts", "authoringsupport", "osmf", "flash-integration" ];
+				break;
+			}
+			case "mx": {
+				compLibs = [ "framework", "textLayout", "authoringsupport", "flash-integration", "rpc", "mx/mx", "charts", "osmf", "advancedgrids"];
+				break;
+			}
+			case "mobile": {
+				compLibs = [ "airglobal", "authoringsupport", "charts", "core", "flash-integration", "framework", "osmf", "rpc", "spark", "textlayout", "mobilecomponents", "servicemonitor" ];
+				break;
+			}
+		}
+
+		// If there are any Components that need to be added, then we should do that.
+		if(compLibs.length>0) {
+			// So, building from FB with `-dump-config` show these should be "internal", but if we make them `-external-library-path`, they will compile without warning.
+			// Not sure what would be right here...
+			let libPathString = "-library-path=" + compLibs.map(lib => `${flexSDKBase}/frameworks/libs/${lib}.swc`).join(",") + "," + flexSDKBase + "/frameworks/locale/{locale}";
+			args.push(libPathString);
+		}
+
+		// @TODO If the preference is slected, we should scan the code base and generate the list...
 		// Add Class entries, if there are any
 		if(classEntries) {
-			console.log(" Go through these! classEntries");
-			consoleLogObject(classEntries)
-
 			args.push("-include-classes");
-
 			classEntries.forEach((classEntry) => { args.push(classEntry); });
 		}
 
-		// Add Resources
+		let sameCount;
+		// Add additional resources to pack with the library
 		if(resourceDestPathEntries && resourceSourcePathEntries) {
 			sameCount = (resourceDestPathEntries.length == resourceSourcePathEntries.length ? true : false);
 			if(sameCount && resourceDestPathEntries.length>0) {
-				// console.log(" Go through these! resourceDestPathEntries & resourceSourcePathEntries");
-				// consoleLogObject(resourceDestPathEntries)
-				// consoleLogObject(resourceSourcePathEntries)
-
 				for(let i = 0; i<resourceDestPathEntries.length; i++) {
 					args.push("-include-file");
 					args.push(resourceDestPathEntries[i]);
@@ -606,10 +642,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		if(namespaceManifestEntryManifests && namespaceManifestEntryNamespaces) {
 			sameCount = (namespaceManifestEntryManifests.length == namespaceManifestEntryNamespaces.length ? true : false);
 			if(sameCount && namespaceManifestEntryManifests.length>0) {
-				// console.log(" Go through these! namespaceManifestEntryManifests & namespaceManifestEntryNamespaces");
-				// consoleLogObject(namespaceManifestEntryManifests)
-				// consoleLogObject(namespaceManifestEntryNamespaces)
-
 				for(let i = 0; i<resourceDestPathEntries.length; i++) {
 					args.push("-namespace");
 					args.push(namespaceManifestEntryNamespaces[i]);
@@ -617,12 +649,44 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					args.push(mainSrcDir + "/" + namespaceManifestEntryManifests[i]);
 
 					// We need to keep track of these for later
-					namespaces.push(namespaceManifestEntryNamespaces[i]);
+					//namespaces.push(namespaceManifestEntryNamespaces[i]);
 				}
 
-				// Now, tell it to include the namespaces!
-				args.push("-include-namespaces");
-				namespaces.forEach((namespace) => { args.push(namespace) });
+				// If we are adding Flex components to the library, we need to include their namesapces!
+				if(componentSet!="none") {
+					args.push("-namespace");
+					args.push("http://ns.adobe.com/mxml/2009");
+					args.push(flexSDKBase + "/frameworks/" + "mxml-2009-manifest.xml");
+
+					args.push("-namespace");
+					args.push("library://ns.adobe.com/flex/spark");
+					args.push(flexSDKBase + "/frameworks/" + "spark-manifest.xml");
+
+					// Do not add these namespaces if making a Mobile library
+					if(componentSet!="mobile") {
+						args.push("-namespace");
+						args.push("library://ns.adobe.com/flex/mx");
+						args.push(flexSDKBase + "/frameworks/" + "mx-manifest.xml");
+
+						args.push("-namespace");
+						args.push("http://www.adobe.com/2006/mxml");
+						args.push(flexSDKBase + "/frameworks/" + "mxml-manifest.xml");
+					}
+				}
+/*
+				// Now, tell it to include the namespaces! Not needed??
+				// args.push("-include-namespaces");
+				// namespaces.forEach((namespace) => { args.push(namespace) });
+*/
+				// Other options to match Flash Builder while testing...
+				// args.push("-target-player=11.1.0");
+				// args.push("-compatibility-version=3.6");
+				args.push("-compiler.show-shadowed-device-font-warnings=false");
+				args.push("-verify-digests=false");
+				args.push("-use-network=true");
+				args.push("-compiler.accessible=false");
+				/*
+				*/
 			} else if(sameCount==false) {
 				nova.workspace.showErrorMessage("Sorry, but the amount of namespaceManifestEntryManifests and namespaceManifestEntryNamespaces do not match. Please make sure these align in the preferences!");
 				return null;

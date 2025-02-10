@@ -234,6 +234,10 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 		//console.log("Using configed DEST DIR " + destDir);
 	}
 
+	// Library only stuff
+	const linkage = nova.workspace.config.get("as3.build.linkage");
+	const componentSet = nova.workspace.config.get("as3.build.componentSet");
+
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
 
 	const appAndExportName = exports.getAppXMLNameAndExport(mainApplicationPath);
@@ -260,7 +264,10 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 		"flexSDKBase": flexSDKBase,
 		"isFlex": isFlex,
 		"appXMLName": appXMLName,
-		"copyAssets": copyAssets
+		"copyAssets": copyAssets,
+		// Used by library building
+		"linkage": linkage,
+		"componentSet": componentSet
 	};
 
 	if(nova.inDevMode()) {

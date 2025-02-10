@@ -357,7 +357,8 @@ exports.resolveStatusCodeFromADT = function(status) {
 }
 
 /**
- * Looks for the `airsdk.xml` in the directory to check what versions of AIR we have
+ * Looks for the `airsdk.xml` in the directory to check what versions of AIR we have. If it's a really old
+ * version of the Flex SDK, we'll try to figure out the AIR version with the template of the air descriptor
  *
  * @param {string} flexSDKBase - The location of the AIR/Flex SDK to check
  * @returns {Object} - An object with a `float` containing the `version` of the SDK, as well as an array `appVersions` with the
@@ -365,17 +366,20 @@ exports.resolveStatusCodeFromADT = function(status) {
  * namespaces (also as a `descriptorNamespace` and `swfVersion`)
  */
 exports.getAIRSDKInfo = function(flexSDKBase) {
-		version = 0;
-		appVersions = [];
-		extensionNamespaces = [];
+	let version = 0;
+	let appVersions = [];
+	let extensionNamespaces = [];
 
-		// Grab the airsdk.xml to check for version nymbers
+	let currentNS = "";
+
+	// Grab the airsdk.xml to check for version nymbers
+	try {
 		var airSDKInfo = getStringOfFile(nova.path.join(flexSDKBase,"airsdk.xml"));
 		// If it's not empty, let's parse it from XML and convert it to JSON for easier reference
 		if(airSDKInfo!="") {
 			var airSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
 
-			var currentNS = airSDKXML.getAttributeFromNodeByName("airSdk","xmlns");
+			currentNS = airSDKXML.getAttributeFromNodeByName("airSdk","xmlns");
 			// break into chunks on "/" and then get the last item for the version number
 			version = parseFloat(currentNS.split("/").pop());
 
@@ -397,29 +401,38 @@ exports.getAIRSDKInfo = function(flexSDKBase) {
 				});
 			});
 		}
+	} catch(error) {
+		// Older SDK don't have the airsdk.xml
+		var airTemplate = getStringOfFile(nova.path.join(flexSDKBase,"/templates/air/descriptor-template.xml"));
+		if(airTemplate) {
+			var airTemplateXML = new xmlToJson.ns3x2j(airTemplate);
+
+			currentNS = airTemplateXML.getAttributeFromNodeByName("application","xmlns");
+			version = parseFloat(currentNS.split("/").pop());
+		}
+	}
 
 	return { version: version, appVersions: appVersions, extensionNamespaces: extensionNamespaces }
 }
 
 /**
- * Used to help figure out the minimum  Flash Player version based upon the AIR SDK
- * @param {Number} sdkVersion - The version of the AIR/Flex SDK
+ * Used to help figure out the minimum  Flash Player version based upon the SWF Version
+ * @note Not sure this is needed
+ * @param {Number} swfVersion - The version of the SWF
  * @returns {Object} - An object with the major, minor and revision numbers
  */
-exports.convertAIRSDKToFlashPlayerVersion = function(sdkVersion) {
+exports.convertSWFVersionoFlashPlayerVersion = function(swfVersion) {
 	var flashVersion = {};
 	flashVersion.major = 0;
 	flashVersion.minor = 0;
 	flashVersion.revision = 0;
 
-	// Technically, the currentAIRSDKVersion shouldn't be below 11!
-	if(sdkVersion>10) {
-		// And there isn't any Flash version greater than 32.
-		if(sdkVersion>43) {
-			flashVersion.major = 32;
+	if(swfVersion>10) {
+		if(swfVersion>43) {
+			swfVersion.major = 32;
 		} else {
 			// Prior to AIR SDK 23, there was the possibility of varied major/minor values.
-			switch (sdkVersion) {
+			switch (swfVersion) {
 				case 22: {
 					flashVersion.major = 11; flashVersion.minor = 9;
 					break;
@@ -473,6 +486,96 @@ exports.convertAIRSDKToFlashPlayerVersion = function(sdkVersion) {
 					flashVersion.major = sdkVersion - 11;
 					break;
 				}
+			}
+		}
+	}
+
+	return flashVersion;
+}
+
+/**
+ * Used to help figure out the minimum  Flash Player version based upon the AIR SDK
+ * @param {Number} sdkVersion - The version of the AIR/Flex SDK
+ * @returns {Object} - An object with the major, minor and revision numbers
+ */
+exports.convertAIRSDKToFlashPlayerVersion = function(sdkVersion) {
+	var flashVersion = {};
+	flashVersion.major = 0;
+	flashVersion.minor = 0;
+	flashVersion.revision = 0;
+
+	// After AIR SDK 11, they changed the numbering of FlashPlayer to match
+	if(sdkVersion>11) {
+		// And there isn't any Flash version greater than 32.
+		if(sdkVersion>31) {
+			flashVersion.major = 32;
+		} else {
+			flashVersion.major = sdkVersion;
+		}
+	} else {
+		switch (sdkVersion) {
+			case 11.9: {
+				flashVersion.major = 11; flashVersion.minor = 9;
+				break;
+			}
+			case 11.8: {
+				flashVersion.major = 11; flashVersion.minor = 8;
+				break;
+			}
+			case 11.7: {
+				flashVersion.major = 11; flashVersion.minor = 7;
+				break;
+			}
+			case 11.6: {
+				flashVersion.major = 11; flashVersion.minor = 6;
+				break;
+			}
+			case 11.5: {
+				flashVersion.major = 11; flashVersion.minor = 5;
+				break;
+			}
+			case 11.4: {
+				flashVersion.major = 11; flashVersion.minor = 4;
+				break;
+			}
+			case 11.3: {
+				flashVersion.major = 11; flashVersion.minor = 3;
+				break;
+			}
+			case 11.2: {
+				flashVersion.major = 11; flashVersion.minor = 2;
+				break;
+			}
+			case 11.1:
+			case 3.1: {
+				flashVersion.major = 11; flashVersion.minor = 1;
+				break;
+			}
+			case 3.0: {
+				flashVersion.major = 11; flashVersion.minor = 0;
+				break;
+			}
+			case 2.7: {
+				flashVersion.major = 10; flashVersion.minor = 3;
+				break;
+			}
+			case 2.6: {
+				flashVersion.major = 10; flashVersion.minor = 2;
+				break;
+			}
+			case 2.5: {
+				flashVersion.major = 10; flashVersion.minor = 1;
+				break;
+			}
+			case 2.0:
+			case 1.5: {
+				flashVersion.major = 10; flashVersion.minor = 0;
+				break;
+			}
+			case 1.1:
+			case 1.0: {
+				flashVersion.major = 9; flashVersion.minor = 0; flashVersion.revision = 115
+				break;
 			}
 		}
 	}

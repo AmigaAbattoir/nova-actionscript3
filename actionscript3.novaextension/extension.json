@@ -462,17 +462,33 @@
 				{
 					"title": "Library Path",
 					"type": "section",
-					"description": "Additonal library folders to use when building",
+					"description": "Additonal library folders to use when building. The Library Task can be used to set additional options for the library.",
 					"children": [
+						{
+							"key": "as3.build.componentSet",
+							"title": "Component set:",
+							"type":  "enum",
+							"radio": true,
+							"description": "When building a library, setting these will add the frameworks necessary for including the components necessary. Unlike Flash Builder, it will not list which onese are added. If you only want certain libraries, you can select `none` and manually add them below.",
+							"values": [
+								[ "both" , "MX + Spark" ],
+								[ "spark" ,"Spark only"],
+								[ "mx" ,"MX only"],
+								[ "mobile" ,"Mobile"],
+								[ "none" ,"None"]
+							],
+							"default": "both"
+						},
 						{
 							"key": "as3.build.linkage",
 							"title": "Framework linkage",
 							"type":  "enum",
+							"radio": false,
 							"values": [
-								["Use default (merged into code)"],
-								["Merge into code"]
+								[ "external" , "External (Use default)" ],
+								[ "merged" ,"Merged into code"]
 							],
-							"default": "Use default (merged into code)"
+							"default": "merged"
 						},
 						{
 							"key": "as3.build.library.additional",
