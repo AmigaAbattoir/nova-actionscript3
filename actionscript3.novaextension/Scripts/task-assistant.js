@@ -1079,52 +1079,60 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Object} config - The Task's configs
 	 */
 	debugRun(projectType, config) {
-		/*
-		const configValues = getConfigsForBuild(true);
-		let flexSDKBase = configValues.flexSDKBase;
-		*/
-/*		var base = nova.path.join(nova.extension.path, "debugger");
+		// Will try to figure this out sometime later...
+		if(false) {
+			const configValues = getConfigsForBuild(true);
+			let flexSDKBase = configValues.flexSDKBase;
 
-		let args = [];
-		args.push("-server");
-		args.push("-Dflexlib=" + flexSDKBase);
-		if(isWorkspace()) {
-			args.push("-Dworkspace=" + nova.workspace.path);
+			var base = nova.path.join(nova.extension.path, "debugger");
+
+			let args = [];
+			// Pass the Flex SDK
+			args.push("-Dflexlib=" + flexSDKBase);
+
+			// For workspaces, pass the folder
+			if(isWorkspace()) {
+				args.push("-Dworkspace=" + nova.workspace.path);
+			}
+
+			//uncomment to debug the SWF debugger JAR
+			//args.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
+			args.push("-cp");
+			args.push("" + base + "/bin/*:" + base + "/bundled-debugger/*");
+			args.push("com.as3mxml.vscode.SWFDebug");
+
+			// @NOTE From Icarus extension
+			var action = new TaskDebugAdapterAction("actionscript3");
+			action.command = "/usr/bin/java";
+			action.args = args;
+			// action.transport = "socket";
+			// action.port="4711";
+			action.adapterStart = "launch";
+
+			// Print out all the args so I know what's getting passed!
+			if(nova.inDevMode()) {
+				var argsOut = "";
+				args.forEach(a => argsOut += a + "\n")
+				console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
+			}
+
+			console.log("DEBUG!");
+			/*
+			new Promise((resolve) => {
+				console.log("Going to try running...");
+				//this.run(projectType, flexSDKBase, profile, destDir, appXMLName, config);
+				console.log("Run should have happened..");
+				resolve();
+			}).then(() => {
+				console.log("now the action should goTried running!");
+			*/
+				return action;
+			/*
+			});
+			*/
+		} else {
+			return this.run(projectType, config);
 		}
-
-		//uncomment to debug the SWF debugger JAR
-		//args.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
-		args.push("-cp");
-		args.push("" + base + "/bundled-debugger/*:" + base + "/bin/*");
-		args.push("com.as3mxml.vscode.SWFDebug");
-
-		// @NOTE From Icarus extension
-		var action = new TaskDebugAdapterAction("actionscript3");
-		action.command = "/usr/bin/java";
-		action.args = args;
-		// action.transport = "socket";
-		// action.port="4711";
-		action.adapterStart = "launch";
-
-		// Print out all the args so I know what's getting passed!
-		if(nova.inDevMode()) {
-			var argsOut = "";
-			args.forEach(a => argsOut += a + "\n")
-			console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
-		}
-		console.log("DEBUG!");
-
-		new Promise((resolve) => {
-			console.log("Going to try running...");
-			this.run(projectType, flexSDKBase, profile, destDir, appXMLName, config);
-			console.log("Run should have happened..");
-			resolve();
-		}).then(() => {
-			console.log("now the action should goTried running!");
-			return action;
-		});
-*/
-		return this.run(projectType, config);
 	}
 
 	/**

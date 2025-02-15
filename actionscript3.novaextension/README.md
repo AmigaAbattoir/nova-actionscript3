@@ -31,8 +31,8 @@ It currently provides:
 
 ## Todo
 
- * Automatically managing library builds
  * Launching AIR projects on actual devices (Android and iOS)
+ * Automatically managing library builds
  * Workers
  * Modules
 
@@ -88,7 +88,11 @@ Since the LSP AS3MXML requires requires an `asconfig.json` for most of the code 
 
 ### Certificates
 
-The extension has the ability to generate certificates for self signing AIR packages. It will also allow you, when packaging to store the password for the certificates for either the session, or store it to your Keychain.
+The extension has the ability to generate certificates for self signing AIR packages. **Extensions → ActionScript 3 → Create new Certificate**. Nova will then prompt you with several questions and allow you to generate a new self-signing certificate.
+
+If your project has Tasks that specify a certificate, you can also use the menu options of **Extensions → ActionScript 3 → Store Certificate Password** to store the password, or **Extensions → ActionScript 3 → Clear Certificate Password** to clear the password from your Keychain.
+
+It will also allow you, when packaging to store the password for the certificates for either the session, or store it to your Keychain.
 
 ## Configuration
 

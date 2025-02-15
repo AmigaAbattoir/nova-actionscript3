@@ -794,7 +794,7 @@
 			},
 			{"separator": true},
 			{
-				"title": "🔒 Clear Certifcate Password",
+				"title": "🔓 Clear Certifcate Password",
 				"command": "as3.clearExportPassword"
 			},
 			{
