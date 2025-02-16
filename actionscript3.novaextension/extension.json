@@ -187,7 +187,8 @@
 					"allowFolders": true,
 					"allowFiles": false,
 					"type": "path",
-					"default": "~/Applications/AIRSDK/"
+					"default": "~/Applications/AIRSDK/",
+					"description": "This is where the default Flex/AIR SDK will be. If empty, it will default to /Applications/AIRSDK."
 				},
 				{
 					"key": "as3.sdk.searchPaths",

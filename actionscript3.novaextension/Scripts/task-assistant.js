@@ -924,7 +924,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			// Replace content that the IDEs were supposed to and then write the app.xml to the output folder
 			try {
-				var newAppXML = appXML.replace(/\[This value will be overwritten by .*? app.xml\]/,exportName);         // Change's Flash Builder's placeholder
+				var newAppXML = appXML.replace(/\[This value will be overwritten by .*? app.xml\]/,exportName);         // Change's Flex/Flash Builder's placeholder
  				newAppXML = newAppXML.replace(/\[Path to content will be replaced by Visual Studio Code\]/,exportName); // Just incase you used AS3MXML wiki
 				var newAppXMLFile = nova.fs.open(destDir + "/" + appXMLName, "w");
 				newAppXMLFile.write(newAppXML);
@@ -1457,6 +1457,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 */
 		nova.workspace.config.set("as3.build.source.main",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","sourceFolderPath"));
 
+		var flexSDKAskedFor = actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","flexSDK");
+
 		var prefSourceDirs = [];
 		actionscriptPropertiesXml.findNodesByName("compilerSourcePathEntry").forEach((sourceDir) => {
 			console.log(" sourceDir: " + sourceDir["@"]["path"]);
@@ -1648,6 +1650,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				this.ensureTaskFolderIsAvailable();
 				this.writeTaskFile("Flash", flashTaskJson);
 			}
+		}
+
+		if(flexSDKAskedFor!="") {
+			showNotification("Check SDK Setting", "The project is looking for the Flex SDK of \"" + flexSDKAskedFor + "\". Please make sure you set this project's settings, select ActionScript 3 and change the Compiler -> AIR/Flex SDK version to the specific SDK.","I did");
 		}
 
 		// Add a value to keep track that we imported the project, so it doesn't keep asking everytime the project is opened

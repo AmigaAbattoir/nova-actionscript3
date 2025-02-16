@@ -76,7 +76,13 @@ exports.resolveStatusCodeFromADL = function(status) {
 			message = "The -screensize argument is not supported in the current profile.";
 			break;
 		}
+		case 128: {
+			message = "Bad CPU type. Prior to AIR 20, ADL was 32bit, which will no longer run on Macs starting with 10.5. You may need to update the AIR SDK you are using!";
+			break;
+		}
 	}
+
+	return { "title": title, "message": message };
 }
 
 /**

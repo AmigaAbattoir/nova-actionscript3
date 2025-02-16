@@ -61,3 +61,7 @@ Here's were most of the setting for the project come. It should pull most of the
  * Additional compiler args
 
 *NOTE:* Still need to check if there are variables in the path values
+
+## AIR Notes
+
+It appears that prior to AIR 20, was the first fully 64bit SDK. Prior to that, may run into problems trying to run applications. Building should be okay.

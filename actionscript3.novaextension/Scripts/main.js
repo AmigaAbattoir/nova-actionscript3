@@ -253,6 +253,7 @@ class AS3MXMLLanguageServer {
 		const watchedWorkspaceConfigs = [
 			"as3.application.mainApp", "as3.build.source.main", "as3.build.output", "as3.build.source.additional",
 			"as3.build.library.additional", "as3.build.anes", "as3.packaging.anes", "as3.export.folder",
+			"as3.compiler.useDefault", "as3.compiler.specificSdk",
 			"as3.project.asconfigMode",
 			"as3.flash.generatorType", "as3.flash.generateHTML", "as3.flash.checkTarget", "as3.flash.express", "as3.flash.navigation"
 		];
@@ -268,6 +269,7 @@ class AS3MXMLLanguageServer {
 		// Keys that should trigger the LSP to restart
 		const configsThatTriggersRestart = [
 			"as3.java.path", "as3.sdk.searchPaths", "as3.sdk.default", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
+			"as3.compiler.useDefault", "as3.compiler.specificSdk",
 			"as3.languageServer.path", "as3.languageServer.jvmargs", "as3.languageServer.concurrentRequests"
 		];
 
@@ -287,13 +289,26 @@ class AS3MXMLLanguageServer {
 		 * which if we need to restart the LSP, would lock up Nova.
 		 */
 		for (const key of watchedConfigs) {
+			// console.log(" =-=-=-= [[ FOR EACH " + key + " of watchedConfigs");
 			let isThrottled = false;
 			nova.config.onDidChange(key, function(newValue, oldValue) {
 				if(!isThrottled) {
 					console.log(` =-=-=-=-= Changed ${key} is now ${newValue} was ${oldValue}`);
 
 					if(configsThatTriggersRestart.includes(key)) {
-						console.log(" =-=-=-=-= Should trigger restart");
+						console.log(" =-=-=-=-= Should trigger restart, maybe...");
+
+						if(key=="as3.compiler.useDefault") {
+							var defaultSDK = nova.workspace.config.get("as3.sdk.default");
+							var specificSDK = nova.workspace.config.get("as3.compiler.specificSdk");
+							if(defaultSDK!=specificSDK) {
+								if(specificSDK!="") {
+									console.log("  =-=-=-= Should restart AS3MXML!");
+								} else {
+									console.log("  =-=-=-= Empty SDK, guess I'll hold off restarting");
+								}
+							}
+						}
 					}
 
 					var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
@@ -305,6 +320,8 @@ class AS3MXMLLanguageServer {
 
 					isThrottled = true;
 					setTimeout(() => (isThrottled = false), 100); // Throttle period
+				} else {
+					console.log(` =-=-=-=-= TROTTLED!!! Changed ${key} is now ${newValue} was ${oldValue}`);
 				}
 			});
 		}
@@ -313,10 +330,10 @@ class AS3MXMLLanguageServer {
 		 * which if we need to restart the LSP, would lock up Nova.
 		 */
 		for (const key of watchedWorkspaceConfigs) {
+			// console.log(" =-=-=-= [[ FOR EACH " + key + " of watchedWorkspaceConfigs");
 			let isThrottled = false;
 			nova.workspace.config.onDidChange(key, function(newValue, oldValue) {
 				if(!isThrottled) {
-
 					console.log(` =-=-=-=-= WORKSPACE Changed ${key} is now ${newValue} was ${oldValue}`);
 
 					if(configsThatTriggersRestart.includes(key)) {
@@ -414,6 +431,8 @@ class AS3MXMLLanguageServer {
 
 					isThrottled = true;
 					setTimeout(() => (isThrottled = false), 100); // Throttle period
+				} else {
+					console.log(` =-=-=-=-= THROTTLED!!! WORKSPACE Changed ${key} is now ${newValue} was ${oldValue}`);
 				}
 			});
 		}
@@ -464,6 +483,23 @@ class AS3MXMLLanguageServer {
 			nova.workspace.context.set("currentAIRAppVersions",JSON.stringify(currentAIRAppVersions));
 			currentAIRExtensionNamespaces = airSDKInfo.extensionNamespaces;
 			nova.workspace.context.set("currentAIRExtensionNamespaces",JSON.stringify(currentAIRExtensionNamespaces));
+
+			if(currentAIRSDKVersion<20) {
+				if(nova.workspace.config.get("as3.project.oldAirWarning")!=flexSDKBase) {
+					let oldAirReq = new NotificationRequest("oldair");
+					oldAirReq.title = "AIRSDK 32bit Warning!";
+					oldAirReq.body = "Prior to Flex/AIR SDK Version 20, some binaries may only be 32bit (like ADL and ADT) and will not run on Mac OS 10.5+. You may need to update your AIR SDK!",
+					oldAirReq.actions = [ "Understood", "Don't Remind Me" ];
+
+					let oldAirReqPromise = nova.notifications.add(oldAirReq);
+					oldAirReqPromise.then((reply) => {
+						// If "Don't Remind Me" is selected
+						if(reply.actionIdx==1) {
+							nova.workspace.config.set("as3.project.oldAirWarning",flexSDKBase);
+						}
+					});
+				}
+			}
 
 			// Create the client
 			var args = new Array;
@@ -723,7 +759,7 @@ class AS3MXMLLanguageServer {
 				*/
 				var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
 				if(needAutoASConfig==null) {
-					var asConfigMessage = "This extension can attempt to automatically make one for you based upon the extensions settings, or you can choose to maintain one of your own. Which way would you prefer?";
+					var asConfigMessage = "There is no \"asconfig.json\". This extension can attempt to automatically make one for you based upon the extensions settings, or you can choose to maintain one of your own. Which way would you prefer?";
 					var hasExistingASConfig = false;
 					// But... if there is already an asconfig.json, change the prompt text
 					if(nova.fs.stat(nova.workspace.path + "/asconfig.json")!=undefined) {
