@@ -819,6 +819,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				let swf_application = mainClass;
 				let swf_swf = exportName.replace(".swf","");
 
+				ensureFolderIsAvailable(destDir);
+
 				// Replace the variables in the template
 				let htmlTemplateFile = getStringOfWorkspaceFile("html-template/index.template.html");
 				let newHtml = htmlTemplateFile.replace(/\${(.*?)}/g, (_, variable) => {
@@ -836,12 +838,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					newHtmlFile.write(newHtml);
 					newHtmlFile.close();
 				} catch(error) {
-					if(lineCount==0) {
-						nova.workspace.showErrorMessage("Error writing HTML file at " + appXMLLocation + ". Please check it's content that it is valid.");
+					//if(lineCount==0) {
+						nova.workspace.showErrorMessage("Error writing HTML file at " + newHtmlFile + ". Please check it's content that it is valid.");
 						console.log("*** ERROR: Writing HTML file! error: ",error);
 						consoleLogObject(error);
 						return null;
-					}
+					//}
 				}
 
 				// Copy the other files in html-template (except index.template.html!)
@@ -940,12 +942,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				newAppXMLFile.write(newAppXML);
 				newAppXMLFile.close();
 			} catch(error) {
-				if(lineCount==0) {
-					nova.workspace.showErrorMessage("Error handling app descriptor at " + appXMLLocation + ". Please check it's content that it is valid.");
+				//if(lineCount==0) {
+					nova.workspace.showErrorMessage("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid.");
 					console.log("*** ERROR: APP XML file! error: ",error);
 					consoleLogObject(error);
 					return null;
-				}
+				//}
 			}
 		}
 
@@ -1236,7 +1238,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(projectType=="airmobile") {
 				var screenSize = config.get("as3.task.deviceToSimulate");
 				if(screenSize==null || screenSize=="none") {
-					nova.workspace.showErrorMessage("ERROR!!!\n\n Please edit the Task to select a screen size to use in the simulator!");
+					nova.workspace.showErrorMessage("Please edit the Task to`	 select a Desktop Device to use for the screen size of the simulator!");
 					return false;
 				} else {
 					screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
@@ -1470,7 +1472,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		var prefSourceDirs = [];
 		actionscriptPropertiesXml.findNodesByName("compilerSourcePathEntry").forEach((sourceDir) => {
-			console.log(" sourceDir: " + sourceDir["@"]["path"]);
+			// console.log(" sourceDir: " + sourceDir["@"]["path"]);
 			prefSourceDirs.push(sourceDir["@"]["path"]);
 		});
 		nova.workspace.config.set("as3.build.source.additional",prefSourceDirs);
@@ -1482,9 +1484,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var prefLibDirs = [];
 
 		actionscriptPropertiesXml.findNodesByName("libraryPathEntry").forEach((libDir) => {
-			consoleLogObject(libDir);
+			// consoleLogObject(libDir);
 			if(libDir["@"]["kind"]==1) {
-				console.log("Add a 'Libs Dirs:` entry of [" + libDir["@"]["path"] + "]");
+				// console.log("Add a 'Libs Dirs:` entry of [" + libDir["@"]["path"] + "]");
 				prefLibDirs.push(libDir["@"]["path"]);
 			} else {
 				// @TODO Kind 4 may be excludes, need to look into how to add that to the call to build...
@@ -1561,12 +1563,18 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				buildTargets.forEach((buildTarget) => {
 					taskName = "";
 					taskJson = this.baseTaskJson;
-					// console.log("buildTarget[@][platformId]: " + buildTarget["@"]["platformId"]);
-					switch(buildTarget["@"]["platformId"]) {
+
+					let platformCheck = buildTarget["@"]["platformId"];
+					if(platformCheck==undefined) {
+						platformCheck = buildTarget["@"]["buildTargetName"];
+					}
+
+					switch(platformCheck) {
 						case "com.adobe.flexide.multiplatform.ios.platform": {
 							taskName = "AIR - iOS";
 							taskJson["extensionTemplate"] = "actionscript-ios";
 							taskJson.extensionValues["as3.target"] = "ios";
+							showNotification("Select Desktop Device for iOS", "Don't forget to set the screen size of the device to simulate when running the iOS Task!","Okay", "ios-task-import");
 							break;
 						}
 						case "com.qnx.flexide.multiplatform.qnx.platform": {
@@ -1574,12 +1582,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							taskJson["extensionTemplate"] = "actionscript-airmobile";
 							taskJson.extensionValues["as3.target"] = "blackberry";
 							console.log("BlackBerry not surpported. Not even sure I can download the SDK anymore...");
+							showNotification("BlackBerry not surpported", "The project contains an entry for BlackBerry, which isn't supported. You may want to remove this task.","Okay", "bb-task-import");
 							break;
 						}
 						case "com.adobe.flexide.multiplatform.android.platform": {
 							taskName = "AIR - Android";
 							taskJson["extensionTemplate"] = "actionscript-android";
 							taskJson.extensionValues["as3.target"] = "android";
+							showNotification("Select Desktop Device for Android", "Don't forget to set the screen size of the device to simulate when running the Android Task!","Okay", "android-task-import");
 							break;
 						}
 						case "default":
@@ -1612,10 +1622,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						var airExcludes = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "airExcludes");
 						var excludedInPackage = []
 
-						airExcludes["children"].forEach((excludes) => {
-							//console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
-							excludedInPackage.push(excludes["@"]["path"]);
-						});
+						if(airExcludes) {
+							airExcludes["children"].forEach((excludes) => {
+								//console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
+								excludedInPackage.push(excludes["@"]["path"]);
+							});
+						}
 						if(excludedInPackage.length>0) {
 							taskJson.extensionValues["as3.packaging.excludedFiles"] = excludedInPackage;
 						}
@@ -1623,12 +1635,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						var anePaths = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "anePaths");
 						var anePathsInPackage = [];
 
-					//	consoleLogObject(anePaths);
-						anePaths["children"].forEach((anePath) => {
-					//		consoleLogObject(anePath);
-							//console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
-							anePathsInPackage.push(anePath["@"]["path"]);
-						});
+						if(anePaths) {
+						//	consoleLogObject(anePaths);
+							anePaths["children"].forEach((anePath) => {
+						//		consoleLogObject(anePath);
+								//console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
+								anePathsInPackage.push(anePath["@"]["path"]);
+							});
+						}
 						if(anePathsInPackage.length>0) {
 							taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
 						}
