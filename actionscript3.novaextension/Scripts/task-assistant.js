@@ -926,7 +926,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 
 				if(appVersion!=currentAIRSDKVersion) {
-					nova.workspace.showErrorMessage("Your app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". " + additionalNote + "Please correct the issue before you can run it.");
+					nova.workspace.showErrorMessage("Your app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". " + additionalNote + "Please correct this so that you can run it.");
 					return null;
 				}
 			} else {
