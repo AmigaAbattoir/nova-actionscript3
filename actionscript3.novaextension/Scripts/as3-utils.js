@@ -387,7 +387,7 @@ exports.getAIRSDKInfo = function(flexSDKBase) {
 
 			currentNS = airSDKXML.getAttributeFromNodeByName("airSdk","xmlns");
 			// break into chunks on "/" and then get the last item for the version number
-			version = parseFloat(currentNS.split("/").pop());
+			version = currentNS.split("/").pop();
 
 			// Used to keep track of what the minimun SWF version is for each descriptor namespace
 			var airAppVersions = airSDKXML.getNodeChildrenByName("applicationNamespaces", "versionMap");
@@ -414,7 +414,7 @@ exports.getAIRSDKInfo = function(flexSDKBase) {
 			var airTemplateXML = new xmlToJson.ns3x2j(airTemplate);
 
 			currentNS = airTemplateXML.getAttributeFromNodeByName("application","xmlns");
-			version = parseFloat(currentNS.split("/").pop());
+			version = currentNS.split("/").pop();
 		}
 	}
 

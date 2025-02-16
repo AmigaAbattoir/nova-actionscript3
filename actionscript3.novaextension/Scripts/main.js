@@ -484,7 +484,7 @@ class AS3MXMLLanguageServer {
 			currentAIRExtensionNamespaces = airSDKInfo.extensionNamespaces;
 			nova.workspace.context.set("currentAIRExtensionNamespaces",JSON.stringify(currentAIRExtensionNamespaces));
 
-			if(currentAIRSDKVersion<20) {
+			if(parseInt(currentAIRSDKVersion)<20) {
 				if(nova.workspace.config.get("as3.project.oldAirWarning")!=flexSDKBase) {
 					let oldAirReq = new NotificationRequest("oldair");
 					oldAirReq.title = "AIRSDK 32bit Warning!";

@@ -910,11 +910,21 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(appXML!=null) {
 				// Read the App XML and make sure the Namespace is the same version!
 				let appXMLNS =  new xmlToJson.ns3x2j(appXML).getAttributeFromNodeByName("application","xmlns");
-				let appVersion = parseFloat(appXMLNS.split("/").pop());
+				let appVersion = appXMLNS.split("/").pop();
 				let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+				let additionalNote = "";
+
+				// Prior to AIR 3, just <version> was good enough
+				if(parseInt(appVersion)<4) {
+					let hasVersionNumber = new xmlToJson.ns3x2j(appXML).findNodesByName("versionNumber");
+					// If there's no version number tag, then warn the user
+					if(hasVersionNumber=="") {
+						additionalNote = "\n\nYou will also need to add a <versionNumber> to the descriptor.\n";
+					}
+				}
 
 				if(appVersion!=currentAIRSDKVersion) {
-					nova.workspace.showErrorMessage("You app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". Please correct the issue before you can run it.");
+					nova.workspace.showErrorMessage("Your app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". " + additionalNote + "Please correct the issue before you can run it.");
 					return null;
 				}
 			} else {
@@ -1432,7 +1442,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		} else {
 			nova.workspace.config.set("editor.default_syntax","ActionScript 3");
 			nova.workspace.config.set("as3.application.isFlex",false);
-			isLibrary = true;
 		}
 
 		// If this is a library project, then it will have a .flexLibProperties file!!
@@ -1441,6 +1450,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			nova.workspace.config.set("editor.default_syntax","ActionScript 3");
 			nova.workspace.config.set("as3.application.isFlex",true);
 			isFlex = true;
+			isLibrary = true;
 		}
 
 		// Check ".actionScriptProperties"
@@ -1456,7 +1466,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		console.log("Name of SWF: [" + swfName  + "]");
 */
 		nova.workspace.config.set("as3.build.source.main",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","sourceFolderPath"));
-
 		var flexSDKAskedFor = actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","flexSDK");
 
 		var prefSourceDirs = [];
@@ -1652,10 +1661,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 		}
 
-		if(flexSDKAskedFor!="") {
+		if(flexSDKAskedFor!=null) {
 			showNotification("Check SDK Setting", "The project is looking for the Flex SDK of \"" + flexSDKAskedFor + "\". Please make sure you set this project's settings, select ActionScript 3 and change the Compiler -> AIR/Flex SDK version to the specific SDK.","I did");
 		}
-
 		// Add a value to keep track that we imported the project, so it doesn't keep asking everytime the project is opened
 		nova.workspace.config.set("as3.project.importedFB","done");
 	}
