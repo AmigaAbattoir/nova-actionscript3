@@ -1037,6 +1037,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 		}
 
+		// Forcing halo (should/could be replace with theme stuff eventually)
+		if(nova.workspace.config.get("as3.themes.forceHalo")==true) {
+			args.push("--theme=" + flexSDKBase + "/frameworks/themes/Halo/halo.swc");
+		}
+
 		// Additional compiler arguments
 		if(compilerAdditional!=null) {
 			/** @NOTE Needs work on parsing the additional args.
@@ -1238,7 +1243,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(projectType=="airmobile") {
 				var screenSize = config.get("as3.task.deviceToSimulate");
 				if(screenSize==null || screenSize=="none") {
-					nova.workspace.showErrorMessage("Please edit the Task to`	 select a Desktop Device to use for the screen size of the simulator!");
+					nova.workspace.showErrorMessage("Please edit the Task to select a Desktop Device to use for the screen size of the simulator!");
 					return false;
 				} else {
 					screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
@@ -1512,6 +1517,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		nova.workspace.config.set("as3.compiler.enableWarnings",(actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","warn")=="true" ? true : false));
 
 		nova.workspace.config.set("as3.compiler.additional",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","additionalCompilerArguments"));
+
+		let themeTag = actionscriptPropertiesXml.findNodesByName("theme");
+		if(themeTag!="") {
+			nova.workspace.config.set("as3.theme.isDefault",(actionscriptPropertiesXml.getAttributeFromNodeByName("theme","themeIsDefault")=="true" ? true : false));
+			nova.workspace.config.set("as3.theme.isSDK",(actionscriptPropertiesXml.getAttributeFromNodeByName("theme","themeIsSDK")=="true" ? true : false));
+			nova.workspace.config.set("as3.theme.location",actionscriptPropertiesXml.getAttributeFromNodeByName("theme","themeLocation"));
+		}
 
 		// @NOTE Modules and Workers. Never used them, not sure how they get setup here.
 

@@ -706,6 +706,20 @@
 					"allowFiles": true
 				}
 			]
+		},
+		{
+			"title": "Themes",
+			"type": "section",
+			"description": "(Incomplete) For now, a flag to specify using Halo in Flex 4 projects.",
+			"children": [
+				{
+					"key": "as3.themes.forceHalo",
+					"title": "Force Halo",
+					"type": "boolean",
+					"description": "Enable this if you are trying to compile a Flex 3 project with an Flex 4 SDK. If building fails with the following types of errors, try to enable this option:\n\nError: The style '…' is only supported by type 'mx.….…' with the theme(s) 'halo'.",
+					"default": false
+				}
+			]
 		}
 	],
 
