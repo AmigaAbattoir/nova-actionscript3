@@ -188,7 +188,7 @@ exports.promptForPassword = function(certificateLocation, storedPasswordExists =
 			message += "password for the certificate:\n\n" + certificateLocation;
 
 			nova.workspace.showInputPanel(message,
-				{ label: "Password", prompt: "Store", secure: true }, (result) => {
+				{ label: "Password", prompt: "OK", secure: true }, (result) => {
 				// console.log("RESULT [[" + result + "]]");
 				// If user cancelled, this will be undefined
 				if(result===undefined) {
