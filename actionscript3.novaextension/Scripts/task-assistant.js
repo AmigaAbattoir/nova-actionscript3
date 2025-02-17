@@ -763,14 +763,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// Read the application file and look for the [SWF()] block for info.
 				let metadata = {};
 
-
-console.log("mainApplicationPath: " + mainApplicationPath);
-
-
 				// Load main class, and get any SWF Metadata
-				var mainAppFile = getStringOfWorkspaceFile(nova.path.join(mainSrcDir,mainApplicationPath));
+				var mainAppFile = getStringOfFile(nova.path.join(mainSrcDir,mainApplicationPath));
 				if(mainAppFile==null) {
-					nova.workspace.showErrorMessage("There was an issue reading the file \"" + nova.path.join(mainSrcDir,mainApplicationPath) + "\". Please check the file and check that it's not empty and there are permissions to read it");
+					nova.workspace.showErrorMessage("There was an issue reading the main application file \"" + nova.path.join(mainSrcDir,mainApplicationPath) + "\". Please check the file, making sure it's not empty and there are permissions to read it");
 					return;
 				}
 
@@ -869,49 +865,53 @@ console.log("mainApplicationPath: " + mainApplicationPath);
 					return null;
 				});
 			}
-		} else { // For AIR Projects
-			if(copyAssets) { // Copy each source dir to the output folder
-				// console.log("copyAssets Begins!");
-				fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
-				fileNamesToExclude.push(appXMLName);
-				fileExtensionsToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.extensions");
+		}
 
-				// console.log("Copy DIR: [[" + copyDirs + "]]")
-				// consoleLogObject("Copy DIR: " + copyDirs)
+		// Both Flash and AIR projects need to copy assets if they are set to
+		if(copyAssets) { // Copy each source dir to the output folder
+			// console.log("copyAssets Begins!");
+			fileNamesToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.names");
+			fileNamesToExclude.push(appXMLName);
+			fileExtensionsToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.extensions");
 
-				var copyDirs = sourceDirs.concat(mainSrcDir);
-				// console.log("Copy DIR: [[" + copyDirs + "]]")
-				// consoleLogObject("Copy DIR: " + copyDirs)
+			// console.log("Copy DIR: [[" + copyDirs + "]]")
+			// consoleLogObject("Copy DIR: " + copyDirs)
 
-				if(copyDirs!=null) {
-					const copyPromises = copyDirs.map(copyDirRaw => {
-						let copyDir = copyDirRaw;
-						if (copyDir.charAt(0) == "~") {
-							copyDir = nova.path.expanduser(copyDir);
-						} else if (copyDir.charAt(0) != "/") {
-							copyDir = nova.path.join(nova.workspace.path, copyDir);
-						}
-						// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
+			var copyDirs = sourceDirs.concat(mainSrcDir);
+			// console.log("Copy DIR: [[" + copyDirs + "]]")
+			// consoleLogObject("Copy DIR: " + copyDirs)
 
-						ensureFolderIsAvailable(destDir);
-						return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
-					});
+			if(copyDirs!=null) {
+				const copyPromises = copyDirs.map(copyDirRaw => {
+					let copyDir = copyDirRaw;
+					if (copyDir.charAt(0) == "~") {
+						copyDir = nova.path.expanduser(copyDir);
+					} else if (copyDir.charAt(0) != "/") {
+						copyDir = nova.path.join(nova.workspace.path, copyDir);
+					}
+					// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
 
-					Promise.all(copyPromises).then(() => {
-						if (nova.inDevMode()) {
-							console.log("All assets copied successfully.");
-						}
-					})
-					.catch(error => {
-						nova.workspace.showErrorMessage("Error during asset copying: " + error);
-						if (nova.inDevMode()) {
-							console.error("Error during asset copying:", error);
-						}
-						return null;
-					});
-				}
+					ensureFolderIsAvailable(destDir);
+					return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
+				});
+
+				Promise.all(copyPromises).then(() => {
+					if (nova.inDevMode()) {
+						console.log("All assets copied successfully.");
+					}
+				})
+				.catch(error => {
+					nova.workspace.showErrorMessage("Error during asset copying: " + error);
+					if (nova.inDevMode()) {
+						console.error("Error during asset copying:", error);
+					}
+					return null;
+				});
 			}
+		}
 
+		// Do this for AIR projects!
+		if(projectType!="flash") {
 			// This loads the app descriptor file and check the version to match the AIR SDK.
 			// FlashBuilder would modify the -app.xml with updated variables, so we will make a copy of the file,
 			// changing what FB would have (and possible VSCode for AS3MXML).  Otherwise, this will write a copy.
@@ -1451,18 +1451,18 @@ console.log("mainApplicationPath: " + mainApplicationPath);
 			var flexPropertiesXml = new xmlToJson.ns3x2j(flexProperties,false);
 			//console.log("compilerSourcePath> " + flexPropertiesXml.select("//flexProperties"));
 			//consoleLogObject(flexPropertiesXml.select("//flexProperties"));
-			nova.workspace.config.set("editor.default_syntax","MXML");
+			nova.workspace.config.set("editor.default_syntax","mxml");
 			nova.workspace.config.set("as3.application.isFlex",true);
 			isFlex = true;
 		} else {
-			nova.workspace.config.set("editor.default_syntax","ActionScript 3");
+			nova.workspace.config.set("editor.default_syntax","actionscript");
 			nova.workspace.config.set("as3.application.isFlex",false);
 		}
 
 		// If this is a library project, then it will have a .flexLibProperties file!!
 		var flexLibProperties = getStringOfWorkspaceFile(".flexLibProperties");
 		if(flexLibProperties!=null) {
-			nova.workspace.config.set("editor.default_syntax","ActionScript 3");
+			nova.workspace.config.set("editor.default_syntax","actionscript");
 			nova.workspace.config.set("as3.application.isFlex",true);
 			isFlex = true;
 			isLibrary = true;
@@ -1498,17 +1498,53 @@ console.log("mainApplicationPath: " + mainApplicationPath);
 
 		nova.workspace.config.set("as3.build.output",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","outputFolderPath"));
 
-		// Since the XML may have libraryPathEntries in multiple places, we need to take a look at the top children of it.
-		//Since pjxml seems to add "" contents after the fact, let's check each one
-		var prefLibDirs = [];
+		/**
+		 * @NOTE Looks like this is how the library paths work:
+		 *
+		 * KIND
+		 * ----
+		 * 1 - Project Relative
+		 * 2 - Absolute path to SWC
+		 * 3 - Flex SDK built-in (frameworks/libs...)
+		 * 4 - Flex SDK Theme (frameworks/themes/...)
+		 * 5 - External Folder (not a SWC but a folder, like ANEs)
+		 *
+		 * LINKTYPE
+		 * --------
+		 * 1 - Merge into code
+		 * 2 - External (runtime shared library)
+		 * 3 - Internal (RSL linked in a specific way)
+		 *
+		 * Now, how to manage all these?!
+		 * For now, we're only adding Kind 1 & 3, but we have to check for excludedEntries...
+		 */
 
+		var excludedLibs = [];
+		// Since the XML may have libraryPathEntries in multiple places, we need to take a look at the top children of it.
+		var excludedLibEntries = actionscriptPropertiesXml.findNodesByName("excludedEntries");//
+		// console.log("Excluded? ");
+		 // consoleLogObject(excludedLibEntries);
+		if(excludedLibEntries.length) {
+			// If there are entries, then lets go through them and add the to our holder.
+			excludedLibEntries[0].children.forEach((duu) => {
+				excludedLibs.push(duu["@"]["path"]);
+			});
+		}
+		// console.log("Excluded libraries!");
+		// consoleLogObject(excludedLibs);
+
+		var prefLibDirs = [];
+		var kind, path;
 		actionscriptPropertiesXml.findNodesByName("libraryPathEntry").forEach((libDir) => {
 			// consoleLogObject(libDir);
-			if(libDir["@"]["kind"]==1) {
-				// console.log("Add a 'Libs Dirs:` entry of [" + libDir["@"]["path"] + "]");
-				prefLibDirs.push(libDir["@"]["path"]);
-			} else {
-				// @TODO Kind 4 may be excludes, need to look into how to add that to the call to build...
+			kind = libDir["@"]["kind"];
+			if(kind==1 || kind==3) {
+				path = libDir["@"]["path"];
+				// console.log(" DO WE ADD PATH: " + path);
+				if(excludedLibs.indexOf(path)==-1) {
+					// console.log("Add a 'Libs Dirs:` entry of [" + libDir["@"]["path"] + "]");
+					prefLibDirs.push(libDir["@"]["path"]);
+				}
 			}
 		});
 

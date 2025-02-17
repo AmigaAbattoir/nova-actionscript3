@@ -49,7 +49,7 @@ exports.updateASConfigFile = function() {
 	asconfig["compilerOptions"]["source-path"] = sourceDirs;
 	// asconfig needs the main source dir in the mix!
 	asconfig["compilerOptions"]["output"] = configValues.destDir + "/" + configValues.exportName;
-	asconfig["compilerOptions"]["library-path"] = configValues.libraryPath
+	asconfig["compilerOptions"]["library-path"] = configValues.libPaths;
 	asconfig["mainClass"] = configValues.mainClass; // @NOTE Should be the main file without src/ and the .as/.mxml
 	asconfig["application"] = configValues.mainSrcDir + "/" + configValues.appXMLName;
 

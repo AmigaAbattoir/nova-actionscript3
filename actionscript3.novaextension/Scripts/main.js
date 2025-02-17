@@ -769,13 +769,12 @@ class AS3MXMLLanguageServer {
 
 					nova.workspace.showActionPanel(asConfigMessage, { buttons: [ "Automatic","I'll Maintain it","Cancel"] },
 						(something, other) => {
-							console.log("Something : "+ something + "   Ohter: " + other)
 							switch(something) {
 								case 0: {
 									if(hasExistingASConfig) {
 										// Back it up...
 										nova.fs.copy(nova.workspace.path + "/asconfig.json",nova.workspace.path + "/asconfig-" + getCurrentDateAsSortableString() + ".json");
-										this.loadASConfigFile();
+										loadASConfigFile();
 									} else {
 										nova.workspace.context.set("currentASConfigText",JSON.stringify({}));
 									}

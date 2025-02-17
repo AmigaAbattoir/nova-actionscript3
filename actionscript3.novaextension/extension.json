@@ -443,7 +443,8 @@
 					"key": "as3.build.outputURL",
 					"title": "Output folder URL",
 					"type": "string",
-					"description": "* Note: Flash only\nThe location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
+					"description": "(Not implements) The location of where the Flash project will be launched from via URL.",
+					"placeholder": "Not used yet..."
 				},
 				{
 					"title": "Source Path",
@@ -494,7 +495,7 @@
 						{
 							"key": "as3.build.library.additional",
 							"title": "Build path libraries",
-							"description": "You can choose to add either individual SWCs or folders of SWCs",
+							"description": "You can choose to add either individual SWCs or folders of SWCs. You can use the shortcut `${PROJECT_FRAMEWORKS}` to reference the current SDK's base.",
 							"type": "pathArray",
 							"relative": true,
 							"allowFolders": true,

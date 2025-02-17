@@ -132,8 +132,8 @@ exports.getConfigsForPacking = function(file) {
 	};
 
 	if(nova.inDevMode()) {
-		console.log("*** ---===[ Here are the packaging settings from the project ]===--- ***");
-		consoleLogObject(configData);
+		// console.log("*** ---===[ Here are the packaging settings from the project ]===--- ***");
+		// consoleLogObject(configData);
 	}
 
 	return configData;
@@ -157,8 +157,8 @@ exports.getAppXMLNameAndExport = function(file) {
 	};
 
 	if(nova.inDevMode()) {
-		console.log("*** ---===[ Here are the app xml and export names settings from the project ]===--- ***");
-		consoleLogObject(configData);
+		// console.log("*** ---===[ Here are the app xml and export names settings from the project ]===--- ***");
+		// consoleLogObject(configData);
 	}
 
 	return configData;
@@ -186,6 +186,9 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	if(mainSrcDir=="./") {
 		mainSrcDir = "";
 	}
+	if(mainSrcDir.charAt(0)=="~") { // If a user shortcut, resolve
+		mainSrcDir = nova.path.expanduser(mainSrcDir);
+	}
 
 	if(appendWorkspacePath) {
 		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
@@ -200,9 +203,8 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 				sourceDir = nova.path.expanduser(sourceDir);
 			}
 			if(sourceDir.includes("${PROJECT_FRAMEWORKS}")) {
-				sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
+				sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks");
 			}
-			/** @TODO Check if it starts with ~, or a "/", then don't merge with workspace! */
 			sourcePath.push(sourceDir);
 		});
 	}
@@ -211,9 +213,11 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	var libraryPaths = [];
 	if(libPaths) {
 		libPaths.forEach((libPath) => {
-			// @NOTE, not sure this is needed, but it may come in handy
+			if(libPath.charAt(0)=="~") { // If a user shortcut, resolve
+				libPath = nova.path.expanduser(libPath);
+			}
 			if(libPath.includes("${PROJECT_FRAMEWORKS}")) {
-				libPath = libPath.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks/");
+				libPath = libPath.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks");
 			}
 			if(libPath.includes("{locale}")) {
 				/** @TODO Need to figure out how to get locale... Maybe a setting in the extension or preferences */
@@ -226,18 +230,20 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	var anePaths = nova.workspace.config.get("as3.build.anes");
 
 	var destDir = nova.workspace.config.get("as3.build.output");
+	// If empty, we are assuming there is a `src/`...
 	if(destDir=="") {
-		if(appendWorkspacePath) {
-			destDir = nova.path.join(nova.workspace.path, "bin-debug");
-		} else {
-			destDir = "bin-debug";
-		}
-	} else {
-		/** @TODO Check if it starts with ~, or a "/", then don't merge with workspace! */
-		if(appendWorkspacePath) {
-			destDir = nova.path.join(nova.workspace.path, destDir);
-		}
-		//console.log("Using configed DEST DIR " + destDir);
+		destDir = "bin-debug";
+	}
+	// If it's a dot slash, we can officially make it empty!
+	if(destDir=="./") {
+		destDir = "";
+	}
+	if(destDir.charAt(0)=="~") { // If a user shortcut, resolve
+		destDir = nova.path.expanduser(destDir);
+	}
+
+	if(appendWorkspacePath) {
+		destDir = nova.path.join(nova.workspace.path, destDir);
 	}
 
 	// Library only stuff
@@ -271,14 +277,15 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 		"isFlex": isFlex,
 		"appXMLName": appXMLName,
 		"copyAssets": copyAssets,
+		"compilerAdditional": compilerAdditional,
 		// Used by library building
 		"linkage": linkage,
 		"componentSet": componentSet
 	};
 
 	if(nova.inDevMode()) {
-		console.log("*** ---===[ Here are the building settings from the project ]===--- ***");
-		consoleLogObject(configData);
+		// console.log("*** ---===[ Here are the building settings from the project ]===--- ***");
+		// consoleLogObject(configData);
 	}
 
 	return configData;
