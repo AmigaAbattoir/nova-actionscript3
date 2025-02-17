@@ -41,7 +41,7 @@
 		"onCommand:as3mxml.selectWorkspaceSDK",
 		"onCommand:as3mxml.getActiveProjectURIs",
 
-		"onCommand:as3.packaging.certificateCreate"
+		"onCommand:as3.certificate.create"
 	],
 
 	"breakpoints": [
@@ -810,15 +810,15 @@
 			{"separator": true},
 			{
 				"title": "🔓 Clear Certificate Password",
-				"command": "as3.clearExportPassword"
+				"command": "as3.certificate.clearPassword"
 			},
 			{
 				"title": "🔐 Store Certificate Password",
-				"command": "as3.storeExportPassword"
+				"command": "as3.certificate.storePassword"
 			},
 			{
 				"title": "🔏 Create new Certificate",
-				"command": "as3.packaging.certificateCreate"
+				"command": "as3.certificate.create"
 			},
 			{"separator": true},
 			{

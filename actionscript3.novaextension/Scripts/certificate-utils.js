@@ -280,7 +280,7 @@ exports.checkCertificatePassword = function(certificateLocation, password) {
  */
 exports.createCertificate = function() {
 	return new Promise((resolve) => {
-		console.log("Called... as3.packaging.certificateCreate");
+		console.log("Called... as3.certificate.create");
 
 		nova.workspace.showFileChooser(
 			"Select where to save the new P12 certificate",

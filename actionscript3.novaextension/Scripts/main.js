@@ -64,11 +64,11 @@ var sessionCertificatePassword = "";
  */
 exports.activate = function() {
 	// ---- Certificate Menu Functions ----
-	nova.commands.register("as3.packaging.certificateCreate", (workspace) => { return createCertificate(); });
+	nova.commands.register("as3.certificate.create", (workspace) => { return createCertificate(); });
 
-	nova.commands.register("as3.clearExportPassword", (workspace) => { return clearExportPassword(); });
+	nova.commands.register("as3.certificate.clearPassword", (workspace) => { return clearExportPassword(); });
 
-	nova.commands.register("as3.storeExportPassword", (workspace) => { return storeExportPassword(); });
+	nova.commands.register("as3.certificate.storePassword", (workspace) => { return storeExportPassword(); });
 
 	// ---- Various Menu Functions ----
 	nova.commands.register("as3.tester", (workspace) => {
