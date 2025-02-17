@@ -809,11 +809,11 @@
 			},
 			{"separator": true},
 			{
-				"title": "🔓 Clear Certifcate Password",
+				"title": "🔓 Clear Certificate Password",
 				"command": "as3.clearExportPassword"
 			},
 			{
-				"title": "🔐 Store Certifcate Password",
+				"title": "🔐 Store Certificate Password",
 				"command": "as3.storeExportPassword"
 			},
 			{

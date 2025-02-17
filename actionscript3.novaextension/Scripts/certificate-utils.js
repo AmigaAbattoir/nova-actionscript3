@@ -57,7 +57,7 @@ exports.clearExportPassword = function() {
 			if(hasCertificates) {
 				nova.workspace.showErrorMessage("You currently do not have any certificate passwords stored in Keychain for this project.");
 			} else {
-				nova.workspace.showErrorMessage("Your project and/or Tasks do not contain a certifcate to clear");
+				nova.workspace.showErrorMessage("Your project and/or Tasks do not contain a Certificate to clear");
 			}
 		} else {
 			var certNamePromise;
@@ -146,7 +146,7 @@ exports.storeExportPassword = function() {
 		}
 
 		if(certs.length==0) {
-			nova.workspace.showErrorMessage("Your project and/or Tasks do not contain a certifcate.");
+			nova.workspace.showErrorMessage("Your project and/or Tasks do not contain a Certificate.");
 		} else {
 			var certNamePromise;
 			if(certs.length==1) {
