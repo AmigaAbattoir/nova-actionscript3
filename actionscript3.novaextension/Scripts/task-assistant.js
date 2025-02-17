@@ -763,8 +763,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// Read the application file and look for the [SWF()] block for info.
 				let metadata = {};
 
+
+console.log("mainApplicationPath: " + mainApplicationPath);
+
+
 				// Load main class, and get any SWF Metadata
-				var mainAppFile = getStringOfWorkspaceFile("src/"+mainApplicationPath);
+				var mainAppFile = getStringOfWorkspaceFile(nova.path.join(mainSrcDir,mainApplicationPath));
+				if(mainAppFile==null) {
+					nova.workspace.showErrorMessage("There was an issue reading the file \"" + nova.path.join(mainSrcDir,mainApplicationPath) + "\". Please check the file and check that it's not empty and there are permissions to read it");
+					return;
+				}
 
 				// Regex to extract [SWF(...)]
 				const swfRegex = /\[SWF\((.*?)\)\]/;
@@ -1472,12 +1480,18 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var swfName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
 		console.log("Name of SWF: [" + swfName  + "]");
 */
-		nova.workspace.config.set("as3.build.source.main",actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","sourceFolderPath"));
+		var mainSrcDir = actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","sourceFolderPath");
+		// If the main source director is empty or null, set it to "./" so we know that the user isn't
+		// using the default "src/" folder! We'll adjust it with the congif-util.js functions!
+		if(mainSrcDir==null || mainSrcDir=="") {
+			mainSrcDir = "./";
+		}
+		nova.workspace.config.set("as3.build.source.main",mainSrcDir);
+
 		var flexSDKAskedFor = actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","flexSDK");
 
 		var prefSourceDirs = [];
 		actionscriptPropertiesXml.findNodesByName("compilerSourcePathEntry").forEach((sourceDir) => {
-			// console.log(" sourceDir: " + sourceDir["@"]["path"]);
 			prefSourceDirs.push(sourceDir["@"]["path"]);
 		});
 		nova.workspace.config.set("as3.build.source.additional",prefSourceDirs);

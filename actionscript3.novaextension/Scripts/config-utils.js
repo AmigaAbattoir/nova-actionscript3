@@ -178,9 +178,15 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	const mainClass = mainApplicationPath.replace(".mxml","").replace(".as","");
 
 	var mainSrcDir = nova.workspace.config.get("as3.build.source.main");
+	// If empty, we are assuming there is a `src/`...
 	if(mainSrcDir=="") {
 		mainSrcDir = "src";
 	}
+	// If it's a dot slash, we can officially make it empty!
+	if(mainSrcDir=="./") {
+		mainSrcDir = "";
+	}
+
 	if(appendWorkspacePath) {
 		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
 	}
