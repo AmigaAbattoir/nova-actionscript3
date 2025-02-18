@@ -8,27 +8,31 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 ### Added
 
 - More work on getting AS3MXML integrated
+- More documentation in README.md
 - Added "Clips" for completion of AS3/MXML content (would have liked to do it through Completions XMLs, but they would not show up properly)
+- Added building and running Flash projects.
+- Added building of Library projects.
 - Prompts to import Flash Builder projects when opening
-- If extension preference is set, opening a project will ask if you want to Import Flash Builder project.
+- Extension preference, to suppress asking to import Flash Builder project.
 - Checks Flash Builder project for sources file to exclude when building Flash projects
 - Prompts to automatically update an existing `asconfig.json` file
 - Will generate an `asconfig.json` file if one is not in the project
 - If there are more than one Task when Exporting Release Build, it will prompt you for which one to build.
 - Add Timestamp option, so you can specify a different RFC3161-compliant timestamp server to use
-- Added building and running Flash projects.
 - Added options for stand alone Flash Player, Ruffle and an old web browser to use for launching. (Preferably Chrome <88)
-- Added some more modern device options (made Google Sheet https://docs.google.com/spreadsheets/d/1RlsuMwYp-ANTerziv12LxxH47GIsoeeBSdaEUdCDY5E/edit?gid=0#gid=0)
+- Added some more modern device options (made Google Sheet https://docs.google.com/spreadsheets/d/1RlsuMwYp-ANTerziv12LxxH47GIsoeeBSdaEUdCDY5E/edit?gid=0#gid=0) to launching simulator
 - Can store or clear stored passwords for certificates from menu
 - Can store certificate password for just the session
 - When exporting a release package, it will verify the password before trying to build the package
-- Added building of Library projects.
 - Adds warning if using an old Flex/AIR SDK
+- Checks the AIR descriptor to see if it matches what's being used to build
+- Added option to force Halo theme for projects (still need work on Themes from FB)
 
 ### Changed
 
-- Using AS3MXML V 1.21.1
+- Using AS3MXML V 1.22.0
 - Make Exporting Release rely more on values in Tasks, making them different tasks per device
+- Import Flash Builder handles libraries better (still needs work)
 - Changed images to adhere to Panic's sizing and folder layout
 - Changed this changelog to a format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and that this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
