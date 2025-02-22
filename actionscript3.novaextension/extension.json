@@ -791,7 +791,7 @@
 			},
 			{"separator": true},
 			{
-				"title": "⚙️ Import FlashBuilder settings",
+				"title": "⚙️ Import Flash Builder project...",
 				"command": "as3.importFlashBuilderSettings",
 				"when": "hasProjectAndASProperties"
 			},
