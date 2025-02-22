@@ -174,6 +174,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					}
 				}
 
+				// Figure out the certificate to use when signing.
+				var certificateLocation = nova.workspace.config.get("as3.packaging.certificate");
+				// If there is no certificate for this, then we can't package!!
+				if(certificateLocation==null) {
+					nova.workspace.showErrorMessage("Your project and/or Tasks do not contain a Certificate which you need in order to package an export release.");
+					return;
+				}
+
 				// console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 				// consoleLogObject(taskConfig);
 				// console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
@@ -260,8 +268,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							});
 						}
 
-						// Figure out the certificate to use when signing.
-						var certificateLocation = nova.workspace.config.get("as3.packaging.certificate");
 						// Check if the Task has a custom certificate set for it!
 						if(taskConfig["as3.packaging.certificate"] && taskConfig["as3.packaging.certificate"]!="") {
 							certificateLocation = taskConfig["as3.packaging.certificate"];
