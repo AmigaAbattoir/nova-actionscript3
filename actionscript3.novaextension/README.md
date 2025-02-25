@@ -10,68 +10,75 @@ The goal was to be use all my old Adobe Flash Build projects and convert them to
 
 ## ✨ Features
 
- * 🖍️ **Syntax Highlighting**
+- 🖍️ **Syntax Highlighting**
 
- * 📁 **Code Folding**
+- 📁 **Code Folding**
 
- * 📚 **Symbols** - _Note:_ Self-closed MXML and children nodes do not show up correctly in the hierarchy.
+- 📚 **Symbols** - _Note:_ Self-closed MXML and children nodes do not show up correctly in the hierarchy.
 
- * ⚠︎ **Issues** - _Via AS3MXML_
+- ⚠︎ **Issues** - _Via AS3MXML_
 
- * 🧪 **Language intelligence** - _Via AS3MXML_
+- 🧪 **Language intelligence** - _Via AS3MXML_
 
- * 💡 **Completions** for the following:
+- 💡 **Completions** for the following:
 
-   * **ActionScript 3**
+  - **ActionScript 3**
 
-   * **MXML** - _Note:_ Still a little wonky
+  - **MXML** - _Note:_ Still a little wonky
 
-   * **AIR Descriptor XML** - Include descriptions on most of the AIR Descriptors tags!
+  - **AIR Descriptor XML** - Include descriptions on most of the AIR Descriptors tags!
 
- * 📎 **Clips**
+- 📎 **Clips**
 
- * ▶️ **Tasks**
+- ▶️ **Tasks**
 
-   * Use Nova's Clean/Build/Run for AIR desktop project, mobile project (currently, only through Desktop simulator), and Flash web based project (using **SWFObject** from the AIR SDK or a very basic page using **Ruffle**). Also, limited support for packaging with ANEs.
+  - Use Nova's Clean/Build/Run for AIR desktop project, mobile project (currently, only through Desktop simulator), and Flash web based project (using **SWFObject** from the AIR SDK or a very basic page using **Ruffle**). Also, limited support for packaging with ANEs.
 
- * 📦 **Exporting AIR Packages**
+- 📦 **Exporting AIR Packages**
 
-   * AIR, AIRI, Captive bundles, and native installer for Mac should work (_untested for submitting to app stores_).
-   * Android and iOS packaging _should_ work (_untested for App Store submission_).
+  - AIR, AIRI, Captive bundles, and native installer for Mac should work (_untested for submitting to app stores_).
+  - Android and iOS packaging _should_ work (_untested for App Store submission_).
 
 ## ☑️ Todo
 
- * **Launching AIR projects on actual devices** - Android and iOS
- * **Locale** - Current set to use en_US
- * **Library** - Automatically managing library builds
- * **Workers**
- * **Modules**
+- **Launching AIR projects on actual devices** - Android and iOS
+- **Locale** - Current set to use en_US
+- **Themes**
+- **ANE** Handling
+- **Library** - Automatically managing library builds
+- **Workers**
+- **Modules**
 
 ## 📝 Notes
 
-The LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.22.0 but Cleaning/Building/Running and Export Packaging are done by this extension using `mxmlc` for compiling of Flash and AIR project and packaging, `compc` is used for compiling libraries, and the running is done with `adt` from an (Harman) Adobe Air or Flex SDK.
+For Issues, language intelligence and completions, the LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.22.0
 
-For the Issues, language intelligence and completions to work, it requires an `asconfig.json` in the project folder. The extension will attempt to auto-generate one. If you have used the VSCode extension, you can disable the automatic generation in the configurations (and the prompt when first opening the project).
+AS3MXML requires an `asconfig.json` in the project folder. The extension will attempt to auto-generate one. If you have used the VSCode extension, and have one already, you can disable the automatic generation and updating in the configurations or with the prompt when first opening the project.
+
+Cleaning/Building/Running and Export Packaging are done by this extension using binaries from the (Harman) Adobe Air or Flex SDK:
+- `mxmlc` for compiling of Flash and AIR project and packaging,
+- `compc` is used for compiling libraries
+- `adt` is used for running (checking for devices and making certificates)
 
 ## 📋 Requirements
 
 ActionScript 3 and MXML for Nova requires the following (besides Nova) to be installed on your Mac:
 
- * **Java (JDK 11+)** - AS3MXML requires it, and it also avoids issues with `mxmlc` returning `"Error: null"` when using Java 1.8.
+- **Java (JDK 11+)** - AS3MXML requires it, and it also avoids issues with `mxmlc` returning `"Error: null"` when using Java 1.8.
 
- * **(Harman) Adobe Air** or **Flex SDK** - Default path is `~/Applications/AIRSDK` (but can be changed in the extension settings)
+- **(Harman) Adobe Air** or **Flex SDK** - Default path is `~/Applications/AIRSDK` (but can be changed in the extension settings)
 
- * **Rosetta 2** (for Apple Silicon Macs) - Required to run SDK tools
+- **Rosetta 2** (for Apple Silicon Macs) - Required to run SDK tools
 
 ### Optional
 
 These are only needed if you plan on running Flash Player projects:
 
- * **Flash Player** (Standalone) - If trying to run Flash projects
+- **Flash Player** (Standalone) - If trying to run Flash projects
 
- * **Ruffle** - Can also run Flash projects. _NOTE:_ There may be some additional prompting to allow it to run the projects if you launch it from Nova.
+- **Ruffle** - Can also run Flash projects. _NOTE:_ There may be some additional prompting to allow it to run the projects if you launch it from Nova.
 
- * **Old Chrome/Chromium with PPAPI Flash Player** - Version prior to V88 should be able to run in browser
+- **Old Chrome/Chromium with PPAPI Flash Player** - Version prior to V88 should be able to run in browser
 
   ![](assets/flash-in-web-small.png)
 
@@ -99,32 +106,34 @@ Since the LSP AS3MXML requires requires an `asconfig.json` for code intelligence
 
 ![](assets/asconfig-prompt.png)
 
- * **Automatic** - If you select this, when project's settings are changed, the extension will modify the `asconfig.json`. If there is an existing `asconfig.json`, it will be backed up and timestamped.
+- **Automatic** - If you select this, when project's settings are changed, the extension will modify the `asconfig.json`. If there is an existing `asconfig.json`, it will be backed up and timestamped.
 
- * **I'll Maintain it** - This will not create or modify an `asconfig.json` file. Remember, you need one for code intelligence and issues!
+- **I'll Maintain it** - This will not create or modify an `asconfig.json` file. Just remember, you need one for code intelligence and issues!
 
- * **Cancel** - Skip, but will prompt you every time you open the project.
+- **Cancel** - Skip, but will prompt you every time you open the project.
 
-If the extension handles your `asconfig.json`, only the options used by this extension are changed. Since the building is not handled by AS3MXML, most of the packaging setting are not modified.
+If the extension handles your `asconfig.json`, only the options used by this extension are changed. Since the building is not handled by AS3MXML, most of the compling and packaging setting are not modified.
 
 
 ## ⚙️ Import Flash Builder project
 
-While Flex Builder / Flash Builder are no longer supported by Adobe, this extension allows users to migrate their existing project for use in Panic Nova. If your project contains  `.actionScriptProperties`, `.project`, and `.flexProperies` or `.flexLibProperies`, the entesting defaults to promting you to import the settings:
+While Flex Builder / Flash Builder are no longer supported by Adobe, this extension allows users to migrate their existing project for use in Panic Nova. If your project contains  `.actionScriptProperties`, `.project`, and `.flexProperies` or `.flexLibProperies`, the extension defaults to prompting you to import the settings:
 
 ![](assets/fb-detected.png)
 
- * **Yes** - Converts the Flash Builder project and modify the Nova project's settings.
+- **Yes** - Converts the Flash Builder project and modify the Nova project's settings.
 
- * **Never** - Will not import and won't ask again.
+- **Never** - Will not import and won't ask again.
 
- * **Cancel** - Will not import, but will ask you next time.
+- **Cancel** - Will not import, but will ask you next time.
 
 If you want, you can also change this setting in the **Extensions → Settings → Additional Options... → Prompt to import Flash Builder projects** and disable it.
 
 You can also use the menu option **Extensions → ActionScript 3 → Import Flash Builder project...** to change your project's settings to those used by a Flash Builder project when ever you feel like it.
 
-Currently, there is no list of SDKs like Flash Builder, if it reads the name of the SDK from the Flash Builder project, it will reminded you to update your project's SDK settings:
+#### SDKs
+
+Currently, there is no list of SDKs like Flash Builder, if the import reads the name of the SDK from the Flash Builder project, it will reminded you to update your project's SDK settings:
 
 ![](assets/check-sdk.png)
 
@@ -147,10 +156,10 @@ Prior to AIR SDK 20, some of the executables were still 32bit. Unfortunately, th
 
   ![](assets/32bit-air.png)
 
-  * **Understood** - The message will pop up every time you open the project
-  * **Don't Remind Me** - This will not show up again, unless you change the SDK that is being used. It will be reset every time you change SDKs.
+ - **Understood** - The message will pop up every time you open the project
+ - **Don't Remind Me** - This will not show up again, unless you change the SDK that is being used. It will be reset every time you change SDKs.
 
-This doesn't mean it won't still build, but if you try to play or package may fail:
+That doesn't mean it won't still build, but if you try to play or package may fail:
 
 ![](assets/air-failed.png)
 
@@ -181,17 +190,17 @@ This will force `mxmlc` to compile and embed the Halo theme, allowing Flex 4 to 
 ## 🔐 Certificates
 
 The extension has the ability to generate certificates for self signing AIR packages using ADL. To create a self-signed certificate:
- * Go to **Extensions → ActionScript 3 → Create new Certificate**
+- Go to **Extensions → ActionScript 3 → Create new Certificate**
 
    Nova will then prompt you with several questions and allow you to generate a new self-signing certificate.
 
 If your project or Tasks have certificates, you can store a certificate password in your Keychain:
- * Go to **Extensions → ActionScript 3 → Store Certificate Password**
+- Go to **Extensions → ActionScript 3 → Store Certificate Password**
 
  If there is more than one certificate, you will get a prompt to select which certificate to store. You must do it one at a time.
 
 To clear the certificate password from your Keychain:
- * Go to **Extensions → ActionScript 3 → Clear Certificate Password**
+- Go to **Extensions → ActionScript 3 → Clear Certificate Password**
 
  If you have stored one or more certificates, then it will prompt to select "All" or a particular certificate to remove.
 
@@ -224,23 +233,23 @@ If just testing locally on your own devices, you can just change the project's s
 
 Remember, there's a ton of configs, and in different places:
 
-  * **Global preferences** - Open **Extensions → Extension Library...** then select ActionScript 3's **Preferences** tab.
+ - **Global preferences** - Open **Extensions → Extension Library...** then select ActionScript 3's **Preferences** tab.
 
-  * **Project preferences** - You can also configure preferences on a per-project basis in **Project → Project Settings...**.
+ - **Project preferences** - You can also configure preferences on a per-project basis in **Project → Project Settings...**.
 
-  * **Task preferences** - Tasks also have a bunch of options too! Don't miss out on **Project → Tasks → Edit Task...** or if you click on the Task dropdown and selecting **Edit Task...** and then selecting the appropriate Task.
+ - **Task preferences** - Tasks also have a bunch of options too! Don't miss out on **Project → Tasks → Edit Task...** or if you click on the Task dropdown and selecting **Edit Task...** and then selecting the appropriate Task.
 
 ## ▶️ Tasks
 
 Task play an important role in build/run as well as exporting of packages. There are different ones available, based on how you plan to run and or package your project. Each project can also include multiple Task, so you can easily switch between building one project for multiple devices. The option to Export Release Build will ask which Task to export.
 
-* ![](Images/as3-air/as3-air.png) **AIR** - Desktop builds.
+- ![](Images/as3-air/as3-air.png) **AIR** - Desktop builds.
 
-* ![](Images/as3-android/as3-android.png)  **AIR - Android** - Packaging for Android devices.
+- ![](Images/as3-android/as3-android.png)  **AIR - Android** - Packaging for Android devices.
 
-* ![](Images/as3-ios/as3-ios.png)  **AIR - iOS** - Packaging for iOS devices.
+- ![](Images/as3-ios/as3-ios.png)  **AIR - iOS** - Packaging for iOS devices.
 
-* ![](Images/as3-flash/as3-flash.png)  **Flash** - Web Builds (supports SWFObject and Ruffle)
+- ![](Images/as3-flash/as3-flash.png)  **Flash** - Web Builds (supports SWFObject and Ruffle)
 
   If building a Flash project and using the Ruffle template for web, you will need to use Nova's External Preview option to run since Ruffle does not allow the use of `file:///` protocol for loading SWFs in a browser.
 
@@ -248,7 +257,7 @@ Task play an important role in build/run as well as exporting of packages. There
 
   ![](assets/stop-flash.png)
 
-  In the **Global preferences** setting**, you can set up the locations of Flash Player, Ruffle, and a old browser to use for launching if you scroll down to the Flash Player Run/Debug section:
+  In the **Global preferences** setting, you can set up the locations of Flash Player, Ruffle, and a old browser to use for launching if you scroll down to the Flash Player Run/Debug section:
 
   ![](assets/flash-runners.png)
 
@@ -256,8 +265,7 @@ Task play an important role in build/run as well as exporting of packages. There
 
   ![](assets/flash-launch-select.png)
 
-
-* ![](Images/as3-lib/as-lib.png)  **Library** - This can be used to make an Flex library (*NOTE:* Not fully tested, and needs some more work.)
+- ![](Images/as3-lib/as-lib.png)  **Library** - This can be used to make an Flex library (*NOTE:* Not fully tested, and needs some more work.)
 
 ## 💡 Tips and Tricks
 
@@ -265,7 +273,7 @@ Task play an important role in build/run as well as exporting of packages. There
 
  1. Going into **Project → Tasks → Edit Task...**
  2. Select the Task you want.
- 3. Scroll all the way to the bottom, change the Task's **Open Report** drop down to ***On Run**.
+ 3. Scroll all the way to the bottom, change the Task's **Open Report** drop down to **On Run**.
 
   ![](assets/open-report.png)
 
@@ -275,10 +283,10 @@ Task play an important role in build/run as well as exporting of packages. There
 
 ### Force build before running
 
- 1. Going into **Project → Tasks → Edit Task...**
+ 1. Going into **Project → Tasks → Edit Task...**.
  2. Expand the Task you want to modify.
  3. Select the **Run** option.
- 4. Then you can check off "Build before running"
+ 4. Then you can check off **Build before running**.
 
 ![](assets/build-before-running.png)
 
@@ -286,15 +294,12 @@ Task play an important role in build/run as well as exporting of packages. There
 
 This extension uses:
 
- * **[AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml)**: by [Bowler Hat LLC](https://bowlerhat.dev/) - [John Tynjala](https://www.patreon.com/josht)
+- **[AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml)**: by [Bowler Hat LLC](https://bowlerhat.dev/) - [John Tynjala](https://www.patreon.com/josht)
 
- * **[Ruffle](https://ruffle.rs/)**: A link to the CDN with the nightly build is included if you make a Flash Task and select the use Ruffle.
+- **[Ruffle](https://ruffle.rs/)**: A link to the CDN with the nightly build is included if you make a Flash Task and select the use Ruffle.
 
 ### ⚖️ Disclaimer
 
 This extension is **not affiliated with, endorsed by, or sponsored by** Adobe Inc or HARMAN International.
 
 "Adobe", "Flash", "Flash Player", "Flex Builder", "Flash Builder", and "Adobe AIR" are trademarks or registered trademarks of **Adobe Inc**. in the United States and other countries.
-
-
-

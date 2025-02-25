@@ -1,6 +1,6 @@
 # ActionScript 3 and MXML Extension for Panic's Nova
 
-*(Currently a work in progress)*
+🚀 **Work In Progress** 🚀
 
 Extension for ActionScript 3 and MXML in [Nova](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as the LSP.
 
