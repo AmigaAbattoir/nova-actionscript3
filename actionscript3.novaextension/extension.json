@@ -12,6 +12,9 @@
 		"clips",
 		"completions"
 	],
+
+	"homepage": "https://github.com/AmigaAbattoir/nova-actionscript3",
+	"repository": "https://github.com/AmigaAbattoir/nova-actionscript3",
 	"bugs": "https://github.com/AmigaAbattoir/nova-actionscript3/issues",
 
 	"main": "main.js",

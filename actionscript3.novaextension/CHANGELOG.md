@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [Unrelease]
+
+### Added
+
+- Includes homepage and repo in extension
+
 ## [0.8.0] - 2025-02-25
 
 ### Added
