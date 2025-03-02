@@ -384,7 +384,7 @@ exports.getCertificatePasswordInKeychain = function(certificateLocation) {
  */
 exports.setCertificatePasswordInKeychain = function(certificateLocation, value) {
 	var certificateName = certificateLocation.split("/").pop();
-	nova.credentials.setPassword("export-with-"+certificateName,certificateLocation);
+	nova.credentials.setPassword("export-with-"+certificateName,certificateLocation,value);
 }
 
 /**
