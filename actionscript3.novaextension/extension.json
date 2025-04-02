@@ -3,7 +3,7 @@
 	"name": "ActionScript 3",
 	"organization": "Abattoir Software",
 	"description": "ActionScript 3 & MXML language extension for Panic Nova. LSP powered by Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player (and maybe Apache Royale).",
-	"version": "0.8.1",
+	"version": "0.8.2",
 	"keywords": ["actionscript 3","flash","air","adobe air","mxml" ],
 	"categories": [
 		"issues",
@@ -352,7 +352,7 @@
 		{
 			"title": "Application",
 			"type": "section",
-			"description": "Select the main ActionScript or MXML for the project",
+			"description": "Select the main ActionScript or MXML for the project. All Tasks will default to this, but you can override it per Task",
 			"children": [
 				{
 					"key": "as3.application.mainApp",
@@ -440,7 +440,7 @@
 					"allowFolders": true,
 					"allowFiles": false,
 					"default": "bin-debug",
-					"description": "The location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\""
+					"description": "The location of where the final files get built. Use \"./\" if you want it at the root, otherwise it defaults to \"bin-debug\". All Tasks will default to this, but if you want you can override it per Task."
 				},
 				{
 					"key": "as3.build.outputURL",
@@ -728,13 +728,16 @@
 	],
 
 	"commands": {
-		"files": [
+		"editor": [
 			{
 				"title": "New ActionScript file",
-				"command": "as3mxml.newActionScriptFile"
-			}
-		],
-		"editor": [
+				"command": "as3mxml.newfile.ActionScript"
+			},
+			{
+				"title": "New CSS file",
+				"command": "as3mxml.newfile.CSS"
+			},
+			{"separator": true},
 			{
 				"title": "Add Import",
 				"subtitle": "You know you want to!",

@@ -120,6 +120,33 @@
 		]
 	},
 	{
+		"title": "Custom Build/Run Options",
+		"type": "section",
+		"description": "These options are used when the Build and Run option for this Task. This allows you to have a different main application file and output folder while using this Task.",
+		"children": [
+			{
+				"key": "as3.task.applicationFile",
+				"title": "Main application",
+				"type": "path",
+				"allowFolders": false,
+				"allowFiles": true,
+				"placeholder": "The project's Main application",
+				"filetype": [ "as","mxml" ],
+				"description": "If you want a custom main application for this Task, you can change that here. Make sure there is also a matching `-app.xml` file!"
+			},
+			{
+				"key": "as3.task.output",
+				"title": "Output folder",
+				"type": "path",
+				"relative": true,
+				"allowFolders": true,
+				"allowFiles": false,
+				"placeholder": "The project's Output folder",
+				"description": "The location of where this Task's build will be made. If blank, it uses the project's Output folder. Use \"./\" if you want it at the root of your project."
+			}
+		]
+	},
+	{
 		"title": "Exporting Release Build Options",
 		"type": "section",
 		"description": "All the below options are used when using the `Export Release Build...` option. They allow you to customize what is used when trying to export a package. This allows for using one project to build for different types of devices by using different task.",

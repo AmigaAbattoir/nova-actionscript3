@@ -170,11 +170,16 @@ exports.getAppXMLNameAndExport = function(file) {
  * Generally, false for the `asconfig.json`.
  * @returns {Object} - Loads of settings that are needed for building the project
  */
-exports.getConfigsForBuild = function(appendWorkspacePath = false) {
+exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrides = {}) {
 	// console.log("appendWorkspacePath: " + appendWorkspacePath);
 	const flexSDKBase = exports.determineFlexSDKBase();
 
-	const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+	var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+	if(configOverrides.mainApplicationPath) {
+		// console.log("  XXXXXX OVERRIDING - MAIN APP PATH!");
+		var mainApplicationPath = configOverrides.mainApplicationPath;
+	}
+
 	const mainClass = mainApplicationPath.replace(".mxml","").replace(".as","");
 
 	var mainSrcDir = nova.workspace.config.get("as3.build.source.main");
@@ -230,7 +235,12 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	var anePaths = nova.workspace.config.get("as3.build.anes");
 
 	var destDir = nova.workspace.config.get("as3.build.output");
-	// If empty, we are assuming there is a `src/`...
+	if(configOverrides.releasePath) {
+		// console.log("  XXXXXX OVERRIDING - DEST DIR!");
+		destDir = configOverrides.releasePath;
+	}
+
+	// If empty, we will assume the default of bin-debug...
 	if(destDir=="") {
 		destDir = "bin-debug";
 	}
@@ -253,8 +263,16 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false) {
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
 
 	const appAndExportName = exports.getAppXMLNameAndExport(mainApplicationPath);
-	const exportName = appAndExportName.exportName;
-	const appXMLName = appAndExportName.appXMLName;
+	var exportName = appAndExportName.exportName;
+	if(configOverrides.exportName) {
+		// console.log("  XXXXXX OVERRIDING - exportName!");
+		exportName = configOverrides.exportName;
+	}
+	var appXMLName = appAndExportName.appXMLName;
+	if(configOverrides.appXMLName) {
+		// console.log("  XXXXXX OVERRIDING - appXMLName!");
+		appXMLName = configOverrides.appXMLName;
+	}
 
 	const copyAssets = nova.workspace.config.get("as3.compiler.copy");
 

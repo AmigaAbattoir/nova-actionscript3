@@ -267,6 +267,8 @@ Task play an important role in build/run as well as exporting of packages. There
 
 - ![](Images/as3-lib/as-lib.png)  **Library** - This can be used to make an Flex library (*NOTE:* Not fully tested, and needs some more work.)
 
+As of V0.8.2, you can now set custom build/run main application files and destination folders, allowing you to launch multiple Tasks at the same time with a different project. This can be useful if you want to build and run a desktop, Android and iOS build from the same code base at the same time!
+
 ## 💡 Tips and Tricks
 
 ### Viewing `trace()` output

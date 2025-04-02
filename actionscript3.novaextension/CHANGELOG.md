@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - Unreleased
+
+### Added
+
+- Can now have custom build/run folder per task
+
 ## [0.8.1] - 2025-03-02
 
 ### Fixed

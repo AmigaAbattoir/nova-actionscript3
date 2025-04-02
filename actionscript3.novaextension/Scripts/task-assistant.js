@@ -706,7 +706,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return new TaskProcessAction(command, { args: args });
 	}
 
-
 	/**
 	 * Builds the SWF for the project
 	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
@@ -716,13 +715,17 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 */
 	//build(projectType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, runMode, destDir, exportName, packageAfterBuild = false, anePaths = []) {
 	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}) {
-		const configValues = getConfigsForBuild(true);
+		const configValues = getConfigsForBuild(true, configOverrides);
 
 		let flexSDKBase = configValues.flexSDKBase;
 		if(flexSDKBase==null) {
 			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
 			return null;
 		}
+		console.log("configOverrides: ");
+		consoleLogObject(configOverrides);
+
+
 		let destDir = configValues.destDir;
 		let mainApplicationPath =  configValues.mainApplicationPath;
 		let isFlex = configValues.isFlex;
@@ -736,31 +739,18 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let anePaths = configValues.anePaths;
 		let compilerAdditional = configValues.compilerAdditional;
 
-		// When building, especially for exporting, we may have different values
-		if(configOverrides) {
-			// console.log(" Config overrides!!!!" ); consoleLogObject(configOverrides);
-
-			// Building a release is in a different folder
-			if(configOverrides.releasePath!=null) {
-				destDir = configOverrides.releasePath;
-			}
-
-			// There may be custom ANEs for different builds
-			if(configOverrides.anes!=null) {
-				anePaths = configOverrides.anes;
-			}
-
-			// You cam want to choose a different main file for different packages
-			if(configOverrides.mainApplicationPath!=null) {
-				mainApplicationPath = configOverrides.mainApplicationPath;
-			}
-			if(configOverrides.appXMLName!=null) {
-				appXMLName = configOverrides.appXMLName;
-			}
-			if(configOverrides.exportName!=null) {
-				exportName = configOverrides.exportName;
-			}
-		}
+		// console.log("destDir = " + configValues.destDir);
+		// console.log("mainApplicationPath =  " + configValues.mainApplicationPath);
+		// console.log("isFlex = " + configValues.isFlex);
+		// console.log("appXMLName = " + configValues.appXMLName);
+		// console.log("mainClass = " + configValues.mainClass);
+		// console.log("mainSrcDir = " + configValues.mainSrcDir);
+		// console.log("exportName = " + configValues.exportName);
+		// console.log("copyAssets = " + configValues.copyAssets);
+		// console.log("sourceDirs = " + configValues.sourceDirs);
+		// console.log("libPaths = " + configValues.libPaths);
+		// console.log("anePaths = " + configValues.anePaths);
+		// console.log("compilerAdditional = " + configValues.compilerAdditional);
 
 		// Check if we are building a Flash project or an AIR one now
 		if(projectType=="flash") {
@@ -895,9 +885,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					} else if (copyDir.charAt(0) != "/") {
 						copyDir = nova.path.join(nova.workspace.path, copyDir);
 					}
-					// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
 
+					// Ensure we get the full path of the dest dir too!
+					if (destDir.charAt(0) == "~") {
+						destDir = nova.path.expanduser(destDir);
+					} else if (destDir.charAt(0) != "/") {
+						destDir = nova.path.join(nova.workspace.path, destDir);
+					}
 					ensureFolderIsAvailable(destDir);
+
+					// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
 					return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
 				});
 
@@ -1171,19 +1168,50 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
 	 * @param {Object} config - The Task's configs
 	 */
-	run(projectType, config) {
+	run(projectType, config, configOverrides) {
 		console.log("projectType: " + projectType)
 		let command = "";
 		let args = [];
 
+
+
+		const configValues = getConfigsForBuild(true,configOverrides);
+		let flexSDKBase = configValues.flexSDKBase;
+		let destDir = configValues.destDir;
+		let appXMLName = configValues.appXMLName;
+		let exportName = configValues.exportName;
+		let mainSrcDir = configValues.mainSrcDir;
+
+		console.log(" DEST DIR: " + destDir);
+/*
+		// When building/running, especially for exporting, we may have different values
+		if(configOverrides) {
+			console.log(" Config overrides!!!!" ); consoleLogObject(configOverrides);
+
+			// Building a release is in a different folder
+			if(configOverrides.releasePath!=null) {
+				destDir = configOverrides.releasePath;
+			}
+
+			// There may be custom ANEs for different builds
+			if(configOverrides.anes!=null) {
+				anePaths = configOverrides.anes;
+			}
+
+			// You cam want to choose a different main file for different packages
+			if(configOverrides.mainApplicationPath!=null) {
+				mainApplicationPath = configOverrides.mainApplicationPath;
+			}
+			if(configOverrides.appXMLName!=null) {
+				appXMLName = configOverrides.appXMLName;
+			}
+			if(configOverrides.exportName!=null) {
+				exportName = configOverrides.exportName;
+			}
+		}
+*/
 		// If we are running Flash
 		if(projectType=="flash") {
-			const configValues = getConfigsForBuild(true);
-			let flexSDKBase = configValues.flexSDKBase;
-			let destDir = configValues.destDir;
-			let appXMLName = configValues.appXMLName;
-			let exportName = configValues.exportName;
-
 			let fpApp;
 			if(config.get("as3.launch.type")=="browser") {
 				let fpApp = nova.config.get("as3.flashPlayer.browser");
@@ -1238,12 +1266,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				args.push(destDir + "/" +  exportName);
 			}
 		} else { // Otherwise, we are running through AIR!
-			const configValues = getConfigsForBuild(true);
-			let flexSDKBase = configValues.flexSDKBase;
-			let destDir = configValues.destDir;
-			let mainSrcDir = configValues.mainSrcDir;
-			let appXMLName = configValues.appXMLName;
-
 			var runningOnDevice = false;
 			// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
 			// To launch ADL, we need to point it to the "-app.xml" file
@@ -1778,6 +1800,22 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let config = context.config;
 		let action = context.action;
 
+		// Check if task overrides values:
+		let configOverrides = {};
+
+		// Check if there's an application file set in the Task, if so, we need to override those values!
+		let appFileOverride = config.get("as3.task.applicationFile")?.trim();
+		if(appFileOverride) {
+			configOverrides.mainApplicationPath = appFileOverride;
+		}
+
+		// If the task sets a different export folder, we'll need to override it!
+		let exportFolderOverride = config.get("as3.task.output")?.trim();
+//			if(config.get("as3.export.folder")!=null && config.get("as3.export.folder")!="") {
+		if(exportFolderOverride) {
+			configOverrides.releasePath = exportFolderOverride;
+		}
+
 		if(action==Task.Build) {
 			if(data.type=="library") {
 				return this.buildLibrary(
@@ -1788,16 +1826,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					config.get("as3.lib.nsm.namespace")
 				);
 			} else {
-				return this.build(data.type, config.get("actionscript3.request"), false);
+				return this.build(data.type, config.get("actionscript3.request"), false, configOverrides);
 			}
 		} else if(action==Task.Run) {
 			if(config.get("actionscript3.request")=="debug") {
-				return this.debugRun(data.type, config);
+				return this.debugRun(data.type, config, configOverrides);
 			} else {
-				return this.run(data.type, config)
+				return this.run(data.type, config, configOverrides)
 			}
 		} else if(action==Task.Clean) {
-			const configValues = getConfigsForBuild(true);
+			const configValues = getConfigsForBuild(true, configOverrides);
 			return new TaskCommandAction("as3.clean", { args: [configValues.destDir] });
 		}
 	}
