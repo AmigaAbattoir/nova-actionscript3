@@ -114,7 +114,6 @@ Since the LSP AS3MXML requires requires an `asconfig.json` for code intelligence
 
 If the extension handles your `asconfig.json`, only the options used by this extension are changed. Since the building is not handled by AS3MXML, most of the compling and packaging setting are not modified.
 
-
 ## ⚙️ Import Flash Builder project
 
 While Flex Builder / Flash Builder are no longer supported by Adobe, this extension allows users to migrate their existing project for use in Panic Nova. If your project contains  `.actionScriptProperties`, `.project`, and `.flexProperies` or `.flexLibProperies`, the extension defaults to prompting you to import the settings:
@@ -130,6 +129,12 @@ While Flex Builder / Flash Builder are no longer supported by Adobe, this extens
 If you want, you can also change this setting in the **Extensions → Settings → Additional Options... → Prompt to import Flash Builder projects** and disable it.
 
 You can also use the menu option **Extensions → ActionScript 3 → Import Flash Builder project...** to change your project's settings to those used by a Flash Builder project when ever you feel like it.
+
+Some additional options to make Nova feel more Flash Builder like are also options that you can change:
+
+- **Open output on run** - This opens the report window when you run a Task, similar to the Console window in Flash Builder
+
+- **Build on run** - This will force building before running
 
 #### SDKs
 

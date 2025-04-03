@@ -1737,6 +1737,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
 						}
 
+						// Enable Build on Run if enabled
+						if(nova.config.get("as3.project.buildOnRun")) {
+							taskJson["buildBeforeRunning"] = true;
+						}
+
+						// Enable Open report window when run
+						if(nova.config.get("as3.project.openOnRun")) {
+							taskJson["openLogOnRun"] = "start";
+						}
+
 						// Ensure Tasks folder is available and then write this Task!
 						this.ensureTaskFolderIsAvailable();
 						this.writeTaskFile(taskName, taskJson);
@@ -1759,10 +1769,21 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// @TODO ? Do we tell the user there are source excludes. I can't figure how FB determines if it should include source or not
 				//flashTaskJson.extensionValues["as3.packaging.includeSource"] = true;
 
+				// Enable Build on Run if enabled
+				if(nova.config.get("as3.project.buildOnRun")) {
+					flashTaskJson["buildBeforeRunning"] = true;
+				}
+
+				// Enable Open report window when run
+				if(nova.config.get("as3.project.openOnRun")) {
+					flashTaskJson["openLogOnRun"] = "start";
+				}
+
 				// Ensure Tasks folder is available and then write this Task!
 				this.ensureTaskFolderIsAvailable();
 				this.writeTaskFile("Flash", flashTaskJson);
 			}
+
 		}
 
 		if(flexSDKAskedFor!=null) {

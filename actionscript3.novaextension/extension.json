@@ -343,6 +343,20 @@
 					"type": "boolean",
 					"default": true,
 					"description": "When specificed, this will ask if you want to import Flash Builder projects when opening a project. If disabled, or you cancel it, you can still do this manually form the menu."
+				},
+				{
+					"key": "as3.project.openOnRun",
+					"title": "Open output on run",
+					"type": "boolean",
+					"default": true,
+					"description": "When importing Flash Builder project, this will set the project to open the output window when running the Task"
+				},
+				{
+					"key": "as3.project.buildOnRun",
+					"title": "Build on run",
+					"type": "boolean",
+					"default": true,
+					"description": "When importing Flash Builder project, this will set the project to build before running the Task"
 				}
 			]
 		}
@@ -826,6 +840,11 @@
 			{
 				"title": "🔏 Create new Certificate",
 				"command": "as3.certificate.create"
+			},
+			{"separator": true},
+			{
+				"title": "New project test",
+				"command": "as3.project.test"
 			}
 		]
 	}
