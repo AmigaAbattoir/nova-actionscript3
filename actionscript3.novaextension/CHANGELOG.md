@@ -3,17 +3,24 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
-## [0.8.2] - Unreleased
+## [0.9.0] - Unreleased
+
+### Fixed
+
+- Variable without declarations broke syntax highlighting
+- When exporting, sometime the workspace's path would be appended twice
 
 ### Added
 
 - Can now have custom build/run folder per task
+- Can create new ActionScript and Flex projects
+- Added options for new projects and an import Flash Builder to set build on run and show output on run options
 
 ## [0.8.1] - 2025-03-02
 
 ### Fixed
 
-Storing password in keychain for certificates
+- Storing password in keychain for certificates
 
 ### Added
 

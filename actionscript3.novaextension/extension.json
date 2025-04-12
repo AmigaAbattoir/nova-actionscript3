@@ -3,7 +3,7 @@
 	"name": "ActionScript 3",
 	"organization": "Abattoir Software",
 	"description": "ActionScript 3 & MXML language extension for Panic Nova. LSP powered by Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player (and maybe Apache Royale).",
-	"version": "0.8.2",
+	"version": "0.9.0",
 	"keywords": ["actionscript 3","flash","air","adobe air","mxml" ],
 	"categories": [
 		"issues",
@@ -349,14 +349,14 @@
 					"title": "Open output on run",
 					"type": "boolean",
 					"default": true,
-					"description": "When importing Flash Builder project, this will set the project to open the output window when running the Task"
+					"description": "Creating a new Projeect or importing a Flash Builder project, this will set the project to open the output window when running the Task"
 				},
 				{
 					"key": "as3.project.buildOnRun",
 					"title": "Build on run",
 					"type": "boolean",
 					"default": true,
-					"description": "When importing Flash Builder project, this will set the project to build before running the Task"
+					"description": "Creating a new Projeect or importing a Flash Builder project, this will set the project to build before running the Task"
 				}
 			]
 		}
@@ -366,12 +366,13 @@
 		{
 			"title": "Application",
 			"type": "section",
-			"description": "Select the main ActionScript or MXML for the project. All Tasks will default to this, but you can override it per Task",
+			"description": "Select the main ActionScript or MXML for the project. It should be on a source folder, and do not include the `src/` part. All Tasks will default to this, but you can override it per Task",
 			"children": [
 				{
 					"key": "as3.application.mainApp",
 					"title": "Main application",
 					"type": "path",
+					"relative": true,
 					"allowFolders": false,
 					"allowFiles": true,
 					"filetype": [ "as","mxml" ]
@@ -744,12 +745,13 @@
 	"commands": {
 		"editor": [
 			{
-				"title": "New ActionScript file",
-				"command": "as3mxml.newfile.ActionScript"
+				"title": "📁 Create AS3 New Project...",
+				"command": "as3.project.test"
 			},
+			{"separator": true},
 			{
-				"title": "New CSS file",
-				"command": "as3mxml.newfile.CSS"
+				"title": "📋 New Flex CSS file",
+				"command": "as3.new.file.css"
 			},
 			{"separator": true},
 			{
@@ -843,7 +845,7 @@
 			},
 			{"separator": true},
 			{
-				"title": "New project test",
+				"title": "📁 Create AS3/Flex New Project...",
 				"command": "as3.project.test"
 			}
 		]

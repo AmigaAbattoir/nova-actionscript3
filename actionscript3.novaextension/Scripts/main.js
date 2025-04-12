@@ -6,6 +6,7 @@ const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-u
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
 const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
+const { makeNewProject, makeNewFile } = require("/new-utils.js");
 
 var langserver = null;
 var taskprovider = null;
@@ -74,6 +75,10 @@ exports.activate = function() {
 	nova.commands.register("as3.tester", (workspace) => {
 		// Placeholder for testing things out without going through an entire process
 	});
+
+	nova.commands.register("as3.new.project", (workspace) => { return makeNewProject(); });
+
+	nova.commands.register("as3.new.file.css", (workspace) => { return makeNewFile("CSS"); });
 
 	nova.commands.register("as3.devicetester", (workspace) => {
 		return new Promise((resolve) => {
