@@ -253,7 +253,9 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	}
 
 	if(appendWorkspacePath) {
-		destDir = nova.path.join(nova.workspace.path, destDir);
+		if(destDir.charAt(0)!="/") {
+			destDir = nova.path.join(nova.workspace.path, destDir);
+		}
 	}
 
 	// Library only stuff
