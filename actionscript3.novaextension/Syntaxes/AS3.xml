@@ -641,12 +641,11 @@
 			<scope name="actionscript3.definition.variable.local">
 				<!--<symbol type="variable" scope="local" />-->
 				<symbol type="variable"/>
-				<expression>\b(var)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(\=)</expression>
+				<expression>\b(var)\s+([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*(:)\s*([a-zA-Z_\$][A-Za-zÀ-ÖØ-öø-ÿŸřŘšŠžŽ0-9_]*)\s*</expression>
 				<capture number="1" name="actionscript3.keyword.construct" />
 				<capture number="2" name="actionscript3.variable.name" />
 				<capture number="3" name="actionscript3.operator" />
 				<capture number="4" name="actionscript3.identifier.type" />
-				<capture number="5" name="actionscript3.operator" />
 			</scope>
 
 <!--
