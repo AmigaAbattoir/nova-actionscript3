@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 ### Added
 
+- MXML now has CSS highlighting style block
 - Can now have custom build/run folder per task
 - Can create new ActionScript and Flex projects
 - Added options for new projects and an import Flash Builder to set build on run and show output on run options

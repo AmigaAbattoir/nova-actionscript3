@@ -109,6 +109,60 @@
 	<collections>
 		<!-- Tags -->
 		<collection name="tags">
+
+			<scope name="mxml.tag.close.style">
+				<symbol type="tag">
+					<context behavior="end" group-by-name="true" />
+				</symbol>
+				<expression>&lt;/((mx|fx):Style)&gt;</expression>
+				<capture number="1" name="mxml.tag.name" />
+			</scope>
+			<scope name="mxml.tag.open.style" spell-check="false" lookup="documentation">
+				<symbol type="tag">
+					<context behavior="end" group-by-name="true" />
+				</symbol>
+				<starts-with>
+					<expression>(?=&lt;((mx|fx):Style))(?![^&gt;]*/&gt;)</expression>
+					<capture number="1" name="mxml.tag.name"/>
+				</starts-with>
+				<ends-with>
+					<expression>(?=&lt;/(mx|fx):Style)</expression>
+				</ends-with>
+				<subscopes anchored="true" skip-whitespace="false">
+					<scope name="mxml.tag.open.style">
+						<symbol type="tag-heading">
+							<filter match-end="(?&lt;!/&gt;)" />
+							<context behavior="start" group-by-name="true">
+								<auto-close string="&lt;/" completion="${name}&gt;" />
+							</context>
+						</symbol>
+						<starts-with>
+							<expression>&lt;((mx|fx):Style)</expression>
+							<capture number="1" name="tag.tag.name" />
+						</starts-with>
+						<ends-with>
+							<expression>/?&gt;</expression>
+						</ends-with>
+						<subscopes>
+							<include syntax="self" collection="attributes" />
+						</subscopes>
+					</scope>
+					<scope name="mxml.tag.content.style" optional="true">
+						<starts-with>
+							<expression>(?&lt;=&gt;)</expression>
+						</starts-with>
+						<ends-with>
+							<expression>(?=&lt;/((mx|fx):Style)\b)</expression>
+						</ends-with>
+						<subsyntax name="css">
+							<cut-off>
+								<expression>(?=&lt;/((mx|fx):Style)\b)</expression>
+							</cut-off>
+						</subsyntax>
+					</scope>
+				</subscopes>
+			</scope>
+
 			<scope name="mxml.tag.close">
 				<symbol type="tag">
 					<context behavior="end" group-by-name="true" />
