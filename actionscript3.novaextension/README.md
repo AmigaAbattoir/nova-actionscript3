@@ -39,6 +39,8 @@ The goal was to be use all my old Adobe Flash Build projects and convert them to
   - AIR, AIRI, Captive bundles, and native installer for Mac should work (_untested for submitting to app stores_).
   - Android and iOS packaging _should_ work (_untested for App Store submission_).
 
+- **Creating New Project**
+
 ## ☑️ Todo
 
 - **Launching AIR projects on actual devices** - Android and iOS
@@ -48,6 +50,7 @@ The goal was to be use all my old Adobe Flash Build projects and convert them to
 - **Library** - Automatically managing library builds
 - **Workers**
 - **Modules**
+- **MXML** - Nova shows the MXML fine on first load, however, after saving it sometime flags a lot of issues.
 
 ## 📝 Notes
 
@@ -114,6 +117,14 @@ Since the LSP AS3MXML requires requires an `asconfig.json` for code intelligence
 
 If the extension handles your `asconfig.json`, only the options used by this extension are changed. Since the building is not handled by AS3MXML, most of the compling and packaging setting are not modified.
 
+### Making Nova feel more like Flash Builder
+
+There are some additional options to make Nova feel more Flash Builder like are also options that you can change. These will affect projects that have been either created with this extension or imported from Flash Builder:
+
+- **Open output on run** - This opens the report window when you run a Task, similar to the Console window in Flash Builder
+
+- **Build on run** - This will force building before running
+
 ## ⚙️ Import Flash Builder project
 
 While Flex Builder / Flash Builder are no longer supported by Adobe, this extension allows users to migrate their existing project for use in Panic Nova. If your project contains  `.actionScriptProperties`, `.project`, and `.flexProperies` or `.flexLibProperies`, the extension defaults to prompting you to import the settings:
@@ -130,11 +141,24 @@ If you want, you can also change this setting in the **Extensions → Settings �
 
 You can also use the menu option **Extensions → ActionScript 3 → Import Flash Builder project...** to change your project's settings to those used by a Flash Builder project when ever you feel like it.
 
-Some additional options to make Nova feel more Flash Builder like are also options that you can change:
+## 🆕 New Projects
 
-- **Open output on run** - This opens the report window when you run a Task, similar to the Console window in Flash Builder
+You can also use the menu option **Extensions → ActionScript 3 → Create New AS3/Flex Project...**.
 
-- **Build on run** - This will force building before running
+- **Flex Projects** - Creates an MXML based project. It will ask if you want to make it an **AIR** or **Flash** based project.
+
+- **Flex Library** - Lets you create an ActionScript based library in one of two flavors:
+  - **Generic** - Can be used with either web, desktop, or mobile projects
+  - **Mobile** - Can only be used with mobile application
+
+- **Flex Mobile Project** - Creates an MXML based mobile project, which you decide how the views are based:
+  - **Tabbed** - Includes a tab bar to switch between views in the application
+  - **View** - Offers different views that can be switched in the application
+  - **Blank** - Simple, one view for displaying the application
+
+- **ActionScript Project**  - It will ask if you want to make it an **AIR** or **Flash** based project.
+
+- **ActionScript Mobile Project** - Creates an AIR based mobile application
 
 #### SDKs
 
