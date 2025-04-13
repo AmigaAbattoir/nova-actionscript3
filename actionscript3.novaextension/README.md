@@ -115,7 +115,7 @@ Since the LSP AS3MXML requires requires an `asconfig.json` for code intelligence
 
 - **Cancel** - Skip, but will prompt you every time you open the project.
 
-If the extension handles your `asconfig.json`, only the options used by this extension are changed. Since the building is not handled by AS3MXML, most of the compling and packaging setting are not modified.
+If the extension handles your `asconfig.json`, only the options used by this extension are changed. Since the building is not handled by AS3MXML, most of the compiling and packaging setting are not modified.
 
 ### Making Nova feel more like Flash Builder
 
