@@ -298,10 +298,9 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 											// Generate basic files for project if needed
 											try {
 												if(projectType==NP_TYPE_Flex) {
-													// Copy basic file:
-													sourceToCopy = "Flex Project - " + applicationType;
-													nova.fs.copy(nova.path.join(nova.extension.path, "/Template/Projects/" + sourceToCopy + ".mxml"),projectFolder + "/src/" + className + ".mxml");
+													nova.fs.copy(nova.path.join(nova.extension.path, "/Template/Projects/Flex/" + applicationType + ".mxml"),projectFolder + "/src/" + className + ".mxml");
 												} else if(projectType==NP_TYPE_FlexMobile) {
+													nova.fs.copy(nova.path.join(nova.extension.path, "/Template/Projects/" + sourceToCopy + "/Main.mxml"),projectFolder + "/src/" + className + ".mxml");
 													switch(applicationType) {
 														case NP_APPTYPE_Blank: {
 															sourceToCopy = "Mobile Blank";
@@ -326,7 +325,6 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 															break;
 														}
 													}
-													nova.fs.copy(nova.path.join(nova.extension.path, "/Template/Projects/" + sourceToCopy + "/Main.mxml"),projectFolder + "/src/" + className + ".mxml");
 												} else if(projectType==NP_TYPE_ActionScript) {
 													// Make a class file
 													let mainClassAS = getStringOfFile(nova.path.join(nova.extension.path, "/Template/New Class.as"));

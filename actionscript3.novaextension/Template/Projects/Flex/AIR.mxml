@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Template Mobile Project with Blank main MXML -->
-<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
-			   xmlns:s="library://ns.adobe.com/flex/spark" applicationDPI="160">
+<!-- Template AIR Flex Project main MXML -->
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx">
 	<fx:Declarations>
 		<!-- Non-visual elements go here -->
 	</fx:Declarations>
@@ -16,4 +17,4 @@
 		]]>
 	</fx:Script>
 	<!-- Visual elements go here -->
-</s:Application>
+</s:WindowedApplication>

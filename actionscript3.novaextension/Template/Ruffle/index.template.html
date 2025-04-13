@@ -45,23 +45,23 @@
     <body>
         <div id="flash_content">
         </div>
-		<!-- Use the latest Ruffle JS -->
-		<script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
-		<!-- create a Ruffle player, add to the div, load the SWF -->
-		<script>
-			window.RufflePlayer = window.RufflePlayer || {};
-			window.addEventListener("load", (event) => {
-				const ruffle = window.RufflePlayer.newest();
-				const player = ruffle.createPlayer();
-				const container = document.getElementById("flash_content");
-				container.appendChild(player);
-				player.load({
-					url: "${swf}.swf",
-					backgroundColor: "${bgcolor}"
-				});
-				player.style.width = "${width}px";
-				player.style.height = "${height}px";
-			});
-		</script>
+        <!-- Use the latest Ruffle JS -->
+        <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+        <!-- create a Ruffle player, add to the div, load the SWF -->
+        <script>
+            window.RufflePlayer = window.RufflePlayer || {};
+            window.addEventListener("load", (event) => {
+                const ruffle = window.RufflePlayer.newest();
+                const player = ruffle.createPlayer();
+                const container = document.getElementById("flash_content");
+                container.appendChild(player);
+                player.load({
+                    url: "${swf}.swf",
+                    backgroundColor: "${bgcolor}"
+                });
+                player.style.width = "${width}px";
+                player.style.height = "${height}px";
+            });
+        </script>
    </body>
 </html>

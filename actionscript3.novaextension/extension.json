@@ -745,8 +745,8 @@
 	"commands": {
 		"editor": [
 			{
-				"title": "📁 Create AS3 New Project...",
-				"command": "as3.project.test"
+				"title": "🆕 Create New AS3/Flex Project...",
+				"command": "as3.new.project"
 			},
 			{"separator": true},
 			{
@@ -845,8 +845,8 @@
 			},
 			{"separator": true},
 			{
-				"title": "📁 Create AS3/Flex New Project...",
-				"command": "as3.project.test"
+				"title": "🆕 Create New AS3/Flex Project...",
+				"command": "as3.new.project"
 			}
 		]
 	}
