@@ -2,7 +2,7 @@
 
 🚀 **Work In Progress** 🚀
 
-Extension for ActionScript 3 and MXML in [Nova](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as the LSP.
+Extension for ActionScript 3 and MXML in [Nova](https://nova.app/) using [Bowler Hat's AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml) as the LSP and [Bowler Hat's SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug) as a debug adapter.
 
 It uses Tasks for cleaning/building/running, which can be set for either Flash, AIR, Android, or iOS.
 

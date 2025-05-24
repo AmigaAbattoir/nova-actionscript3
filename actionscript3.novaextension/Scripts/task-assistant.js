@@ -706,6 +706,83 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return new TaskProcessAction(command, { args: args });
 	}
 
+	checkIfModifiedAfterBuild(destDir, exportName) {
+		console.log("OUTPUT FILE is [[[[" + destDir + "/" + exportName + "]]]]]");
+		console.log("STAT: " + nova.fs.stat(destDir + "/" + exportName));
+
+		/** @TODO Have to go through all the source folders and check */
+		if(nova.fs.stat(destDir + "/" + exportName)!=undefined) {
+			console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST BUILD....");
+
+			fileNamesToExclude = [ ".DS_Store", ".git", ".svn" ];
+			fileExtensionsToExclude = [];
+			// consoleLogObject(fileNamesToExclude);
+			// consoleLogObject(fileExtensionsToExclude);
+
+			function anyFileModifiedAfter(referenceFilePath, folderPath) {
+				const referenceFile = nova.fs.stat(referenceFilePath);
+				if (!referenceFile) {
+					console.error("Reference file not found:", referenceFilePath);
+					return false;
+				}
+
+				const referenceTime = referenceFile.mtime.getTime();
+
+				// Helper to recursively check files in a folder
+				function checkFolderRecursive(path) {
+					const entries = nova.fs.listdir(path);
+
+					for (const entry of entries) {
+						const fullPath = nova.path.join(path, entry);
+						const stat = nova.fs.stat(fullPath);
+
+						if (!stat) continue;
+
+						if(shouldIgnoreFileName(entry)) {
+							// console.log("  ><><>< IGNORING " + entry);
+							continue;
+						}
+						// console.log("  ><><>< CHECKING " + entry);
+
+						if (stat.isDirectory()) {
+							if (checkFolderRecursive(fullPath)) {
+								return true;
+							}
+						} else {
+							if (stat.mtime.getTime() > referenceTime) {
+								// console.log(`Modified file found: ${fullPath}`);
+								return true;
+							}
+						}
+					}
+					return false;
+				}
+
+				return checkFolderRecursive(folderPath);
+			}
+
+			// Setup files to ignore when checking:
+			const wasModified = anyFileModifiedAfter(
+				nova.path.join(destDir + "/" + exportName),
+				nova.path.join(nova.workspace.path, "src")
+			);
+
+			if (wasModified) {
+				console.log(" !#! TRUE, At least one file was modified after the timestamp.");
+				return true;
+			} else {
+				console.log(" !#! FALSE, No files have changed since the last build.");
+				return false;
+				return new TaskProcessAction("/usr/bin/true");
+			}
+		} else {
+			console.log(" !#! TRUE, Hey, there's no output, so there is a difference");
+			return true;
+		}
+		console.log(" !#! Don't think we will get to here....");
+		return false;
+	}
+
 	/**
 	 * Builds the SWF for the project
 	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
@@ -714,7 +791,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Object} configOverrides - A object of variables to override
 	 */
 	//build(projectType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, runMode, destDir, exportName, packageAfterBuild = false, anePaths = []) {
-	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}) {
+	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}, returnAsProcess = false) {
 		const configValues = getConfigsForBuild(true, configOverrides);
 
 		let flexSDKBase = configValues.flexSDKBase;
@@ -722,8 +799,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
 			return null;
 		}
-		console.log("configOverrides: ");
-		consoleLogObject(configOverrides);
+		// console.log("configOverrides: ");
+		// consoleLogObject(configOverrides);
 
 
 		let destDir = configValues.destDir;
@@ -1087,7 +1164,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			consoleLogObject(args);
 		}
 
-		if(packageAfterBuild) {
+		if(packageAfterBuild || returnAsProcess) {
 			if (nova.inDevMode()) {
 				console.log(" #### Okay, ready to do Promise!");
 			}
@@ -1107,60 +1184,55 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Object} config - The Task's configs
 	 */
 	debugRun(projectType, config) {
-		// Will try to figure this out sometime later...
-		if(false) {
-			const configValues = getConfigsForBuild(true);
-			let flexSDKBase = configValues.flexSDKBase;
+		const configValues = getConfigsForBuild(true);
+			
+		// console.log("CONFIG VALUES: ");
+		// consoleLogObject(configValues);
+		// console.log("CONFIG VALUES: ");
+		let flexSDKBase = configValues.flexSDKBase;
 
-			var base = nova.path.join(nova.extension.path, "debugger");
+		var base = nova.path.join(nova.extension.path, "debugger");
 
-			let args = [];
-			// Pass the Flex SDK
-			args.push("-Dflexlib=" + flexSDKBase);
+		let args = [];
+		// Pass the Flex SDK
+		args.push("-Dflexlib=" + flexSDKBase+"/frameworks");
 
-			// For workspaces, pass the folder
-			if(isWorkspace()) {
-				args.push("-Dworkspace=" + nova.workspace.path);
-			}
-
-			//uncomment to debug the SWF debugger JAR
-			//args.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
-			args.push("-cp");
-			args.push("" + base + "/bin/*:" + base + "/bundled-debugger/*");
-			args.push("com.as3mxml.vscode.SWFDebug");
-
-			// @NOTE From Icarus extension
-			var action = new TaskDebugAdapterAction("actionscript3");
-			action.command = "/usr/bin/java";
-			action.args = args;
-			// action.transport = "socket";
-			// action.port="4711";
-			action.adapterStart = "launch";
-
-			// Print out all the args so I know what's getting passed!
-			if(nova.inDevMode()) {
-				var argsOut = "";
-				args.forEach(a => argsOut += a + "\n")
-				console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
-			}
-
-			console.log("DEBUG!");
-			/*
-			new Promise((resolve) => {
-				console.log("Going to try running...");
-				//this.run(projectType, flexSDKBase, profile, destDir, appXMLName, config);
-				console.log("Run should have happened..");
-				resolve();
-			}).then(() => {
-				console.log("now the action should goTried running!");
-			*/
-				return action;
-			/*
-			});
-			*/
-		} else {
-			return this.run(projectType, config);
+		// For workspaces, pass the folder
+		if(isWorkspace()) {
+			args.push("-Dworkspace=" + nova.workspace.path);
 		}
+
+		//uncomment to debug the SWF debugger JAR
+		//args.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
+		args.push("-cp");
+		args.push("" + base + "/bin/*:" + base + "/bundled-debugger/*");
+		args.push("com.as3mxml.vscode.SWFDebug");
+
+		var action = new TaskDebugAdapterAction("actionscript3");
+		action.command = "/usr/bin/java";
+		action.args = args;
+		action.cwd = nova.workspace.path;
+		
+		// Launch should be used for SWF/AIR Desktop. I believe "attach" is going to be for on devices or simulators.
+		action.adapterStart = "launch";
+		
+		let debugArgs = {};
+		//debugArgs.program = "bin-debug/SnakeInTheGrass.swf";
+		debugArgs.program = configValues.destDir + "/" + configValues.exportName;
+		/* Need to add ad adjust debugArgs based on the "Launch configuration attributes" depending on type of Task. See debugger/readme.MD for more info! */
+		action.debugArgs = debugArgs;
+		
+		// Print out all the args so I know what's getting passed!
+		if(nova.inDevMode()) {
+			var argsOut = "";
+			args.forEach(a => argsOut += a + "\n")
+			argsOut = "\nDebugger Args:\n";
+			console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n");
+			consoleLogObject(debugArgs);
+			console.log("\n *** ARGS:: /\\/\\/\\");
+		}
+
+		return action;
 	}
 
 	/**
@@ -1172,8 +1244,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		console.log("projectType: " + projectType)
 		let command = "";
 		let args = [];
-
-
 
 		const configValues = getConfigsForBuild(true,configOverrides);
 		let flexSDKBase = configValues.flexSDKBase;
@@ -1847,10 +1917,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					config.get("as3.lib.nsm.namespace")
 				);
 			} else {
-				return this.build(data.type, config.get("actionscript3.request"), false, configOverrides);
+				/** @TODO, should this be a different config, like build mode with or without debug? */
+				return this.build(data.type,  config.get("actionscript3.request"), false, configOverrides);
 			}
 		} else if(action==Task.Run) {
-			if(config.get("actionscript3.request")=="debug") {
+			if(config.get("as3.run.withDebugger")) {
 				return this.debugRun(data.type, config, configOverrides);
 			} else {
 				return this.run(data.type, config, configOverrides)

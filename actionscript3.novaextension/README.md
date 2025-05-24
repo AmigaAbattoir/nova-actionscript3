@@ -10,6 +10,8 @@ The goal was to be use all my old Adobe Flash Build projects and convert them to
 
 ## ✨ Features
 
+- 🐛 **Debugging** - _Via SWF Debug_ - _(Still WIP)_
+
 - 🖍️ **Syntax Highlighting**
 
 - 📁 **Code Folding**
@@ -46,7 +48,7 @@ The goal was to be use all my old Adobe Flash Build projects and convert them to
 - **Launching AIR projects on actual devices** - Android and iOS
 - **Locale** - Current set to use en_US
 - **Themes**
-- **ANE** Handling
+- **ANE** Handling, unpacking to "tmp" folder
 - **Library** - Automatically managing library builds
 - **Workers**
 - **Modules**
@@ -54,7 +56,8 @@ The goal was to be use all my old Adobe Flash Build projects and convert them to
 
 ## 📝 Notes
 
-For Issues, language intelligence and completions, the LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.22.0
+For Issues, language intelligence and completions, the LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.22.0.
+For Debugging, [Bowler Hat's SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug) V1.10.0
 
 AS3MXML requires an `asconfig.json` in the project folder. The extension will attempt to auto-generate one. If you have used the VSCode extension, and have one already, you can disable the automatic generation and updating in the configurations or with the prompt when first opening the project.
 

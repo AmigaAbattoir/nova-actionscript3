@@ -1,5 +1,11 @@
 [
 	{
+		"key": "as3.run.withDebugger",
+		"title": "Enable running with Debugger",
+		"type": "boolean",
+		"default": false
+	},
+	{
 		"title": "Custom Build/Run Options",
 		"type": "section",
 		"description": "These options are used when the Build and Run option for this Task. This allows you to have a different main application file and output folder while using this Task.",

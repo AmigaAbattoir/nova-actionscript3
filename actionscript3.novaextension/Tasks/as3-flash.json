@@ -1,5 +1,11 @@
 [
 	{
+		"key": "as3.run.withDebugger",
+		"title": "Enable running with Debugger",
+		"type": "boolean",
+		"default": false
+	},
+	{
 		"title": "Launcher",
 		"type": "section",
 		"children": [

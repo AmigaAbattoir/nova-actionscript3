@@ -2,6 +2,7 @@
   "as3.project.asconfigMode" : "manual",
   "as3.project.importedFB" : "done",
   "com.tommasonegri.novatypes.isNovaExtension" : true,
+  "editor.default_syntax" : "javascript",
   "index.ignored_file_patterns" : [
     "ignore\/",
     "*\/language-server\/**"
