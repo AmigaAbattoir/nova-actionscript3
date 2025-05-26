@@ -5,7 +5,13 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 ## [0.10.0] - Unreleased
 
-- Added initial support for debugging
+### Added
+
+- Added initial support for debugging!
+
+### Changed
+
+- Includes DPI to simulator devices
 
 ## [0.9.0] - 2025-04-13
 
