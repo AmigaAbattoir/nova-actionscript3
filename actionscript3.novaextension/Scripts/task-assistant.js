@@ -1316,6 +1316,28 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 				debugArgs.program = destDir + "/" +  exportName.replace(".swf",".html");
 				debugArgs.runtimeExecutable = fpApp;
+				
+				if(nova.config.get("as3.flashPlayer.browserCustomUser")==true) {
+					// Make a temp old user
+					const userDataDir = "/tmp/old-chrome-profile";
+
+					// Ensure the custom profile directory exists
+					if (!nova.fs.stat(userDataDir)) {
+						nova.fs.mkdir(userDataDir);
+					}
+
+					// Chrome command-line arguments
+					args = [
+						"--user-data-dir=" + userDataDir, // Use custom profile
+						"--allow-outdated-plugins",       // Allow outdated plugins like Flash
+						"--enable-npapi",                 // Enable NPAPI (needed for Flash)
+						"--no-first-run",                 // Suppress first-run prompts
+						//"--disable-web-security",       // Optional: disable web security for testing
+						//"--disable-extensions",           // Disable Chrome extensions
+					];
+					debugArgs.runtimeArgs = args;
+				}
+				
 			} else {
 				let launchType = config.get("as3.launch.type");
 				
