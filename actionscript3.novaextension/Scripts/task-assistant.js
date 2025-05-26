@@ -539,6 +539,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		}
 	}
 
+	/**
+	 * Used to build a library.
+	 *
+	 * @param {Array} classEntries - The list of all the classes that should be included in the build
+	 * @param {Array} resourceDestPathEntries - The resources that should be copied into this library
+	 * @param {Array} resourceSourcePathEntries - The resource's source files locations. There should be the same amount of `resourceDestPathEntries` and `resourceSourcePathEntries`!
+	 * @param {Array} namespaceManifestEntryManifests - The locations of the manifest XMLs
+	 * @param {Array} namespaceManifestEntryNamespaces - The namespaced used for these manifest XMLs. There needs to be the same amount of `namespaceManifestEntryManifests` and `namespaceManifestEntryNamespaces`!
+	 */
 	buildLibrary(classEntries, resourceDestPathEntries, resourceSourcePathEntries, namespaceManifestEntryManifests, namespaceManifestEntryNamespaces) {
 		const configValues = getConfigsForBuild();
 
@@ -706,6 +715,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return new TaskProcessAction(command, { args: args });
 	}
 
+	/**
+	 * Checks if any of the sourse files have been modified since they were copied to the output folder
+	 * @NOTE Was devised to try and only build if files changed, but I don't think we can work that into Nova
+	 * @param {string} destDir - The source files
+	 * @param {string} exportName - The exported SWF that will be the reference of the time when it was built
+	 */
 	checkIfModifiedAfterBuild(destDir, exportName) {
 		console.log("OUTPUT FILE is [[[[" + destDir + "/" + exportName + "]]]]]");
 		console.log("STAT: " + nova.fs.stat(destDir + "/" + exportName));
@@ -784,13 +799,81 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	}
 
 	/**
+	 * Helps read through the descriptor XML to see what type of profile to use
+	 *
+	 * @param {Object} config - The config from the build/run
+	 * @param {string} projectType - What kind of project are we building
+	 * @param {string} appXMLLocation - The location of the descriptor file
+	 * @returns {string} - The type of profile to use (desktop|extendedDesktop|mobileDevice|extendedMobileDevice)
+	 */
+	getProfileType(config, projectType, appXMLLocation) {
+		var profileType = config["as3.task.profile"];
+		if(profileType===undefined || profileType=="default") {
+			try {
+				let appXML = getStringOfFile(appXMLLocation);
+				if(appXML!=null) {
+					// Read the App XML and make sure the Namespace is the same version!
+					let supportedProfile =  new xmlToJson.ns3x2j(appXML).findNodesByName("supportedProfiles");
+					profileType = supportedProfile[0].textContent.split(" ")[0];
+				}
+			}catch(error) {
+				// If there's an error, we'll figure it out later.
+				if (nova.inDevMode()) {
+					console.log("There was an error trying to read the app-xml for which profile to user: " + error);
+				}
+			}
+		}
+		
+		// If we still don't have a profile, then we will assume which one to use!
+		if(profileType===undefined || profileType=="default") {
+			if(projectType=="airmobile") {
+				profileType = "mobileDevice";
+			} else {
+				profileType = "desktop";
+			}
+		}
+
+		return profileType;
+	}
+	
+	/**
+	 * Parses the device to simulate's to get the screensize for the simulator that is requested
+	 * @param {string} screenSize - The formatted simulator device from the list of devices in the Task
+	 * @returns {string} - A screen size that ADL will understand, ###x###:###x### format
+	 */
+	getFormattedScreenSize(screenSize) {
+		if(screenSize==null || screenSize=="none") {
+			nova.workspace.showErrorMessage("Please edit the Task to select a Desktop Device to use for the screen size of the simulator!");
+			return false;
+		} else {
+			screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
+		}
+		return screenSize;
+	}
+	
+	/**
+	 * Parses the device to simulate's to get the DPI for the simulator that is requested
+	 * @param {string} screenSize - The formatted simulator device from the list of devices in the Task
+	 * @returns {number} - The DPI as a number. If the Task is not set, or is from an old version of the extension, 0 is returned.
+	 */
+	getFormattedScreenDPI(screenSize) {
+		let dpi = "0";
+		if(screenSize!=null && screenSize!="none") {
+			let check = screenSize.match(/@ ([0-9]+)DPI/);
+			if(check!=null) {
+				dpi = check[1];
+			}
+		}
+		return parseInt(dpi);
+	}
+
+	/**
 	 * Builds the SWF for the project
 	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
 	 * @param {string} runMode - What kind of build, either `release`|`debug`
 	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
 	 * @param {Object} configOverrides - A object of variables to override
 	 */
-	//build(projectType, copyAssets, mainSrcDir, mainApplicationPath, sourceDirs, libPaths, appXMLName, flexSDKBase, runMode, destDir, exportName, packageAfterBuild = false, anePaths = []) {
 	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}, returnAsProcess = false) {
 		const configValues = getConfigsForBuild(true, configOverrides);
 
@@ -1178,18 +1261,25 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	}
 
 	/**
-	 * @TODO
-	 * Run the project with debugger (Not implemented yet, so it's just running as usual!)
-	 * @param {string} projectType - Which type of project, "air|airmobile|flex|flash"
+	 * Run the project with debugger
+	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
+	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
 	 * @param {Object} config - The Task's configs
+	 * @param {Object} configOverrides - Which type of project, "air|airmobile|flex"
 	 */
-	debugRun(projectType, config) {
-		const configValues = getConfigsForBuild(true);
+	debugRun(projectType, projectOS, config, configOverrides) {
+		const configValues = getConfigsForBuild(true,configOverrides);
 			
 		// console.log("CONFIG VALUES: ");
 		// consoleLogObject(configValues);
 		// console.log("CONFIG VALUES: ");
 		let flexSDKBase = configValues.flexSDKBase;
+		let destDir = configValues.destDir;
+		let appXMLName = configValues.appXMLName;
+		let exportName = configValues.exportName;
+		let mainSrcDir = configValues.mainSrcDir;
+		// Only needed for AIR:
+		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
 
 		var base = nova.path.join(nova.extension.path, "debugger");
 
@@ -1213,13 +1303,60 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		action.args = args;
 		action.cwd = nova.workspace.path;
 		
-		// Launch should be used for SWF/AIR Desktop. I believe "attach" is going to be for on devices or simulators.
+		// Launch should be used for SWF/AIR Desktop. I believe "attach" is going to be for on devices or simulators. (Which have yet to do!)
 		action.adapterStart = "launch";
 		
-		let debugArgs = {};
-		//debugArgs.program = "bin-debug/SnakeInTheGrass.swf";
-		debugArgs.program = configValues.destDir + "/" + configValues.exportName;
 		/* Need to add ad adjust debugArgs based on the "Launch configuration attributes" depending on type of Task. See debugger/readme.MD for more info! */
+		let debugArgs = {};
+		
+		if(projectType=="flash") {
+			let fpApp;
+			if(config.get("as3.launch.type")=="browser") {
+				fpApp = nova.config.get("as3.flashPlayer.browser");
+
+				debugArgs.program = destDir + "/" +  exportName.replace(".swf",".html");
+				debugArgs.runtimeExecutable = fpApp;
+			} else {
+				let launchType = config.get("as3.launch.type");
+				
+				if(launchType=="ruffle") {
+					nova.workspace.showErrorMessage("Using debugger with Ruffle is unsupported. Please change launch type to Flash Player or Browser. Or disable the options to `Enable running with Debugger`.");
+					return null;
+				}
+				
+				fpApp = nova.config.get("as3.flashPlayer.standalone");
+				debugArgs.program = destDir + "/" +  exportName;
+				debugArgs.runtimeExecutable = fpApp;
+			}
+		} else {
+			var profileType = this.getProfileType(config, projectType, appXMLLocation);
+			debugArgs.profile = profileType;
+			
+			if(projectType=="airmobile") {
+				var simulatorDevice = config.get("as3.task.deviceToSimulate");
+				var screenSize = this.getFormattedScreenSize(simulatorDevice);
+				debugArgs.screenSize = screenSize;
+				
+				var screenDPI = this.getFormattedScreenDPI(simulatorDevice);
+				if(screenDPI>0) {
+					debugArgs.screenDPI = screenDPI;
+				}
+				
+				var versionPlatform = "MAC";
+				if(projectOS!=undefined) {
+					if(projectOS=="ios") {
+						versionPlatform = "IOS";
+					} else if(projectOS=="android") {
+						versionPlatform = "AND"
+					}
+				}
+				debugArgs.platform = versionPlatform;
+			}
+			
+			debugArgs.runtimeExecutable = flexSDKBase + "/bin/adl";
+			debugArgs.program = destDir + "/" + appXMLName;
+		}
+		
 		action.debugArgs = debugArgs;
 		
 		// Print out all the args so I know what's getting passed!
@@ -1238,9 +1375,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	/**
 	 * Runs the project using Nova's task system
 	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
+	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
 	 * @param {Object} config - The Task's configs
+	 * @param {Object} configOverrides - Which type of project, "air|airmobile|flex"
 	 */
-	run(projectType, config, configOverrides) {
+	run(projectType, projectOS, config, configOverrides) {
 		console.log("projectType: " + projectType)
 		let command = "";
 		let args = [];
@@ -1251,40 +1390,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let appXMLName = configValues.appXMLName;
 		let exportName = configValues.exportName;
 		let mainSrcDir = configValues.mainSrcDir;
+		// Only needed for AIR:
+		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
 
-		console.log(" DEST DIR: " + destDir);
-/*
-		// When building/running, especially for exporting, we may have different values
-		if(configOverrides) {
-			console.log(" Config overrides!!!!" ); consoleLogObject(configOverrides);
-
-			// Building a release is in a different folder
-			if(configOverrides.releasePath!=null) {
-				destDir = configOverrides.releasePath;
-			}
-
-			// There may be custom ANEs for different builds
-			if(configOverrides.anes!=null) {
-				anePaths = configOverrides.anes;
-			}
-
-			// You cam want to choose a different main file for different packages
-			if(configOverrides.mainApplicationPath!=null) {
-				mainApplicationPath = configOverrides.mainApplicationPath;
-			}
-			if(configOverrides.appXMLName!=null) {
-				appXMLName = configOverrides.appXMLName;
-			}
-			if(configOverrides.exportName!=null) {
-				exportName = configOverrides.exportName;
-			}
-		}
-*/
+		// console.log(" DEST DIR: " + destDir);
 		// If we are running Flash
 		if(projectType=="flash") {
 			let fpApp;
 			if(config.get("as3.launch.type")=="browser") {
-				let fpApp = nova.config.get("as3.flashPlayer.browser");
+				fpApp = nova.config.get("as3.flashPlayer.browser");
 
 				command = getExec(fpApp);
 				if(command==null) {
@@ -1347,46 +1461,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 
 			if(projectType=="airmobile") {
-				var screenSize = config.get("as3.task.deviceToSimulate");
-				if(screenSize==null || screenSize=="none") {
-					nova.workspace.showErrorMessage("Please edit the Task to select a Desktop Device to use for the screen size of the simulator!");
-					return false;
-				} else {
-					screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
-				}
-
+				var screenSize = getFormattedScreenSize(config.get("as3.task.deviceToSimulate"));
 				args.push("-screensize");
 				args.push(screenSize);
 			}
 
 			args.push("-profile");
 			// Check if the Task set's the profile or if we need to check in the app-xml
-			var profileType = config["as3.task.profile"];
-			if(profileType===undefined || profileType=="default") {
-				try {
-					let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
-					let appXML = getStringOfFile(appXMLLocation);
-					if(appXML!=null) {
-						// Read the App XML and make sure the Namespace is the same version!
-						let supportedProfile =  new xmlToJson.ns3x2j(appXML).findNodesByName("supportedProfiles");
-						profileType = supportedProfile[0].textContent.split(" ")[0];
-					}
-				}catch(error) {
-					// If there's an error, we'll figure it out later.
-					if (nova.inDevMode()) {
-						console.log("There was an error trying to read the app-xml for which profile to user: " + error);
-					}
-				}
-			}
-
-			// If we still don't have a profile, then we will assume which one to use!
-			if(profileType===undefined || profileType=="default") {
-				if(projectType=="airmobile") {
-					profileType = "mobileDevice";
-				} else {
-					profileType = "desktop";
-				}
-			}
+			var profileType = this.getProfileType(config, projectType, appXMLLocation);
 			args.push(profileType);
 
 			// ADL wants the directory with the ANEs
@@ -1922,9 +2004,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 		} else if(action==Task.Run) {
 			if(config.get("as3.run.withDebugger")) {
-				return this.debugRun(data.type, config, configOverrides);
+				return this.debugRun(data.type, data.os, config, configOverrides);
 			} else {
-				return this.run(data.type, config, configOverrides)
+				return this.run(data.type, data.os, config, configOverrides)
 			}
 		} else if(action==Task.Clean) {
 			const configValues = getConfigsForBuild(true, configOverrides);
