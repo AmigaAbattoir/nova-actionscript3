@@ -21,6 +21,15 @@ function shouldIgnoreFileName(fileName) {
 	return false;
 }
 
+function displayANEsProjectUUIDError() {
+	var uuidMessage = "Project UUID Missing\n\nPlease use the Import Flash Builder option in the menu,";
+	if(nova.version[0]<10) {
+		uuidMessage += "ensure that `uuidgen` is on your system's path, update to Nova 10+,"
+	}
+	uuidMessage += " or run from the menu `Check Project UUID` to ensure a project UUID is created. Once it's created, you can try again!";
+	nova.workspace.showErrorMessage(uuidMessage);
+}
+
 /**
  * The Task Assistant that handles all the things for Task.
  */
@@ -57,6 +66,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			try {
 				nova.fs.rmdir(outputPath);
 				nova.fs.mkdir(outputPath);
+				/** @NOTE Add temp dir or ANE folder too? */
 			} catch(error) {
 				result = false;
 			}
@@ -533,7 +543,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					});
 				},
 				(reject) => {
-					nova.workspace.showErrorMessage("Project UUID Missing\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu, or ensure that `uuidgen` is on your system's path!");
+					var uuidMessage = "Project UUID Missing\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu,";
+					if(nova.version[0]<10) {
+						uuidMessage += "ensure that `uuidgen` is on your system's path, update to Nova 10+"
+					}
+					uuidMessage += ", or run from the menu `Check Project UUID` to ensure a project UUID is created.";
+					nova.workspace.showErrorMessage(uuidMessage);
 				});
 			});
 		}
@@ -823,7 +838,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 			}
 		}
-		
+
 		// If we still don't have a profile, then we will assume which one to use!
 		if(profileType===undefined || profileType=="default") {
 			if(projectType=="airmobile") {
@@ -835,7 +850,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		return profileType;
 	}
-	
+
 	/**
 	 * Parses the device to simulate's to get the screensize for the simulator that is requested
 	 * @param {string} screenSize - The formatted simulator device from the list of devices in the Task
@@ -850,7 +865,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		}
 		return screenSize;
 	}
-	
+
 	/**
 	 * Parses the device to simulate's to get the DPI for the simulator that is requested
 	 * @param {string} screenSize - The formatted simulator device from the list of devices in the Task
@@ -1162,49 +1177,51 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			// If we have ANEs, we will need to unzip them to a folder so that ADL can run and point to those
 			// ANEs so we can run on desktop. But, if it's building for packing, ADT will incorporate that into
 			// the package for us!
-			if(anePaths) {
-				if(anePaths.length>0) {
-					/** @TODO Maybe make this a temp directory */
-					var extdir = destDir + "/ane";
+			if(anePaths && anePaths.length>0) {
+				var aneTempPath = determineAneTempPath();
+				if(aneTempPath==null) {
+					displayANEsProjectUUIDError();
+					return null;
+				}
+				var extdir = aneTempPath;
+				if(packageAfterBuild==false) {
+					// If the destination "extdir" exists, delete it then make it!
+					try {
+						if(nova.fs.stat(extdir).isDirectory()) {
+							nova.fs.rmdir(extdir);
+						}
+						nova.fs.mkdir(extdir);
+					} catch(error) {
+						nova.workspace.showErrorMessage("Failed to make ANE temp folder.");
+						console.log("*** ERROR: Failed to make ANE temp folder *** ");
+					}
+				}
+				anePaths.forEach((anePath) => {
+					args.push("--external-library-path+=" + anePath);
+					// Needed?
+					//args.push("--library-path+=" + anePath);
 					if(packageAfterBuild==false) {
-						// If the destination "extdir" exists, delete it then make it!
+						var aneDest = anePath.substring(anePath.lastIndexOf("/"),anePath.length);
+						//console.log("ANE DEST: [[" + aneDest + "]]");
+						//console.log("ANE PATH: [[" + anePath + "]]");
+						//console.log("/usr/bin/unzip" + " " + anePath + " " + "-d" + " " + extdir + aneDest);
 						try {
-							if(nova.fs.stat(extdir).isDirectory()) {
-								nova.fs.rmdir(extdir);
-							}
-							nova.fs.mkdir(extdir);
+							nova.fs.mkdir(extdir + aneDest);
+							var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
+							unzip.then((resolve) => {
+								// console.log("Unzip successful?!");
+							},(reject) => {
+								nova.workspace.showErrorMessage("Failed while trying to unzip ANE " + anePath + " to temp folder.");
+								console.log("Unzip failed?!?!");
+								return null;
+							});
 						} catch(error) {
-							nova.workspace.showErrorMessage("Failed to make ANE temp folder.");
-							console.log("*** ERROR: Failed to make ANE temp folder *** ");
+							nova.workspace.showErrorMessage("Failed to unzip ANE " + anePath + " to temp folder.");
+							console.log("*** ERROR: Couldn't unzip ANE for test runs ***");
+							return null;
 						}
 					}
-					anePaths.forEach((anePath) => {
-						args.push("--external-library-path+=" + anePath);
-						// Needed?
-						//args.push("--library-path+=" + anePath);
-						if(packageAfterBuild==false) {
-							var aneDest = anePath.substring(anePath.lastIndexOf("/"),anePath.length);
-							//console.log("ANE DEST: [[" + aneDest + "]]");
-							//console.log("ANE PATH: [[" + anePath + "]]");
-							//console.log("/usr/bin/unzip" + " " + anePath + " " + "-d" + " " + extdir + aneDest);
-							try {
-								nova.fs.mkdir(extdir + aneDest);
-								var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
-								unzip.then((resolve) => {
-									// console.log("Unzip successful?!");
-								},(reject) => {
-									nova.workspace.showErrorMessage("Failed while trying to unzip ANE " + anePath + " to temp folder.");
-									console.log("Unzip failed?!?!");
-									return null;
-								});
-							} catch(error) {
-								nova.workspace.showErrorMessage("Failed to unzip ANE " + anePath + " to temp folder.");
-								console.log("*** ERROR: Couldn't unzip ANE for test runs ***");
-								return null;
-							}
-						}
-					});
-				}
+				});
 			}
 		}
 
@@ -1269,7 +1286,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 */
 	debugRun(projectType, projectOS, config, configOverrides) {
 		const configValues = getConfigsForBuild(true,configOverrides);
-			
+
 		// console.log("CONFIG VALUES: ");
 		// consoleLogObject(configValues);
 		// console.log("CONFIG VALUES: ");
@@ -1280,6 +1297,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let mainSrcDir = configValues.mainSrcDir;
 		// Only needed for AIR:
 		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
+		let anePaths = configValues.anePaths;
 
 		var base = nova.path.join(nova.extension.path, "debugger");
 
@@ -1302,13 +1320,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		action.command = "/usr/bin/java";
 		action.args = args;
 		action.cwd = nova.workspace.path;
-		
+
 		// Launch should be used for SWF/AIR Desktop. I believe "attach" is going to be for on devices or simulators. (Which have yet to do!)
 		action.adapterStart = "launch";
-		
+
 		/* Need to add ad adjust debugArgs based on the "Launch configuration attributes" depending on type of Task. See debugger/readme.MD for more info! */
 		let debugArgs = {};
-		
+
 		if(projectType=="flash") {
 			let fpApp;
 			if(config.get("as3.launch.type")=="browser") {
@@ -1316,7 +1334,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 				debugArgs.program = destDir + "/" +  exportName.replace(".swf",".html");
 				debugArgs.runtimeExecutable = fpApp;
-				
+
 				if(nova.config.get("as3.flashPlayer.browserCustomUser")==true) {
 					// Make a temp old user
 					const userDataDir = "/tmp/old-chrome-profile";
@@ -1337,15 +1355,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					];
 					debugArgs.runtimeArgs = args;
 				}
-				
+
 			} else {
 				let launchType = config.get("as3.launch.type");
-				
+
 				if(launchType=="ruffle") {
 					nova.workspace.showErrorMessage("Using debugger with Ruffle is unsupported. Please change launch type to Flash Player or Browser. Or disable the options to `Enable running with Debugger`.");
 					return null;
 				}
-				
+
 				fpApp = nova.config.get("as3.flashPlayer.standalone");
 				debugArgs.program = destDir + "/" +  exportName;
 				debugArgs.runtimeExecutable = fpApp;
@@ -1353,17 +1371,17 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		} else {
 			var profileType = this.getProfileType(config, projectType, appXMLLocation);
 			debugArgs.profile = profileType;
-			
+
 			if(projectType=="airmobile") {
 				var simulatorDevice = config.get("as3.task.deviceToSimulate");
 				var screenSize = this.getFormattedScreenSize(simulatorDevice);
 				debugArgs.screenSize = screenSize;
-				
+
 				var screenDPI = this.getFormattedScreenDPI(simulatorDevice);
 				if(screenDPI>0) {
 					debugArgs.screenDPI = screenDPI;
 				}
-				
+
 				var versionPlatform = "MAC";
 				if(projectOS!=undefined) {
 					if(projectOS=="ios") {
@@ -1374,13 +1392,22 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 				debugArgs.platform = versionPlatform;
 			}
-			
+
+			if(anePaths && anePaths.length>0) {
+				var aneTempPath = determineAneTempPath();
+				if(aneTempPath==null) {
+					displayANEsProjectUUIDError();
+					return null;
+				}
+				debugArgs.exdir = aneTempPath;
+			}
+
 			debugArgs.runtimeExecutable = flexSDKBase + "/bin/adl";
 			debugArgs.program = destDir + "/" + appXMLName;
 		}
-		
+
 		action.debugArgs = debugArgs;
-		
+
 		// Print out all the args so I know what's getting passed!
 		if(nova.inDevMode()) {
 			var argsOut = "";
@@ -1495,8 +1522,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			// ADL wants the directory with the ANEs
 			/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-			//var anes = config.get("as3.packaging.anePaths"); //nova.workspace.config.get("as3.packaging.anes");
-
 			/** @NOTE Should check if there's a difference in the Workspace config and the packaging */
 			var anes = anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
 			// If there are ANEs, then we need to include the "ane" folder we made with the extracted
@@ -1505,8 +1530,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				console.log("anes: " + JSON.stringify(anes));
 			}
 			if(anes && anes.length>0) {
+				var aneTempPath = determineAneTempPath();
+				if(aneTempPath==null) {
+					displayANEsProjectUUIDError();
+					return null;
+				}
 				args.push("-extdir");
-				args.push(destDir + "/ane");
+				args.push(determineAneTempPath());
 			}
 
 			// The app.xml file

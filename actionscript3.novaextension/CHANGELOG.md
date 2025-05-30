@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 ### Changed
 
 - Includes DPI to simulator devices
+- ANEs are extracted to a temp directory
+
+### Fixed
+
+- `determineProjectUUID()` used nova.crypto which was only available in Nova 10, added check and alternate way to generate uuid for Nova 9 and below
 
 ## [0.9.0] - 2025-04-13
 

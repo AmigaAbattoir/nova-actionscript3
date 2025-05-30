@@ -847,6 +847,15 @@
 			{
 				"title": "🆕 Create New AS3/Flex Project...",
 				"command": "as3.new.project"
+			},
+			{"separator": true},
+			{
+				"title": "Check Project UUID",
+				"command": "as3.check.uuid"
+			},
+			{
+				"title": "Check ANE temp dir",
+				"command": "as3.check.aneTemp"
 			}
 		]
 	}

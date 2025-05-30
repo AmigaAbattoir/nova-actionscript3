@@ -1,6 +1,6 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
-const { getAIRSDKInfo } = require("./as3-utils.js");
+const { getAIRSDKInfo, determineProjectUUID, determineAneTempPath } = require("./as3-utils.js");
 const { showNotification, consoleLogObject, getStringOfFile, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
@@ -79,6 +79,16 @@ exports.activate = function() {
 	nova.commands.register("as3.new.project", (workspace) => { return makeNewProject(); });
 
 	nova.commands.register("as3.new.file.css", (workspace) => { return makeNewFile("CSS"); });
+
+	nova.commands.register("as3.check.uuid", (workspace) => {
+		return new Promise((resolve) => {
+			determineProjectUUID().then(uuid => {
+				showNotification("ActionScript 3 Project UUID",uuid);
+			});
+		});
+	});
+
+	nova.commands.register("as3.check.aneTemp", (workspace) => { showNotification("ActionScript 3 ANE temp path", determineAneTempPath()); });
 
 	nova.commands.register("as3.devicetester", (workspace) => {
 		return new Promise((resolve) => {

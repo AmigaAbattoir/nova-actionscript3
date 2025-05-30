@@ -4,21 +4,56 @@ const { getProcessResults, getStringOfFile, consoleLogObject } = require("./nova
 /**
  * Figures out a ProjectUUID for building releases and storing passwords.
  * May not be needed anymore.
- * @returns {Promise} Returns the projects UUID or generates one using Nova's crypto.randomUUID()`
+ * @returns {Promise} Returns the projects UUID or generates one using Nova's `crypto.randomUUID()`
+ * or for Nova 9 and below, a process call to `/usr/bin/uuidgen`
  */
 exports.determineProjectUUID = function() {
-	var projectUUID =  nova.workspace.config.get("as3.application.projectUUID");
-	var getUUID = Promise.resolve(projectUUID);
+	return new Promise((resolve,reject) => {
+		const existingUUID = nova.workspace.config.get("as3.application.projectUUID");
 
-	if(projectUUID==null || projectUUID=="" || projectUUID=="null") {
-		var getUUID = nova.crypto.randomUUID();
-		nova.workspace.config.set("as3.application.projectUUID",getUUID);
-		projectUUID = nova.workspace.config.get("as3.application.projectUUID");
-		return Promise.resolve(projectUUID);
-	} else {
-		return Promise.resolve(projectUUID);
+		if (existingUUID!=null && existingUUID!="") {
+			return resolve(existingUUID);
+		}
+
+		if(nova.version[0]>=10) {
+			const newUUID = nova.crypto.randomUUID();
+			nova.workspace.config.set("as3.application.projectUUID", newUUID);
+			return resolve(newUUID);
+		} else {
+			getProcessResults("/usr/bin/uuidgen").then((result) => {
+				const newUUID = result.stdout.trim();
+				nova.workspace.config.set("as3.application.projectUUID",newUUID);
+				resolve(newUUID);
+			}, (error) => {
+				reject(error);
+			});
+		}
+	});
+}
+
+/**
+ * Get's the temp path to use for ANEs. Since this isn't async, we could end up with
+ * @returns {string} - The location of a temp directory to extract ANEs to.
+ */
+exports.determineAneTempPath = function() {
+	var uuid = nova.workspace.config.get("as3.application.projectUUID");
+
+	if (!uuid || uuid===null) {
+		if (nova.version[0] >= 100) {
+			// Generate UUID synchronously
+			uuid = nova.crypto.randomUUID();
+			nova.workspace.config.set("as3.application.projectUUID", uuid);
+		} else {
+			// Old Nova versions need to fall back to async logic
+			// But, let's fire  this off so maybe it will be ready!
+			exports.determineProjectUUID();
+			// Make a placeholder for now based on the workspace name..
+			uuid = nova.workspace.config.get("workspace.name").replaceAll(" ","_");
+		}
 	}
-	return getUUID;
+
+	var anePath = nova.path.join(nova.fs.tempdir, uuid, "ane");
+	return anePath;
 }
 
 /**
