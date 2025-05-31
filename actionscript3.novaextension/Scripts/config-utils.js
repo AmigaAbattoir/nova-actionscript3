@@ -233,6 +233,20 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	}
 
 	var anePaths = nova.workspace.config.get("as3.build.anes");
+	if(configOverrides.anePaths) {
+		anePaths =configOverrides.anePaths;
+	}
+	var anesToPackage = [];
+	if(anePaths) {
+		anePaths.forEach((anePath) => {
+			if(anePath!="") {
+				if(anePath.charAt(0)=="~") { // If a user shortcut, resolve
+					anePath = nova.path.expanduser(anePath);
+				}
+				anesToPackage.push(anePath);
+			}
+		})
+	}
 
 	var destDir = nova.workspace.config.get("as3.build.output");
 	if(configOverrides.releasePath) {
@@ -285,7 +299,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 		"sourceDirs": sourceDirs,  // Needed for additional sources (may be relative) mostly for asconfig
 		"sourcePath":  sourcePath, // Full (resolved) path of files for building
 		"libPaths": libraryPaths,
-		"anePaths": anePaths,
+		"anePaths": anesToPackage,
 		"destDir": destDir,
 		"exportName": exportName,
 		"mainClass": mainClass,

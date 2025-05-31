@@ -47,8 +47,7 @@ exports.determineAneTempPath = function() {
 			// Old Nova versions need to fall back to async logic
 			// But, let's fire  this off so maybe it will be ready!
 			exports.determineProjectUUID();
-			// Make a placeholder for now based on the workspace name..
-			uuid = nova.workspace.config.get("workspace.name").replaceAll(" ","_");
+			return null;
 		}
 	}
 

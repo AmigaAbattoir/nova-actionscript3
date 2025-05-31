@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
-const { determineProjectUUID, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
+const { determineProjectUUID, determineAneTempPath, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
 
 var fileExtensionsToExclude = [];
@@ -861,6 +861,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			nova.workspace.showErrorMessage("Please edit the Task to select a Desktop Device to use for the screen size of the simulator!");
 			return false;
 		} else {
+			let check = screenSize.match(/([0-9]+ x [0-9]+:[0-9]+ x [0-9]+)/);
+			if(check!=null) {
+				screenSize = check[1];
+			}
 			screenSize = screenSize.replace(/^[^-]*-\s*/, '').replace(/\s+/g, '');
 		}
 		return screenSize;
@@ -1188,12 +1192,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					// If the destination "extdir" exists, delete it then make it!
 					try {
 						if(nova.fs.stat(extdir).isDirectory()) {
+							console.log("Trying to remove directory....");
 							nova.fs.rmdir(extdir);
 						}
 						nova.fs.mkdir(extdir);
 					} catch(error) {
 						nova.workspace.showErrorMessage("Failed to make ANE temp folder.");
-						console.log("*** ERROR: Failed to make ANE temp folder *** ");
+						console.log("*** ERROR: Failed to make ANE temp folder " + extdir + " *** ");
 					}
 				}
 				anePaths.forEach((anePath) => {
@@ -1375,7 +1380,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(projectType=="airmobile") {
 				var simulatorDevice = config.get("as3.task.deviceToSimulate");
 				var screenSize = this.getFormattedScreenSize(simulatorDevice);
-				debugArgs.screenSize = screenSize;
+				debugArgs.screensize = screenSize;
 
 				var screenDPI = this.getFormattedScreenDPI(simulatorDevice);
 				if(screenDPI>0) {
@@ -1510,7 +1515,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 
 			if(projectType=="airmobile") {
-				var screenSize = getFormattedScreenSize(config.get("as3.task.deviceToSimulate"));
+				var screenSize = this.getFormattedScreenSize(config.get("as3.task.deviceToSimulate"));
 				args.push("-screensize");
 				args.push(screenSize);
 			}
@@ -1536,7 +1541,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return null;
 				}
 				args.push("-extdir");
-				args.push(determineAneTempPath());
+				args.push(aneTempPath);
 			}
 
 			// The app.xml file
@@ -2039,6 +2044,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 //			if(config.get("as3.export.folder")!=null && config.get("as3.export.folder")!="") {
 		if(exportFolderOverride) {
 			configOverrides.releasePath = exportFolderOverride;
+		}
+
+		let anePathOverride = config.get("as3.packaging.anes");
+		console.log(" ## ## CONGIF: " + anePathOverride);
+		consoleLogObject(anePathOverride);
+		if(anePathOverride) {
+			console.log(" ## ## OVERRIDE!!")
+			configOverrides.anePaths = anePathOverride;
 		}
 
 		if(action==Task.Build) {
