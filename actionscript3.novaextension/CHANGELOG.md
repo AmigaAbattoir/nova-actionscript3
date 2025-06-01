@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 ### Added
 
 - Added initial support for debugging!
+- Added note about AIR flair option in Android build
 
 ### Changed
 
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 ### Fixed
 
 - `determineProjectUUID()` used nova.crypto which was only available in Nova 10, added check and alternate way to generate uuid for Nova 9 and below
+- Import Flash Builder adds ANEs correctly to Tasks.
 
 ## [0.9.0] - 2025-04-13
 

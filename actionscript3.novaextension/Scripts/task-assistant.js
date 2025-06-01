@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
+const { showNotification, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
 const { getWorkspaceOrGlobalConfig, isWorkspace, determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, determineAneTempPath, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
@@ -485,6 +485,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								args.push(platformSdk);
 							}
 
+							if(configOverrides.anes) {
+								var aneTempPath = determineAneTempPath();
+								if(aneTempPath==null) {
+									displayANEsProjectUUIDError();
+									return null;
+								}
+								args.push("-extdir");
+								args.push(aneTempPath+"-packed");
+							}
+
 							args.unshift(command);
 							var process = new Process("/usr/bin/env", {
 								args: args,
@@ -901,9 +911,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
 			return null;
 		}
-		// console.log("configOverrides: ");
-		// consoleLogObject(configOverrides);
 
+		console.log(" ||| build() configOverrides: ");
+		consoleLogObject(configOverrides);
+		console.log(" ||| build() configOverrides: ");
 
 		let destDir = configValues.destDir;
 		let mainApplicationPath =  configValues.mainApplicationPath;
@@ -915,7 +926,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let copyAssets = configValues.copyAssets;
 		let sourceDirs = configValues.sourceDirs;
 		let libPaths = configValues.libPaths;
-		let anePaths = configValues.anePaths;
+		let anes = configValues.anes;
 		let compilerAdditional = configValues.compilerAdditional;
 
 		// console.log("destDir = " + configValues.destDir);
@@ -928,7 +939,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// console.log("copyAssets = " + configValues.copyAssets);
 		// console.log("sourceDirs = " + configValues.sourceDirs);
 		// console.log("libPaths = " + configValues.libPaths);
-		// console.log("anePaths = " + configValues.anePaths);
 		// console.log("compilerAdditional = " + configValues.compilerAdditional);
 
 		// Check if we are building a Flash project or an AIR one now
@@ -1181,51 +1191,49 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			// If we have ANEs, we will need to unzip them to a folder so that ADL can run and point to those
 			// ANEs so we can run on desktop. But, if it's building for packing, ADT will incorporate that into
 			// the package for us!
-			if(anePaths && anePaths.length>0) {
+			if(anes && anes.length>0) {
 				var aneTempPath = determineAneTempPath();
 				if(aneTempPath==null) {
 					displayANEsProjectUUIDError();
 					return null;
 				}
 				var extdir = aneTempPath;
-				if(packageAfterBuild==false) {
-					// If the destination "extdir" exists, delete it then make it!
-					try {
-						if(nova.fs.stat(extdir).isDirectory()) {
-							console.log("Trying to remove directory....");
-							nova.fs.rmdir(extdir);
-						}
-						nova.fs.mkdir(extdir);
-					} catch(error) {
-						nova.workspace.showErrorMessage("Failed to make ANE temp folder.");
-						console.log("*** ERROR: Failed to make ANE temp folder " + extdir + " *** ");
-					}
+
+				// Make folder for unzipped ANEs when building
+				if(makeOrClearFolder(extdir)==false) {
+					return null;
+				};
+				// Make folder for packed ANEs when building.
+				if(makeOrClearFolder(extdir+"-packed")==false) {
+					return null;
 				}
-				anePaths.forEach((anePath) => {
-					args.push("--external-library-path+=" + anePath);
+
+				anes.forEach((ane) => {
+					args.push("--external-library-path+=" + ane);
 					// Needed?
-					//args.push("--library-path+=" + anePath);
-					if(packageAfterBuild==false) {
-						var aneDest = anePath.substring(anePath.lastIndexOf("/"),anePath.length);
-						//console.log("ANE DEST: [[" + aneDest + "]]");
-						//console.log("ANE PATH: [[" + anePath + "]]");
-						//console.log("/usr/bin/unzip" + " " + anePath + " " + "-d" + " " + extdir + aneDest);
+					//args.push("--library-path+=" + ane);
+					//if(packageAfterBuild==false) {
+						var aneDest = ane.substring(ane.lastIndexOf("/"),ane.length);
 						try {
+							// Copy ANE to temp folder so we can reference to when using ADL to run
+							nova.fs.copy(nova.workspace.path+"/"+ane,extdir + "-packed/"+ane.split('/').pop());
+
+							// Unzip ANE to a temp folder so we can reference
 							nova.fs.mkdir(extdir + aneDest);
-							var unzip = getProcessResults("/usr/bin/unzip",[ anePath, "-d", extdir + aneDest], nova.workspace.path );
+							var unzip = getProcessResults("/usr/bin/unzip",[ ane, "-d", extdir + aneDest], nova.workspace.path );
 							unzip.then((resolve) => {
 								// console.log("Unzip successful?!");
 							},(reject) => {
-								nova.workspace.showErrorMessage("Failed while trying to unzip ANE " + anePath + " to temp folder.");
-								console.log("Unzip failed?!?!");
+								nova.workspace.showErrorMessage("Failed while trying to unzip ANE " + ane + " to temp folder.");
+								console.log("Unzip failed");
 								return null;
 							});
 						} catch(error) {
-							nova.workspace.showErrorMessage("Failed to unzip ANE " + anePath + " to temp folder.");
-							console.log("*** ERROR: Couldn't unzip ANE for test runs ***");
+							nova.workspace.showErrorMessage("Failed to unzip ANE " + ane + " to temp folder.");
+							console.log("*** ERROR: Couldn't unzip ANE for test runs ***",error);
 							return null;
 						}
-					}
+					//}
 				});
 			}
 		}
@@ -1943,7 +1951,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							});
 						}
 						if(anePathsInPackage.length>0) {
-							taskJson.extensionValues["as3.packaging.anePaths"] = anePathsInPackage;
+							taskJson.extensionValues["as3.packaging.anes"] = anePathsInPackage;
 						}
 
 						// Enable Build on Run if enabled
@@ -2046,12 +2054,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			configOverrides.releasePath = exportFolderOverride;
 		}
 
-		let anePathOverride = config.get("as3.packaging.anes");
-		console.log(" ## ## CONGIF: " + anePathOverride);
-		consoleLogObject(anePathOverride);
-		if(anePathOverride) {
-			console.log(" ## ## OVERRIDE!!")
-			configOverrides.anePaths = anePathOverride;
+		// Check if the task has custom ANEs set
+		if(config.get("as3.packaging.customANEs")) {
+			let anePathOverride = config.get("as3.packaging.anes");
+			if(anePathOverride) {
+				configOverrides.anes = anePathOverride;
+			}
 		}
 
 		if(action==Task.Build) {

@@ -232,18 +232,18 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 		});
 	}
 
-	var anePaths = nova.workspace.config.get("as3.build.anes");
-	if(configOverrides.anePaths) {
-		anePaths =configOverrides.anePaths;
+	var anes = nova.workspace.config.get("as3.build.anes"); // Reminder, it's build.anes for the project, Task configs use packaging.anes...
+	if(configOverrides.anes) {
+		anes = configOverrides.anes;
 	}
-	var anesToPackage = [];
-	if(anePaths) {
-		anePaths.forEach((anePath) => {
-			if(anePath!="") {
-				if(anePath.charAt(0)=="~") { // If a user shortcut, resolve
-					anePath = nova.path.expanduser(anePath);
+	var anePaths = [];
+	if(anes) {
+		anes.forEach((ane) => {
+			if(ane!="") {
+				if(ane.charAt(0)=="~") { // If a user shortcut, resolve
+					ane = nova.path.expanduser(ane);
 				}
-				anesToPackage.push(anePath);
+				anePaths.push(ane);
 			}
 		})
 	}
@@ -299,7 +299,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 		"sourceDirs": sourceDirs,  // Needed for additional sources (may be relative) mostly for asconfig
 		"sourcePath":  sourcePath, // Full (resolved) path of files for building
 		"libPaths": libraryPaths,
-		"anePaths": anesToPackage,
+		"anes": anePaths,
 		"destDir": destDir,
 		"exportName": exportName,
 		"mainClass": mainClass,

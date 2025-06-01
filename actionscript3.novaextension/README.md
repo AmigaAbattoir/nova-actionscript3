@@ -248,6 +248,12 @@ If you have multiple Tasks, and you try to export a release build it will ask wh
 
 Next, it will prompt you for you certificate password, and if it's good, it will ask you if you want to use it just this one time, save it to your Keychain, or use for the session.
 
+### Android Air Flair
+
+By default, when packaging for Android, `air.` is prepended to the application ID. This can be toggled in the Android Task.
+
+![](assets/air-flair.png)
+
 ### Timestamp Errors
 
 One minute it works, next minute it doesn't.

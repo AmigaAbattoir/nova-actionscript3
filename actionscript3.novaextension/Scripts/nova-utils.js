@@ -270,6 +270,24 @@ exports.ensureFolderIsAvailable = function(folder) {
 	return true;
 }
 
+exports.makeOrClearFolder = function(folder) {
+	try {
+		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
+			// console.log(" Making folder at " + folder + "!!!");
+			nova.fs.mkdir(folder+"/");
+		} else if(nova.fs.stat(folder).isDirectory()) {
+			// console.log("Trying to remove directory....");
+			nova.fs.rmdir(folder);
+			nova.fs.mkdir(folder+"/");
+		}
+		return true;
+	} catch(error) {
+		nova.workspace.showErrorMessage("Failed to make folder: " + folder + "\n",error);
+		// console.log("*** ERROR: Failed to make folder " + folder + " *** ");
+	}
+	return false;
+}
+
 /**
  * Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
  * @param {string} folderPath - The folder path to look through

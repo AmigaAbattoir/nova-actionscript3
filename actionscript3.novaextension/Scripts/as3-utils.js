@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { getProcessResults, getStringOfFile, consoleLogObject } = require("./nova-utils.js");
+const { getProcessResults, getStringOfFile, consoleLogObject, ensureFolderIsAvailable } = require("./nova-utils.js");
 
 /**
  * Figures out a ProjectUUID for building releases and storing passwords.
@@ -52,6 +52,11 @@ exports.determineAneTempPath = function() {
 	}
 
 	var anePath = nova.path.join(nova.fs.tempdir, uuid, "ane");
+
+	// Make sure that the temp dir exists!
+	ensureFolderIsAvailable(nova.fs.tempdir);
+	ensureFolderIsAvailable(nova.fs.tempdir + "/" + uuid);
+
 	return anePath;
 }
 
