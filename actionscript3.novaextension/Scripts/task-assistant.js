@@ -1115,7 +1115,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// Read the App XML and make sure the Namespace is the same version!
 				let appXMLNS =  new xmlToJson.ns3x2j(appXML).getAttributeFromNodeByName("application","xmlns");
 				let appVersion = appXMLNS.split("/").pop();
-				let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+				let airSDKInfo = getAIRSDKInfo(flexSDKBase);
+				let currentAIRSDKVersion = airSDKInfo.version;
 				let additionalNote = "";
 
 				// Prior to AIR 3, just <version> was good enough
