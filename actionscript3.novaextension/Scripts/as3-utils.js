@@ -35,7 +35,7 @@ exports.determineProjectUUID = function() {
  * Get's the temp path to use for ANEs. Since this isn't async, we could end up with
  * @returns {string} - The location of a temp directory to extract ANEs to.
  */
-exports.determineAneTempPath = function() {
+exports.determineAneTempPath = function(prefix = "") {
 	var uuid = nova.workspace.config.get("as3.application.projectUUID");
 
 	if (!uuid || uuid===null) {
@@ -51,7 +51,7 @@ exports.determineAneTempPath = function() {
 		}
 	}
 
-	var anePath = nova.path.join(nova.fs.tempdir, uuid, "ane");
+	var anePath = nova.path.join(nova.fs.tempdir, uuid, prefix + "ane");
 
 	// Make sure that the temp dir exists!
 	ensureFolderIsAvailable(nova.fs.tempdir);

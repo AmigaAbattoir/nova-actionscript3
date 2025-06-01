@@ -487,7 +487,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							}
 
 							if(configOverrides.anes) {
-								var aneTempPath = determineAneTempPath();
+								var aneTempPath = determineAneTempPath("release-");
 								if(aneTempPath==null) {
 									displayANEsProjectUUIDError();
 									return null;
@@ -534,6 +534,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									);
 									if(taskConfig["as3.export.deleteAfterSuccess"] && taskConfig["as3.export.deleteAfterSuccess"]==true) {
 										nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
+										// If there are ANEs, clean them up too!
+										nova.fs.rmdir(aneTempPath);
+										nova.fs.rmdir(aneTempPath+"-packed");
 									}
 								} else {
 									var result = resolveStatusCodeFromADT(status);
@@ -1191,7 +1194,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			// ANEs so we can run on desktop. But, if it's building for packing, ADT will incorporate that into
 			// the package for us!
 			if(anes && anes.length>0) {
-				var aneTempPath = determineAneTempPath();
+				var anePrefix = (packageAfterBuild ? "release-" : "");
+				var aneTempPath = determineAneTempPath(anePrefix);
 				if(aneTempPath==null) {
 					displayANEsProjectUUIDError();
 					return null;
