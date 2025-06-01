@@ -169,7 +169,7 @@ exports.resolveStatusCodeFromADT = function(status) {
 		case 10: {
 			title =   "Could not create time stamp";
 			message = "ADT could not establish a connection to the timestamp server. If you connect to the internet through a proxy server, you may need to configure the JRE proxy settings.";
-			message += "\n\nThe timestamp server might also be down. For mroe information check the project's preferences in Build Packaging -> Timestamp";
+			message += "\n\nThe timestamp server might also be down. For more information check the project's preferences in Build Packaging -> Timestamp";
 			break;
 		}
 		case 11: {
@@ -417,7 +417,7 @@ exports.getAIRSDKInfo = function(flexSDKBase) {
 
 	let currentNS = "";
 
-	// Grab the airsdk.xml to check for version nymbers
+	// Grab the airsdk.xml to check for version numbers
 	try {
 		var airSDKInfo = getStringOfFile(nova.path.join(flexSDKBase,"airsdk.xml"));
 		// If it's not empty, let's parse it from XML and convert it to JSON for easier reference
@@ -428,7 +428,7 @@ exports.getAIRSDKInfo = function(flexSDKBase) {
 			// break into chunks on "/" and then get the last item for the version number
 			version = currentNS.split("/").pop();
 
-			// Used to keep track of what the minimun SWF version is for each descriptor namespace
+			// Used to keep track of what the minimum SWF version is for each descriptor namespace
 			var airAppVersions = airSDKXML.getNodeChildrenByName("applicationNamespaces", "versionMap");
 			airAppVersions.forEach((airAppVersion) => {
 				appVersions.push({
@@ -437,7 +437,7 @@ exports.getAIRSDKInfo = function(flexSDKBase) {
 				});
 			});
 
-			// Used to keep track of what the minimun SWF version is for ANEs
+			// Used to keep track of what the minimum SWF version is for ANEs
 			var airExtensionNamespaces = airSDKXML.getNodeChildrenByName("extensionNamespaces", "versionMap");
 			airExtensionNamespaces.forEach((airExtensionNamespace) => {
 				extensionNamespaces.push({
