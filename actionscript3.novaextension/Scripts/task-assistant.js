@@ -453,7 +453,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									nova.workspace.showErrorMessage("Export Release Build failed!\n\nCannot export to folder "+exportLocation);
 								}
 							}
-							args.push(nova.path.join(exportLocation, packageName));
+							let outputFile = nova.path.join(exportLocation, packageName);
+							args.push(outputFile);
 
 							// Descriptor
 							args.push(appXMLName);
@@ -523,11 +524,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								if (nova.inDevMode()) {
 									consoleLogObject(status);
 								}
-								var title = "Export Package";
-								var message = "Okay?!!!";
 								if(status==0) {
-									showNotification("Export Package Successful!", "Congrats!");
-									// @TODO, add button to reveal path on notification
+									nova.workspace.showActionPanel("Export Package Successful!", { buttons: [ "Okay", "Show in Finder"] },
+										(result) => {
+											if(result==1) {
+												nova.fs.reveal(nova.path.join(exportLocation, packageName));
+											}
+										}
+									);
 									if(taskConfig["as3.export.deleteAfterSuccess"] && taskConfig["as3.export.deleteAfterSuccess"]==true) {
 										nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
 									}
@@ -535,11 +539,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									var result = resolveStatusCodeFromADT(status);
 									message = result.message;
 									if (nova.inDevMode()) {
-										// console.log("RESULT: ");
+										console.log("Final RESULT: ");
 										console.log("STDOUT: " + stdout);
 										console.log("STDERR: " + stderr);
 									}
-									nova.workspace.showErrorMessage(title + "\n\n" + message);
+									nova.workspace.showErrorMessage(title + "\n\n" + message + "\n\n" + stderr);
 								}
 							})
 						},(reject) => {
@@ -549,16 +553,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					}, (reject) => {
 						// To make this a little neater, remove the workspace's path from the stderr messages
 						var message = reject.stderr.replaceAll(nova.workspace.path,"");
-						nova.workspace.showErrorMessage("Export Release Build failed!\n\nOne or more errors were found while trying to build the release version. Unable to export.\n" + message);
+						nova.workspace.showErrorMessage("Export Release Build failed!\n\nOne or more errors were found while trying to build the release version. Unable to export.\n\n" + message);
 					});
 				},
 				(reject) => {
-					var uuidMessage = "Project UUID Missing\n\n" + reject + "\nPlease use the Import Flash Builder option in the menu,";
-					if(nova.version[0]<10) {
-						uuidMessage += "ensure that `uuidgen` is on your system's path, update to Nova 10+"
-					}
-					uuidMessage += ", or run from the menu `Check Project UUID` to ensure a project UUID is created.";
-					nova.workspace.showErrorMessage(uuidMessage);
+					displayANEsProjectUUIDError();
 				});
 			});
 		}
