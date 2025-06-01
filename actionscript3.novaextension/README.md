@@ -41,18 +41,19 @@ The goal was to be use all my old Adobe Flash Build projects and convert them to
   - AIR, AIRI, Captive bundles, and native installer for Mac should work (_untested for submitting to app stores_).
   - Android and iOS packaging _should_ work (_untested for App Store submission_).
 
+- **ANE** - Should allow for using ANEs when running and for exporting release builds.
+
 - **Creating New Project**
 
 ## ☑️ Todo
 
+- **MXML** - Nova shows the MXML fine on first load, however, after saving it sometime flags a lot of issues.
 - **Launching AIR projects on actual devices** - Android and iOS
-- **Locale** - Current set to use en_US
-- **Themes**
-- **ANE** Handling, unpacking to "tmp" folder
+- **Locale** - Currently set to use en_US
+- **Themes** - Importing Flash Builder projects should store the right value, but currently not honored.
 - **Library** - Automatically managing library builds
 - **Workers**
 - **Modules**
-- **MXML** - Nova shows the MXML fine on first load, however, after saving it sometime flags a lot of issues.
 
 ## 📝 Notes
 
