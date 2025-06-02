@@ -280,7 +280,7 @@ exports.checkCertificatePassword = function(certificateLocation, password) {
  */
 exports.createCertificate = function() {
 	return new Promise((resolve) => {
-		console.log("Called... as3.certificate.create");
+		// console.log("Called... as3.certificate.create");
 
 		nova.workspace.showFileChooser(
 			"Select where to save the new P12 certificate",
@@ -298,7 +298,7 @@ exports.createCertificate = function() {
 
 					collectInput(prompts).then((responses) => {
 						if(responses!==null) {
-							consoleLogObject(responses);
+							// consoleLogObject(responses);
 
 							let [certFileName, certName, orgUnit, orgName, country] = responses;
 
@@ -310,7 +310,7 @@ exports.createCertificate = function() {
 							// country = country.toUpperCase().substring(0,2);
 
 							exports.createNewCertificatePassword().then((password) => {
-								console.log(" WE GOT A PASSWORD... alsmost there  " + password);
+								// console.log(" WE GOT A PASSWORD... almost there  " + password);
 
 								let flexSDKBase = determineFlexSDKBase();
 								var command = flexSDKBase + "/bin/adt";
