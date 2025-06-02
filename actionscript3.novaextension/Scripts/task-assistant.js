@@ -914,9 +914,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			return null;
 		}
 
-		console.log(" ||| build() configOverrides: ");
-		consoleLogObject(configOverrides);
-		console.log(" ||| build() configOverrides: ");
+		// console.log(" ||| build() configOverrides: ");
+		// consoleLogObject(configOverrides);
+		// console.log(" ||| build() configOverrides: ");
 
 		let destDir = configValues.destDir;
 		let mainApplicationPath =  configValues.mainApplicationPath;
@@ -1446,7 +1446,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Object} configOverrides - Which type of project, "air|airmobile|flex"
 	 */
 	run(projectType, projectOS, config, configOverrides) {
-		console.log("projectType: " + projectType)
+		// console.log("projectType: " + projectType)
 		let command = "";
 		let args = [];
 

@@ -3,12 +3,13 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
-## [0.10.0] - Unreleased
+## [0.10.0] - 2025-06-01
 
 ### Added
 
-- Added initial support for debugging!
+- Added initial support for debugging
 - Added note about AIR flair option in Android build
+- ANEs are packaged with export project
 
 ### Changed
 
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 - `determineProjectUUID()` used nova.crypto which was only available in Nova 10, added check and alternate way to generate uuid for Nova 9 and below
 - Import Flash Builder adds ANEs correctly to Tasks.
+- If using an different AIRSDK for a Task, the descriptor would check the project's AIRSDK version instead of the one for the Task.
 
 ## [0.9.0] - 2025-04-13
 

@@ -178,7 +178,7 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 
 	// Now that we have a Project Type, let's see if we need to check what type of Application it will be
 	projectTypePromise.then((projectType) => {
-		console.log(" PROJECT TYPE: ][" + projectType + "]]");
+		// console.log(" PROJECT TYPE: ][" + projectType + "]]");
 		if(projectType==undefined) { // If it's undefined, the user aborted the selector, bail out!
 			return;
 		}
@@ -437,7 +437,7 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 												var configFile = nova.fs.open(projectFolder + "/.nova/Configuration.json","w");
 												configFile.write(JSON.stringify(projectConfig,null,2));
 												configFile.close();
-												console.log("Write config....")
+												// console.log("Write config....")
 											} catch(error) {
 												nova.workspace.showErrorMessage("Problem creating the configuration for new project at " + projectFolder + "/.nova");
 											}
@@ -452,11 +452,11 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 											}
 
 											// All that's left now is to open the project in Nova.
-											console.log("V@@@:");
+											// console.log("V@@@:");
 											getProcessResults("/usr/local/bin/nova", [ projectFolder ]).then((result) => {
 												resolve(result);
 											}).catch((error) => {
-												console.error("@@@@@@   @@  @@  Problem opening project", error);
+												// console.error("@@@@@@   @@  @@  Problem opening project", error);
 												consoleLogObject(error)
 												reject(error); // Reject the promise with the error
 											});
