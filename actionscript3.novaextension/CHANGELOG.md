@@ -3,6 +3,16 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2025-07-01
+
+### Added
+
+- When building for desktop, if the descriptor doesn't have icons for 16x16, 32x32, 48x48, and 128x128, warn that the app icon will be an empty, default Mac icon
+
+### Fixed
+
+- If packaging failed, no notice would show up
+
 ## [0.10.0] - 2025-06-01
 
 ### Added

@@ -106,13 +106,34 @@ exports.determineAndroidSDKBase = function() {
  * configuration)
  * @returns {Object} - Various configs that are needed when packaging a build
  */
-exports.getConfigsForPacking = function(file) {
+exports.getConfigsForPacking = function(file, appendWorkspacePath = false, configOverrides = {}) {
 	const flexSDKBase = exports.determineFlexSDKBase();
 	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
 	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
 
 	//const isFlex = nova.workspace.config.get("as3.application.isFlex");
-	const mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+	var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
+	if(configOverrides.mainApplicationPath) {
+		// console.log("  XXXXXX OVERRIDING - MAIN APP PATH!");
+		mainApplicationPath = configOverrides.mainApplicationPath;
+	}
+
+	var mainSrcDir = nova.workspace.config.get("as3.build.source.main");
+	// If empty, we are assuming there is a `src/`...
+	if(mainSrcDir=="") {
+		mainSrcDir = "src";
+	}
+	// If it's a dot slash, we can officially make it empty!
+	if(mainSrcDir=="./") {
+		mainSrcDir = "";
+	}
+	if(mainSrcDir.charAt(0)=="~") { // If a user shortcut, resolve
+		mainSrcDir = nova.path.expanduser(mainSrcDir);
+	}
+
+	if(appendWorkspacePath) {
+		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
+	}
 
 	// If there is a different file for the mainApplication
 	if(!file) {
@@ -125,6 +146,7 @@ exports.getConfigsForPacking = function(file) {
 
 	const configData = {
 		"flexSDKBase": flexSDKBase,
+		"mainSrcDir": mainSrcDir,
 		"packageName": packageName,
 		"appXMLName": appXMLName,
 		"doTimestamp": doTimestamp,
@@ -177,7 +199,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
 	if(configOverrides.mainApplicationPath) {
 		// console.log("  XXXXXX OVERRIDING - MAIN APP PATH!");
-		var mainApplicationPath = configOverrides.mainApplicationPath;
+		mainApplicationPath = configOverrides.mainApplicationPath;
 	}
 
 	const mainClass = mainApplicationPath.replace(".mxml","").replace(".as","");

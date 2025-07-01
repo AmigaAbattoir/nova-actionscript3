@@ -44,7 +44,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 	 * @param {number} column - The column number where the node starts (if tracking position).
 	 * @returns {Object} The JSON representation of the node.
 	 */
-	generateNode(nodeName, attributes, children, textContent, line, column) {
+	generateNode(nodeName, attributes, children, textContent, line, column, charIndex) {
 		return {
 			name: nodeName,
 			"@": attributes,
@@ -52,7 +52,8 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 			textContent: textContent,
 			...(this.trackPosition && {
 				line: line,
-				column: column
+				column: column,
+				charIndex: charIndex
 			})
 		};
 	}
@@ -111,6 +112,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 
 		let lineStart = this.lineNumber;
 		let colStart = this.columnNumber;
+		let charIndex = this.currentIndex;
 
 		const nodeName = this.parseNodeName();
 		const attributes = this.parseAttributes();
@@ -134,12 +136,12 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 			}
 		} else if (this.xmlString[this.currentIndex] === '/' && this.xmlString[this.currentIndex + 1] === '>') {
 			this.moveCurrentIndex(2); // Skip '/>'
-			return this.generateNode(nodeName, attributes, [], null, lineStart, colStart);
+			return this.generateNode(nodeName, attributes, [], null, lineStart, colStart, charIndex);
 		} else {
 			this.showErrorContext("Unexpected character at position " + this.getLineColumn());
 		}
 
-		return this.generateNode(nodeName, attributes, children, textContent, lineStart, colStart);
+		return this.generateNode(nodeName, attributes, children, textContent, lineStart, colStart, charIndex);
 	}
 
 	/**
@@ -319,7 +321,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 					if (textContent.trim().length > 0) {
 						// Don't trim text content!
 						children.push(
-							this.generateNode("#text", {}, [], textContent, lineStart, this.columnNumber)
+							this.generateNode("#text", {}, [], textContent, lineStart, this.columnNumber, -44)
 						);
 					}
 					break;

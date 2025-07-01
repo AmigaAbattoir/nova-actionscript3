@@ -192,9 +192,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return;
 				}
 
-				// console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-				// consoleLogObject(taskConfig);
-				// console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+				console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+				consoleLogObject(taskConfig);
+				console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 
 				// We need a project UUID which we use to save the certificate password in a later step, but let's check
 				// first. It should generate one if possible, but on the unlikely event, we should abort.
@@ -235,7 +235,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					}
 
 					this.build(projectType, "release", true, configOverrides).then((resolve) => {
-						const configValues = getConfigsForPacking(taskConfig["as3.task.applicationFile"]);
+						const configValues = getConfigsForPacking(taskConfig["as3.task.applicationFile"],true,configOverrides);
 						let flexSDKBase = configValues.flexSDKBase;
 						let appXMLName = configValues.appXMLName;
 						let doTimestamp= configValues.doTimestamp;
@@ -276,6 +276,25 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								}
 								//console.log("DONE!");
 							});
+						}
+
+						// If default (desktop), then for Mac, certain icons aren't set, then it will be a default empty icon
+						if(taskConfig["as3.target"]=="default") {
+							let mainSrcDir = configValues.mainSrcDir;
+							let appXMLName = configValues.appXMLName;
+							let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
+							let appXML = getStringOfFile(appXMLLocation);
+							if(appXML!=null) {
+								// Read the App XML and make sure the Namespace is the same version!
+								var check1 = new xmlToJson.ns3x2j(appXML).findNodesByName("image16x16");
+								var check2 = new xmlToJson.ns3x2j(appXML).findNodesByName("image32x32");
+								var check3 = new xmlToJson.ns3x2j(appXML).findNodesByName("image48x48");
+								var check4 = new xmlToJson.ns3x2j(appXML).findNodesByName("image128x128");
+
+								if(check1.length==0 || check2.length==0 || check3.length==0 || check4.length==0) {
+									showNotification("Default Icon for app may be used","If you do not have <image16x16>, <image32x32>, <image48x48>, and <image128x128> in your app descriptor, you may get an empty, default Mac icon instead","Oh no!","bad-icon");
+								}
+							}
 						}
 
 						// Check if the Task has a custom certificate set for it!
@@ -402,7 +421,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 								args.push("-storepass");
 								args.push(password);
-
 
 								if(taskConfig["as3.target"]=="ios") {
 									args.push("-provisioning-profile");
@@ -540,13 +558,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									}
 								} else {
 									var result = resolveStatusCodeFromADT(status);
-									message = result.message;
+									var message = result.message;
 									if (nova.inDevMode()) {
 										console.log("Final RESULT: ");
 										console.log("STDOUT: " + stdout);
 										console.log("STDERR: " + stderr);
 									}
-									nova.workspace.showErrorMessage(title + "\n\n" + message + "\n\n" + stderr);
+									nova.workspace.showErrorMessage("Export Package Failed" + "\n\n" + message + "\n\n" + stderr);
 								}
 							})
 						},(reject) => {

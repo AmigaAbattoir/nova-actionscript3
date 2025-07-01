@@ -198,14 +198,6 @@ exports.activate = function() {
 
 		langserver = new AS3MXMLLanguageServer();
 	});
-
-/*
-	if (nova.inDevMode()) {
-		console.log(">>>> AS3MXML Activated");
-		console.log("  >> langserver.languageClient:  " + langserver.languageClient);
-		console.log("  >> JSON.stringify(langserver): " + JSON.stringify(langserver));
-	}
-*/
 }
 
 /**
@@ -487,7 +479,9 @@ class AS3MXMLLanguageServer {
 
 		// Check if the flexSDKBase is valid, if not, warn user and abort!
 		if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
-			console.log("flexSDKBase accessable? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
+			if (nova.inDevMode()) {
+				console.log("flexSDKBase accessable? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
+			}
 			nova.workspace.showErrorMessage("Configure AIR SDK!\n\nIn order to use this extension you will need to have installed a FlexSDK. Please set the location of \"Default AIR SDK\" in the extension preferences!")
 		} else {
 			// Keep track of what AIRSDK we're using
@@ -603,11 +597,6 @@ class AS3MXMLLanguageServer {
 				client.start();
 				client.onDidStop((error) => { console.log("**** AS3MXML ERROR: " + error + ". It may be still running: ", client.running); });
 
-				client.onNotification("initialized", (param) => {
-					console.log(" !!!Got initialized notificatiON!!");
-					showNotification("ActionScript 3", "LSP Initialized! What now...");
-				});
-
 				// Get the search paths for as3mxml
 				var sdkSearchPath = [];
 				if(getWorkspaceOrGlobalConfig("as3.sdk.searchPaths")!=null) {
@@ -637,7 +626,7 @@ class AS3MXMLLanguageServer {
 				var concurrentRequest = getWorkspaceOrGlobalConfig("as3.languageServer.concurrentRequests");
 
 				// Send Change workspace config slightly after startup
-				// Ideally, it should be onNotification("initialized")...
+				// Ideally, it should be onNotification("initialize")...
 				setTimeout(function() {
 					// @NOTE Most of it is just copied from VSCode, some setting are probably not needed!
 					const config = {
@@ -698,11 +687,16 @@ class AS3MXMLLanguageServer {
 							}
 						}
 					};
-					console.log(" >>> Sending notifications of workspace/didChangeConfiguration!! ");
+
+					if (nova.inDevMode()) {
+						console.log(" >>> Sending notifications of workspace/didChangeConfiguration!! ");
+					}
 					client.sendNotification("workspace/didChangeConfiguration", config);
 
-					console.log(" >>> Sending request of workspace/executeCommand!! ");
-					// Set perferred target (need to change for Royale...)
+					// Set preferred target (need to change for Royale...)
+					if (nova.inDevMode()) {
+						console.log(" >>> Sending request of workspace/executeCommand!! ");
+					}
 					client.sendRequest("workspace/executeCommand", {
 						command: "as3mxml.setRoyalePreferredTarget",
 						arguments: [
@@ -726,13 +720,13 @@ class AS3MXMLLanguageServer {
 				});
 				*/
 
+				// When we get this, then AS3MXML should be ready.
 				client.onNotification("as3mxml/setActionScriptActive", () => {
 					as3mxmlCodeIntelligenceReady = true;
 					nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
 				});
 
-
-				// @TODO Can I check with initialized?
+				// @TODO Can I check when the LSP responds with "initialize"??
 				setTimeout(function() {
 					if(as3mxmlCodeIntelligenceReady==false) {
 						showNotification("ActionScript 3 not ready", "ActionScript & MXML code intelligence disabled. Either no sdk found or you need to create a file named 'asconfig.json' to enable all features.")
@@ -813,7 +807,6 @@ class AS3MXMLLanguageServer {
 						loadASConfigFile();
 					}
 				}
-
 			} catch (err) {
 				if (nova.inDevMode()) {
 					console.error(" *** CAUGHT AN ERROR!!!" + err + " .... " + JSON.stringify(err) + " ***");
