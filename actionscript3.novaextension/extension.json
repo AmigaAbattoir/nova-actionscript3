@@ -3,7 +3,7 @@
 	"name": "ActionScript 3",
 	"organization": "Abattoir Software",
 	"description": "ActionScript 3 & MXML language extension for Panic Nova. LSP powered by Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player (and maybe Apache Royale).",
-	"version": "0.10.0",
+	"version": "0.10.1",
 	"keywords": ["actionscript 3","flash","air","adobe air","mxml" ],
 	"categories": [
 		"issues",
