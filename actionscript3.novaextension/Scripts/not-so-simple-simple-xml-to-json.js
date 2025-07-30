@@ -10,7 +10,7 @@
  * and the hierarchical structure of the XML. It also has the ability to track the position of nodes within the XML.
  *
  * @author ChatGPT and Christopher Pollati
- * @version 1.0
+ * @version 1.1
  */
 exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 
@@ -27,11 +27,12 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 		this.lineNumber = 1;
 		this.columnNumber = 0;
 		this.jsonArray = [];
+		this.error = "";
 		const rootNode = this.parseNode();
 		if (rootNode) {
 			this.jsonArray.push(rootNode);
 		}
-	}
+ 	}
 
 	/**
 	 * Generates a JSON representation of an XML node.
@@ -367,8 +368,10 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 		console.error(`Error: ${message}`);
 		console.error(`${before}${pointer}${after}`);
 
+		this.error += `Error: ${message}` + "\n";
+		this.error +=`${before}${pointer}${after}` + "\n\n";
 		/** @NOTE This cause Nova to stop parsing, which is usually fine in the case of debugging an extension */
-		throw new Error(message);
+		//throw new Error(message);
 	}
 
 	/* ---- Helpers ---- */

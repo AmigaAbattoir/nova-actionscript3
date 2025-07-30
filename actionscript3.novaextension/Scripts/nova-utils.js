@@ -5,6 +5,8 @@
  * @param {string} body - The text to display in the notification
  * @param {string} closeButtonName - Optional button, if there, it will keep the box open until
  * clicked
+ * @param {string} requestIdAddition - If this is given, you can later use this ID to remove the
+ * notification.
  */
 exports.showNotification = function(title, body, closeButtonName = "", requestIdAddition = "") {
 	//if (nova.inDevMode()) {
@@ -17,6 +19,14 @@ exports.showNotification = function(title, body, closeButtonName = "", requestId
 		}
 		nova.notifications.add(request);
 	//}
+}
+
+/**
+ * Removes a notification.
+ * @param {string} requestIdAddition - The ID of the notification to remove
+ */
+exports.cancelNotification = function(requestIdAddition) {
+	nova.notifications.cancel("ant-nova-message"+requestIdAddition);
 }
 
 /**
