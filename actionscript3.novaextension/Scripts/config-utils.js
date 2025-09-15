@@ -170,8 +170,8 @@ exports.getAppXMLNameAndExport = function(file) {
 	/* @TODO Strip to last part, remove any src/ or path prior to it */
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
 
-	const exportName = (isFlex ? file.replace(".mxml",".swf") : file.replace(".as",".swf"));
-	const appXMLName = (isFlex ? file.replace(".mxml","-app.xml") : file.replace(".as","-app.xml"));
+	const exportName = file.replace(/\.(mxml|as)$/i, ".swf");
+	const appXMLName = file.replace(/\.(mxml|as)$/i, "-app.xml");
 
 	const configData = {
 		"exportName": exportName,
