@@ -3,6 +3,23 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [0.10.2] - Unreleased
+
+### Added
+
+- Warns that code intelligence may not work when open ActionScript files outside of a project
+
+### Fixed
+
+- Exporting a package with an empty custom ANEs would fail
+- Exporting with ANEs would try to include unpacked ANEs instead
+- Does not ask to import Flash Builder if a file is opened outside of a project
+
+### Changed
+
+- Update NS3X2J to match Ant extension's code base
+- Modified how the `-app.xml` is changed so it should work if you have a mix of Flex and ActionScript tasks and want to use the same project
+
 ## [0.10.1] - 2025-07-01
 
 ### Added

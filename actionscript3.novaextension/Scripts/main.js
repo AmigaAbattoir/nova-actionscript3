@@ -2,7 +2,7 @@ const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
 const { getAIRSDKInfo, determineProjectUUID, determineAneTempPath } = require("./as3-utils.js");
 const { showNotification, consoleLogObject, getStringOfFile, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
-const { getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
+const { isWorkspace, getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
 const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
@@ -729,82 +729,89 @@ class AS3MXMLLanguageServer {
 				// @TODO Can I check when the LSP responds with "initialize"??
 				setTimeout(function() {
 					if(as3mxmlCodeIntelligenceReady==false) {
-						showNotification("ActionScript 3 not ready", "ActionScript & MXML code intelligence disabled. Either no sdk found or you need to create a file named 'asconfig.json' to enable all features.")
+						if(isWorkspace()) {
+							showNotification("ActionScript 3 not ready", "ActionScript & MXML code intelligence disabled. Either no sdk found or you need to create a file named 'asconfig.json' to enable all features.");
+						} else {
+							showNotification("ActionScript 3 not ready", "ActionScript & MXML code intelligence maybe disabled in file not open in a workspace.");
+						}
 					}
 				}, 2500);
 
 				nova.subscriptions.add(client);
 				this.languageClient = client;
 
-				// Check if we should ask to import Flash Builder project.
-				if(nova.config.get("as3.project.importFB")) {
-					if(nova.fs.stat(nova.workspace.path + "/.project")!=undefined || nova.fs.stat(nova.workspace.path + "/.actionScriptProperties")!=undefined) {
-						hasProjectAndASProperties = true;
-						nova.workspace.context.set("hasProjectAndASProperties", hasProjectAndASProperties);
-						let imported = nova.workspace.config.get("as3.project.importedFB");
-						if(imported!="done") {
-							nova.workspace.showActionPanel("We detected this may be a Flash Builder project. Would you like to import it to Nova? The original Flash Builder files will not be altered.", { buttons: [ "Yes","Never","Cancel"] },
-								(something) => {
-									switch(something) {
-										case 0: {
-											taskprovider.importFlashBuilderSettings();
-											break;
-										}
-										case 1: {
-											// Just mark it done
-											nova.workspace.config.set("as3.project.importedFB","done");
+				// If opening a workspace, then ask about importing Flash Builder project and setting up the asconfig files:
+				if(isWorkspace()) {
+					// Check if we should ask to import Flash Builder project.
+					if(nova.config.get("as3.project.importFB")) {
+						if(nova.fs.stat(nova.workspace.path + "/.project")!=undefined || nova.fs.stat(nova.workspace.path + "/.actionScriptProperties")!=undefined) {
+							hasProjectAndASProperties = true;
+							nova.workspace.context.set("hasProjectAndASProperties", hasProjectAndASProperties);
+							let imported = nova.workspace.config.get("as3.project.importedFB");
+							if(imported!="done") {
+								nova.workspace.showActionPanel("We detected this may be a Flash Builder project. Would you like to import it to Nova? The original Flash Builder files will not be altered.", { buttons: [ "Yes","Never","Cancel"] },
+									(something) => {
+										switch(something) {
+											case 0: {
+												taskprovider.importFlashBuilderSettings();
+												break;
+											}
+											case 1: {
+												// Just mark it done
+												nova.workspace.config.set("as3.project.importedFB","done");
+											}
 										}
 									}
-								}
-							);
-						}
-					}
-				}
-
-				// Check if there's an asconfig, ask if they want to update the file automatically or if they will handle it
-				/* // DEBUG to force prompting about asconfig!
-				nova.config.set("as3.project.asconfigMode",null);
-				nova.workspace.config.set("as3.project.asconfigMode",null);
-				*/
-				var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
-				if(needAutoASConfig==null) {
-					var asConfigMessage = "There is no \"asconfig.json\". This extension can attempt to automatically make one for you based upon the extensions settings, or you can choose to maintain one of your own. Which way would you prefer?";
-					var hasExistingASConfig = false;
-					// But... if there is already an asconfig.json, change the prompt text
-					if(nova.fs.stat(nova.workspace.path + "/asconfig.json")!=undefined) {
-						hasExistingASConfig = true;
-						asConfigMessage = "We noticed an existing \"asconfig.json\". However, this extension can attempt to automatically make one for you based upon the extensions settings, or you can choose to maintain one of your own. If you choose automatic, we will rename your existing file. Which way would you prefer?";
-					}
-
-					nova.workspace.showActionPanel(asConfigMessage, { buttons: [ "Automatic","I'll Maintain it","Cancel"] },
-						(something, other) => {
-							switch(something) {
-								case 0: {
-									if(hasExistingASConfig) {
-										// Back it up...
-										nova.fs.copy(nova.workspace.path + "/asconfig.json",nova.workspace.path + "/asconfig-" + getCurrentDateAsSortableString() + ".json");
-										loadASConfigFile();
-									} else {
-										nova.workspace.context.set("currentASConfigText",JSON.stringify({}));
-									}
-									updateASConfigFile();
-									// Fire it off!!!
-									nova.workspace.config.set("as3.project.asconfigMode","automatic");
-									break;
-								}
-								case 1: {
-									// Just mark it as manual
-									nova.workspace.config.set("as3.project.asconfigMode","manual");
-									break;
-								}
+								);
 							}
 						}
-					);
-				} else {
-					nova.workspace.context.set("currentASConfigAutomatic", (needAutoASConfig=="automatic" ? true : false));
-					// If in asconfig automatic mode, load the asconfig file to keep track of.
-					if(needAutoASConfig=="automatic") {
-						loadASConfigFile();
+					}
+
+					// Check if there's an asconfig, ask if they want to update the file automatically or if they will handle it
+					/* // DEBUG to force prompting about asconfig!
+					nova.config.set("as3.project.asconfigMode",null);
+					nova.workspace.config.set("as3.project.asconfigMode",null);
+					*/
+					var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
+					if(needAutoASConfig==null) {
+						var asConfigMessage = "There is no \"asconfig.json\". This extension can attempt to automatically make one for you based upon the extensions settings, or you can choose to maintain one of your own. Which way would you prefer?";
+						var hasExistingASConfig = false;
+						// But... if there is already an asconfig.json, change the prompt text
+						if(nova.fs.stat(nova.workspace.path + "/asconfig.json")!=undefined) {
+							hasExistingASConfig = true;
+							asConfigMessage = "We noticed an existing \"asconfig.json\". However, this extension can attempt to automatically make one for you based upon the extensions settings, or you can choose to maintain one of your own. If you choose automatic, we will rename your existing file. Which way would you prefer?";
+						}
+
+						nova.workspace.showActionPanel(asConfigMessage, { buttons: [ "Automatic","I'll Maintain it","Cancel"] },
+							(something, other) => {
+								switch(something) {
+									case 0: {
+										if(hasExistingASConfig) {
+											// Back it up...
+											nova.fs.copy(nova.workspace.path + "/asconfig.json",nova.workspace.path + "/asconfig-" + getCurrentDateAsSortableString() + ".json");
+											loadASConfigFile();
+										} else {
+											nova.workspace.context.set("currentASConfigText",JSON.stringify({}));
+										}
+										updateASConfigFile();
+										// Fire it off!!!
+										nova.workspace.config.set("as3.project.asconfigMode","automatic");
+										break;
+									}
+									case 1: {
+										// Just mark it as manual
+										nova.workspace.config.set("as3.project.asconfigMode","manual");
+										break;
+									}
+								}
+							}
+						);
+					} else {
+						nova.workspace.context.set("currentASConfigAutomatic", (needAutoASConfig=="automatic" ? true : false));
+						// If in asconfig automatic mode, load the asconfig file to keep track of.
+						if(needAutoASConfig=="automatic") {
+							loadASConfigFile();
+						}
 					}
 				}
 			} catch (err) {
