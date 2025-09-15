@@ -376,10 +376,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								// Only for Android building
 								if(taskConfig["as3.target"]=="android") {
 									// Check if we want to disable AIR Flair. I know I do!
-									var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];									if(noAndroidAirFlair!=undefined) {
-										// console.log("AIR FLAIR: " + noAndroidAirFlair);									} else {
+									var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
+									if(noAndroidAirFlair!=undefined) {
+										// console.log("AIR FLAIR: " + noAndroidAirFlair);
+									} else {
 										noAndroidAirFlair = false;
-										// console.log("AIR FLAIR undefined, so now it'll be false!");									}
+										// console.log("AIR FLAIR undefined, so now it'll be false!");
+									}
 
 									if(noAndroidAirFlair) {
 										env = { AIR_NOANDROIDFLAIR: "true" };
@@ -504,7 +507,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								args.push(platformSdk);
 							}
 
-							if(configOverrides.anes) {
+							var anes = taskConfig["as3.packaging.anes"];//nova.workspace.config.get("as3.packaging.anes");
+
+							// If there are ANEs, then we need to include the "ane" folder we made with the extracted
+							// ones that to the destination dir.
+							if (nova.inDevMode()) {
+								console.log("anes: " + JSON.stringify(anes));
+							}
+
+							if(anes && anes.length>0) {
 								var aneTempPath = determineAneTempPath("release-");
 								if(aneTempPath==null) {
 									displayANEsProjectUUIDError();
@@ -543,6 +554,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									consoleLogObject(status);
 								}
 								if(status==0) {
+									if(taskConfig["as3.export.deleteAfterSuccess"]!==false) {
+										nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
+										// If there are ANEs, clean them up too!
+										if(anes && anes.length>0) {
+											nova.fs.rmdir(aneTempPath);
+											nova.fs.rmdir(aneTempPath+"-packed");
+										}
+									}
 									nova.workspace.showActionPanel("Export Package Successful!", { buttons: [ "Okay", "Show in Finder"] },
 										(result) => {
 											if(result==1) {
@@ -550,12 +569,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 											}
 										}
 									);
-									if(taskConfig["as3.export.deleteAfterSuccess"] && taskConfig["as3.export.deleteAfterSuccess"]==true) {
-										nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
-										// If there are ANEs, clean them up too!
-										nova.fs.rmdir(aneTempPath);
-										nova.fs.rmdir(aneTempPath+"-packed");
-									}
 								} else {
 									var result = resolveStatusCodeFromADT(status);
 									var message = result.message;
@@ -1283,10 +1296,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// Should handle something like "-locale en_US"
 				if(eqLoc==-1 && spaceLoc!=-1) {
 					var moreArgs = addition.split(" ");
-					args.push(moreArgs[0]); 
-					args.push(moreArgs[1]); 
+					args.push(moreArgs[0]);
+					args.push(moreArgs[1]);
 				} else {
-					args.push(additional); 
+					args.push(additional);
 				}
 			});
 		}
@@ -1558,7 +1571,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			// ADL wants the directory with the ANEs
 			/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 			/** @NOTE Should check if there's a difference in the Workspace config and the packaging */
-			var anes = anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
+			var anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
 			// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 			// ones that to the destination dir.
 			if (nova.inDevMode()) {
