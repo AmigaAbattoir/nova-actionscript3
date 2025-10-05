@@ -2,8 +2,8 @@
 	"identifier": "com.abattoirsoftware.actionscript3",
 	"name": "ActionScript 3",
 	"organization": "Abattoir Software",
-	"description": "ActionScript 3 & MXML language extension for Panic Nova. LSP powered by Bowler Hat LLC's vscode-as3mxml. Develop apps for Adobe AIR, Adobe Flash Player (and maybe Apache Royale).",
-	"version": "0.10.2",
+	"description": "ActionScript 3 & MXML language extension for Nova. Develop apps for Adobe AIR, Adobe Flash Player (and maybe Apache Royale).\n\nLSP powered by Bowler Hat LLC's vscode-as3mxml",
+	"version": "0.11.0",
 	"keywords": ["actionscript 3","flash","air","adobe air","mxml" ],
 	"categories": [
 		"issues",
@@ -43,8 +43,11 @@
 		"onCommand:as3mxml.saveSessionPassword",
 		"onCommand:as3mxml.selectWorkspaceSDK",
 		"onCommand:as3mxml.getActiveProjectURIs",
-
-		"onCommand:as3.certificate.create"
+		"onCommand:as3.certificate.create",
+		"onCommand:as3.resolver.sdk",
+		"onCommand:as3.resolver.iosDevices",
+		"onCommand:as3.resolver.androidDevices",
+		"onCommand:as3.tester"
 	],
 
 	"breakpoints": [
@@ -182,26 +185,16 @@
 		{
 			"title": "SDKs",
 			"type": "section",
-			"description": "Here is where all setting for which AID SDKs to use",
+			"description": "Here is where all setting for which AID SDKs to use, as well as additional SDKs like iOS and Android.",
 			"children": [
 				{
-					"key": "as3.sdk.default",
-					"title": "Default AIR SDK path",
-					"allowFolders": true,
-					"allowFiles": false,
-					"type": "path",
-					"default": "~/Applications/AIRSDK/",
-					"description": "This is where the default Flex/AIR SDK will be. If empty, it will default to /Applications/AIRSDK."
-				},
-				{
-					"key": "as3.sdk.searchPaths",
-					"title": "SDK Search Paths",
+					"key": "as3.sdk.installed",
+					"title": "Installed SDKs",
 					"allowFolders": true,
 					"allowFiles": false,
 					"type": "pathArray",
 					"placeholder": "",
-					"description": "(*NOTE Not implemented yet.*) Specifies a folder path containing one or more SDKs to add as custom options in the SDK picker."
-
+					"description": "SDKs that you have installed that can be used for building.\n\nThe top-most entry will be the default one. If there are no entries, then it will default to ~/Applications/AIRSDK."
 				},
 				{
 					"key": "as3.sdk.animate",
@@ -216,8 +209,8 @@
 					"type": "path",
 					"allowFolders": true,
 					"allowFiles": false,
-					"default": "~/Applications/AIRSDK/",
-					"description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably set `as3.sdk.framework` instead.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the `as3.sdk.editor` setting to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
+					"placeholder": "Will use either first `as3.sdk.installed` or ~/Applications/AIRSDK/ if not set" ,
+					"description": "(Advanced) Specifies the folder path of the Apache Royale SDK used internally by the extension to provide code intelligence features. Unless you know what you're doing, you should probably leave this blank.\n\nIf you are working on a project that uses a nightly build of Apache Royale, you may be required to specify the location of the SDK to avoid compiler errors. Sometimes, new versions of Royale add new compiler options that older versions of compiler may not recognize."
 				},
 				{
 					"key": "as3.sdk.ios",
@@ -575,20 +568,13 @@
 					"type": "section",
 					"children": [
 						{
-							"key": "as3.compiler.useDefault",
-							"title": "Use the default SDK",
+							"key": "as3.compiler.sdk",
+							"title": "Use different SDK for this project:",
 							"type": "enum",
-							"values": [ "Use default SDK","Use a specific SDK"],
-							"default": "Use default SDK",
-							"description": "Specifies the folder path of the ActionScript SDK used by the current workspace. Supports the Adobe AIR SDK & Compiler, Apache Royale (maybe), the classic Apache Flex or Adobe Flex SDKs."
-						},
-						{
-							"key": "as3.compiler.specificSdk",
-							"title": "Use a specific SDK",
-							"type": "path",
-							"allowFolders": true,
-							"allowFiles": false,
-							"placeholder": "If empty, defaults the one specified in the extention's preferences"
+							"radio": false,
+							"resolve": "as3.resolver.sdk",
+							"description": "Use this to select a different SDK for this project. If set to `None`, then it will default to the top most SDK in the Extension settings.",
+							"dontallowCustom": true
 						}
 					]
 				},

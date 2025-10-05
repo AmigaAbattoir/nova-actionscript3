@@ -507,7 +507,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								args.push(platformSdk);
 							}
 
-							var anes = taskConfig["as3.packaging.anes"];//nova.workspace.config.get("as3.packaging.anes");
+							var anes = taskConfig["as3.packaging.anes"];
 
 							// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 							// ones that to the destination dir.
@@ -1160,7 +1160,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 
 				if(appVersion!=currentAIRSDKVersion) {
-					nova.workspace.showErrorMessage("Your app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". " + additionalNote + "Please correct this so that you can run it.");
+					nova.workspace.showErrorMessage("Your app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". " + additionalNote + "Please correct this so that you can build it.");
 					return null;
 				}
 			} else {
@@ -2075,6 +2075,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// Check if task overrides values:
 		let configOverrides = {};
+
+		// Check if the task is using a different SDK
+		let sdkOverride = config.get("as3.compiler.sdk");
+		if(sdkOverride!=null) {
+			configOverrides.sdkBase = sdkOverride;
+		}
 
 		// Check if there's an application file set in the Task, if so, we need to override those values!
 		let appFileOverride = config.get("as3.task.applicationFile")?.trim();

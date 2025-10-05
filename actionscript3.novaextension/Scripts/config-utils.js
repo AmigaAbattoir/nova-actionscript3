@@ -1,4 +1,4 @@
-const { consoleLogObject, showNotification, isWorkspace } = require("./nova-utils.js");
+const { consoleLogObject, showNotification, doesFileExist, doesFolderExist, ensureExpandedUserPath, isWorkspace } = require("./nova-utils.js");
 
 /**
  * Returns a config, first checking for the extension, then if there is a Workspace value
@@ -29,10 +29,10 @@ exports.isWorkspace = function() {
 	if (nova.workspace.path == undefined || nova.workspace.path == null) {
 		// Opening single file in a Nova editor does not define a workspace. A project must exist.
 		// Opening a remote server environment is also not considered a workspace.
-		return false
+		return false;
 	} else {
 		// A local project is the only environment considered a Nova workspace.
-		return true
+		return true;
 	}
 }
 
@@ -41,41 +41,57 @@ exports.isWorkspace = function() {
  * level, then the default SDK to use, and finally if the Workspace has a specific SDK to use
  * @returns {String} - The location of the SDK
  */
-exports.determineFlexSDKBase = function() {
-	// Check if user setup the location of the SDK for this project
-	var flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3.sdk.framework");
-	if(flexSDKBase!=null && flexSDKBase.charAt(0)=="~") {
-		flexSDKBase = nova.path.expanduser(flexSDKBase);
-	}
+exports.determineFlexSDKBase = function(selectedSDK = null) {
+	// Check if user setup a specific SDK that should be used by the editor (like in as3mxml)
+	var flexSDKBase = ensureExpandedUserPath( exports.getWorkspaceOrGlobalConfig("as3.sdk.editor") );
 
-	// Since we can't use user's SDK location, try default
+	// If we don't have that, then we use the user's SDKs locations,
 	if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
-		flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3.sdk.default");
-		if(flexSDKBase.charAt(0)=="~") {
-			flexSDKBase = nova.path.expanduser(flexSDKBase);
+		// @TODO Make this the first one in the `as3.sdk.installed`
+		if(exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")) {
+			flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")[0];
+		} else {
+			flexSDKBase = "~/Applications/AIRSDK";
+		}
+
+		flexSDKBase = ensureExpandedUserPath(flexSDKBase);
+
+		if(doesFolderExist(flexSDKBase) && nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false) {
+			return null;
 		}
 	}
 
-	if(exports.getWorkspaceOrGlobalConfig("as3.compiler.useDefault")=="Use a specific SDK") {
-		var specificSdk = exports.getWorkspaceOrGlobalConfig("as3.compiler.specificSdk");
-		if(specificSdk!=null) {
-			if(specificSdk.charAt(0)=="~") {
-				specificSdk = nova.path.expanduser(specificSdk);
-			}
-
-			if(nova.fs.access(specificSdk, nova.fs.F_OK | nova.fs.X_OK)!=false) {
-				flexSDKBase = specificSdk;
-			} else {
-				showNotification("Could not find specific AIR SDK", "Could not find specific AIR SDK at\n " + specificSdk + ", using default of " + flexSDKBase, "Oh no!");
-			}
+	// If the Project's setting ask for a specific SDK then check for that one
+	// @NOTE NEED TO UPDATE THIS TO TRANSLATE THE DropDown options
+	if(exports.getWorkspaceOrGlobalConfig("as3.compiler.sdk")) {
+		var specificSdk = ensureExpandedUserPath( exports.getWorkspaceOrGlobalConfig("as3.compiler.sdk") );
+		if(doesFolderExist(specificSdk) && nova.fs.access(specificSdk, nova.fs.F_OK | nova.fs.X_OK)!=false) {
+			flexSDKBase = specificSdk;
+		} else {
+			showNotification("Could not find specific AIR SDK", "Could not find specific AIR SDK at:\n " + specificSdk + "\n using default of:\n " + flexSDKBase, "Oh no!");
 		}
 	}
 
-	//console.log("Setting as3.sdk.framework:    " + exports.getWorkspaceOrGlobalConfig("as3.sdk.framework"));
-	//console.log("Setting as3.sdk.default:      " + exports.getWorkspaceOrGlobalConfig("as3.sdk.default"));
-	//console.log("Setting as3.compiler.useDefault:  " + exports.getWorkspaceOrGlobalConfig("as3.compiler.useDefault"));
-	//console.log("Setting as3.compiler.specificSdk: " + exports.getWorkspaceOrGlobalConfig("as3.compiler.specificSdk"));
-	//console.log("Using flexSDKBase: " + flexSDKBase);
+	// If there a task assigned SDK, that's what we're using!
+	if(selectedSDK) {
+		selectedSDK = ensureExpandedUserPath(selectedSDK);
+
+		if(doesFolderExist(selectedSDK) && nova.fs.access(selectedSDK, nova.fs.F_OK | nova.fs.X_OK)!=false) {
+			flexSDKBase = selectedSDK;
+		} else {
+			showNotification("Could not find specific AIR SDK", "Could not find or use the task's specific AIR SDK at:\n " + selectedSDK + "\n using default of:\n " + flexSDKBase, "Oh no!");
+		}
+	}
+
+	// Set context variable to keep track of it later @NOTE Not sure we need this.
+	currentSDKPath = flexSDKBase;
+	nova.workspace.context.set("currentSDKPath", currentSDKPath);
+
+	// console.log("Setting as3.sdk.installed[0]:      " + exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")[0]);
+	// console.log("Setting as3.compiler.useDefault:  " + exports.getWorkspaceOrGlobalConfig("as3.compiler.useDefault"));
+	// console.log("Setting as3.compiler.specificSdk: " + exports.getWorkspaceOrGlobalConfig("as3.compiler.specificSdk"));
+	// console.log("From Task at hand: " + selectedSDK);
+	// console.log("Using flexSDKBase ------->>>>>> : " + flexSDKBase);
 	return flexSDKBase;
 }
 
@@ -90,11 +106,7 @@ exports.determineAndroidSDKBase = function() {
 	if(!androidSDKBase) {
 		androidSDKBase = "~/Library/Android/sdk/";
 	}
-	if(androidSDKBase!=null) {
-		if(androidSDKBase.charAt(0)=="~") {
-			androidSDKBase = nova.path.expanduser(androidSDKBase);
-		}
-	}
+	androidSDKBase = ensureExpandedUserPath(androidSDKBase);
 
 	//console.log("Using androidSDKBase: " + androidSDKBase);
 	return androidSDKBase;
@@ -107,7 +119,11 @@ exports.determineAndroidSDKBase = function() {
  * @returns {Object} - Various configs that are needed when packaging a build
  */
 exports.getConfigsForPacking = function(file, appendWorkspacePath = false, configOverrides = {}) {
-	const flexSDKBase = exports.determineFlexSDKBase();
+	var sdkBase = "";
+	if(configOverrides.sdkBase!=null) {
+		sdkBase = configOverrides.sdkBase;
+	}
+	const flexSDKBase = exports.determineFlexSDKBase(sdkBase);
 	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
 	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
 
@@ -127,9 +143,7 @@ exports.getConfigsForPacking = function(file, appendWorkspacePath = false, confi
 	if(mainSrcDir=="./") {
 		mainSrcDir = "";
 	}
-	if(mainSrcDir.charAt(0)=="~") { // If a user shortcut, resolve
-		mainSrcDir = nova.path.expanduser(mainSrcDir);
-	}
+	mainSrcDir = ensureExpandedUserPath(mainSrcDir); // If a user shortcut, resolve
 
 	if(appendWorkspacePath) {
 		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
@@ -194,7 +208,11 @@ exports.getAppXMLNameAndExport = function(file) {
  */
 exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrides = {}) {
 	// console.log("appendWorkspacePath: " + appendWorkspacePath);
-	const flexSDKBase = exports.determineFlexSDKBase();
+	var sdkBase = "";
+	if(configOverrides.sdkBase!=null) {
+		sdkBase = configOverrides.sdkBase;
+	}
+	var flexSDKBase = exports.determineFlexSDKBase(sdkBase);
 
 	var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
 	if(configOverrides.mainApplicationPath) {
@@ -213,9 +231,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	if(mainSrcDir=="./") {
 		mainSrcDir = "";
 	}
-	if(mainSrcDir.charAt(0)=="~") { // If a user shortcut, resolve
-		mainSrcDir = nova.path.expanduser(mainSrcDir);
-	}
+	mainSrcDir = ensureExpandedUserPath(mainSrcDir); // If a user shortcut, resolve
 
 	if(appendWorkspacePath) {
 		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
@@ -226,9 +242,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 //	sourcePath.push(mainSrcDir);
 	if(sourceDirs) {
 		sourceDirs.forEach((sourceDir) => {
-			if(sourceDir.charAt(0)=="~") { // If a user shortcut, resolve
-				sourceDir = nova.path.expanduser(sourceDir);
-			}
+			sourceDir = ensureExpandedUserPath(sourceDir);  // If a user shortcut, resolve
 			if(sourceDir.includes("${PROJECT_FRAMEWORKS}")) {
 				sourceDir = sourceDir.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks");
 			}
@@ -240,9 +254,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	var libraryPaths = [];
 	if(libPaths) {
 		libPaths.forEach((libPath) => {
-			if(libPath.charAt(0)=="~") { // If a user shortcut, resolve
-				libPath = nova.path.expanduser(libPath);
-			}
+			libPath = ensureExpandedUserPath(libPath); // If a user shortcut, resolve
 			if(libPath.includes("${PROJECT_FRAMEWORKS}")) {
 				libPath = libPath.replace("${PROJECT_FRAMEWORKS}",flexSDKBase+"/frameworks");
 			}
@@ -262,10 +274,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	if(anes) {
 		anes.forEach((ane) => {
 			if(ane!="") {
-				if(ane.charAt(0)=="~") { // If a user shortcut, resolve
-					ane = nova.path.expanduser(ane);
-				}
-				anePaths.push(ane);
+				anePaths.push( ensureExpandedUserPath(ane) );
 			}
 		})
 	}
@@ -284,9 +293,7 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	if(destDir=="./") {
 		destDir = "";
 	}
-	if(destDir.charAt(0)=="~") { // If a user shortcut, resolve
-		destDir = nova.path.expanduser(destDir);
-	}
+	destDir = ensureExpandedUserPath(destDir); // If a user shortcut, resolve
 
 	if(appendWorkspacePath) {
 		if(destDir.charAt(0)!="/") {

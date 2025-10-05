@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
 const { getAIRSDKInfo, determineProjectUUID, determineAneTempPath } = require("./as3-utils.js");
-const { showNotification, consoleLogObject, getStringOfFile, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
+const { showNotification, consoleLogObject, getStringOfFile, doesFileExist, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
 const { isWorkspace, getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
@@ -51,11 +51,17 @@ var currentASConfigAutomatic = false;
  */
 var currentASConfigText = "";
 
+/**
+ * Stores the current path of the SDK used
+ * @type {string}
+ */
+var currentSDKPath = "";
+
 // Used to store session passwords
 /**
  * Extension context that stores certificate passwords for building, but are asked to only keep
  * for the current session. Once the Workspace is closed, it will be forgotten. Has to be stored
- * as stringified text!
+ * as JSON stringified text!
  * @type {string}
  */
 var sessionCertificatePassword = "";
@@ -64,6 +70,66 @@ var sessionCertificatePassword = "";
  * When the Extension is activated
  */
 exports.activate = function() {
+	// ---- Resolves configuration dropdowns ----
+	nova.commands.register("as3.resolver.sdk", (workspace) => {
+		return new Promise((resolve, reject) => {
+			let sdks = nova.config.get("as3.sdk.installed") || [];
+			let results = [];
+			for (let sdkPath of sdks) {
+				try {
+					let label = sdkPath;
+					let airSDKInfo;
+					// If it has a flex-sdk-description.xml, use that, otherwise it should check `airsdk.xml`
+					if(doesFileExist(nova.path.join(sdkPath,"flex-sdk-description.xml"))) {
+						airSDKInfo = getStringOfFile(nova.path.join(sdkPath,"flex-sdk-description.xml"));
+						let flexSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
+						let name = flexSDKXML.findNodesByName("name");
+						let build = flexSDKXML.findNodesByName("build");
+
+						label = " " + name[0]["textContent"] + " (" + build[0]["textContent"] + ")";
+					} else {
+						airSDKInfo = getStringOfFile(nova.path.join(sdkPath,"airsdk.xml"));
+						let airSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
+						let currentNS = airSDKXML.getAttributeFromNodeByName("airSdk","xmlns");
+
+						label = "AIR SDK " + currentNS.split("/").pop();
+					}
+					results.push([sdkPath,label]);
+				} catch (err) { // Fallback: use path for both
+					results.push([sdkPath, sdkPath]);
+				}
+			}
+			console.log("RESOLVER SDK: ");
+			consoleLogObject(results)
+			resolve(results);
+		});
+	});
+
+	nova.commands.register("as3.resolver.iosDevices", (workspace) => {
+		return new Promise((resolve, reject) => {
+			let results = [];
+			getIOSDevices().then((iosDevices) => {
+				for(device of iosDevices) {
+					results.push([device.uuid,device.deviceName+": "+device.uuid]);
+				}
+				resolve(results);
+			});
+		});
+	});
+
+	nova.commands.register("as3.resolver.androidDevices", (workspace) => {
+		return new Promise((resolve, reject) => {
+			let results = [];
+			getAndroidDevices().then((androidDevices) => {
+				for(device of androidDevices) {
+					consoleLogObject(device);
+					results.push([device.uuid,device.model+": "+device.uuid]);
+				}
+				resolve(results);
+			});
+		});
+	});
+
 	// ---- Certificate Menu Functions ----
 	nova.commands.register("as3.certificate.create", (workspace) => { return createCertificate(); });
 
@@ -89,18 +155,6 @@ exports.activate = function() {
 	});
 
 	nova.commands.register("as3.check.aneTemp", (workspace) => { showNotification("ActionScript 3 ANE temp path", determineAneTempPath()); });
-
-	nova.commands.register("as3.devicetester", (workspace) => {
-		return new Promise((resolve) => {
-			var ad = getAndroidDevices().then((androidDevices) => {
-				consoleLogObject(androidDevices);
-
-				var dd = getIOSDevices().then((iosDevices) => {
-					consoleLogObject(iosDevices);
-				});
-			})
-		});
-	});
 
 	nova.commands.register("as3.update.asconfig", (workspace) => {
 		return new Promise((resolve) => {
@@ -187,17 +241,35 @@ exports.activate = function() {
 
 	nova.commands.register("as3.as3reference.old",() => { nova.openURL("https://help.adobe.com/en_US/air/build/index.html"); });
 
-	nova.commands.register("as3.restart", (editor) => {
-		langserver.stop();
+	nova.commands.register("as3.restart", (editor) => { /* Not sure this is the best way... */ restart(); });
+}
 
-		// Extension context varaible reset
-		as3mxmlCodeIntelligenceReady = false;
-		nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
-		hasProjectAndASProperties = false;
-		nova.workspace.context.set("hasProjectAndASProperties", hasProjectAndASProperties);
+function restart() {
+	langserver.stop();
+	nova.subscriptions.remove(langserver);
 
-		langserver = new AS3MXMLLanguageServer();
-	});
+	// Extension context variable reset
+	as3mxmlCodeIntelligenceReady = false;
+	nova.workspace.context.set("as3mxmlCodeIntelligenceReady", as3mxmlCodeIntelligenceReady);
+	hasProjectAndASProperties = false;
+	nova.workspace.context.set("hasProjectAndASProperties", hasProjectAndASProperties);
+
+	// Technically, these should all be reset when it tries to open the default SDK
+	currentAIRSDKVersion = 0;
+	nova.workspace.context.set("currentAIRSDKVersion", currentAIRSDKVersion);
+	currentAIRAppVersions = [];
+	nova.workspace.context.set("currentAIRAppVersions", currentAIRAppVersions);
+	currentAIRExtensionNamespaces = [];
+	nova.workspace.context.set("currentAIRExtensionNamespaces", currentAIRExtensionNamespaces);
+	currentASConfigAutomatic = false;
+	nova.workspace.context.set("currentASConfigAutomatic", currentASConfigAutomatic);
+	currentASConfigText = "";
+	nova.workspace.context.set("currentASConfigText", currentASConfigText);
+	currentSDKPath = "";
+	nova.workspace.context.set("currentSDKPath", currentSDKPath);
+
+	// Start up new language server.
+	langserver = new AS3MXMLLanguageServer();
 }
 
 /**
@@ -227,6 +299,28 @@ class AS3MXMLLanguageServer {
 			console.log(" *** Constructing AS3MXML Extension with PATH: ",path);
 			console.log(" *** Version: " + nova.extension.version);
 		}
+
+		// @DEBUG, TESTING make sure this is cleared
+		/*
+		nova.config.set("as3.sdk.default","/Applications/Apache Flex/SDKs/4.16.1-AIR32");
+		nova.config.set("as3.sdk.installed", null);
+		*/
+		// Upgrade with <0.11
+		if(nova.config.get("as3.sdk.default")!="") {
+			var installed = nova.config.get("as3.sdk.installed");
+			if(installed==null || installed.length==0) {
+				installed = [];
+				installed.push(nova.config.get("as3.sdk.default"));
+				// Update the installed SDK to the old default one
+				nova.config.set("as3.sdk.installed", installed);
+				// Clear the old preferences so we don't have to do this again.
+				nova.config.set("as3.sdk.default",null);
+				nova.workspace.showActionPanel("With ActionScript 3 V0.11, the handling of SDKs has changed. The `Default AIR SDK path` has been replace with `Installed SDKs`. With this, you can now list multiple SDKs and set ones per project and/or task.\n\nYour Installed SDKs has been updated to include your Default SDK now!");
+				//nova.extension.openChangelog();
+				//nova.openURL("https://github.com/AmigaAbattoir/nova-actionscript3/wiki?");
+			}
+		}
+
 		this.start(nova.extension.path)
 	}
 
@@ -239,9 +333,7 @@ class AS3MXMLLanguageServer {
 	 * What to do when deactivating the extension
 	 */
 	deactivate() {
-		if (nova.inDevMode()) {
-			console.log(" *** AS3MXML Deactivated");
-		}
+		if (nova.inDevMode()) { console.log(" *** AS3MXML Deactivated"); }
 		this.stop();
 	}
 
@@ -252,7 +344,7 @@ class AS3MXMLLanguageServer {
 	setupConfigurationWatchers() {
 		// Extension configs we need to watch
 		const watchedConfigs = [
-			"as3.java.path", "as3.sdk.searchPaths", "as3.sdk.default", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
+			"as3.java.path", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
 			"as3.languageServer.jvmargs", "as3.languageServer.concurrentRequests",
 		];
 
@@ -260,7 +352,7 @@ class AS3MXMLLanguageServer {
 		const watchedWorkspaceConfigs = [
 			"as3.application.mainApp", "as3.build.source.main", "as3.build.output", "as3.build.source.additional",
 			"as3.build.library.additional", "as3.build.anes", "as3.packaging.anes", "as3.export.folder",
-			"as3.compiler.useDefault", "as3.compiler.specificSdk",
+			"as3.compiler.sdk",
 			"as3.project.asconfigMode",
 			"as3.flash.generatorType", "as3.flash.generateHTML", "as3.flash.checkTarget", "as3.flash.express", "as3.flash.navigation"
 		];
@@ -275,8 +367,7 @@ class AS3MXMLLanguageServer {
 
 		// Keys that should trigger the LSP to restart
 		const configsThatTriggersRestart = [
-			"as3.java.path", "as3.sdk.searchPaths", "as3.sdk.default", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
-			"as3.compiler.useDefault", "as3.compiler.specificSdk",
+			"as3.java.path", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
 			"as3.languageServer.path", "as3.languageServer.jvmargs", "as3.languageServer.concurrentRequests"
 		];
 
@@ -300,19 +391,23 @@ class AS3MXMLLanguageServer {
 			let isThrottled = false;
 			nova.config.onDidChange(key, function(newValue, oldValue) {
 				if(!isThrottled) {
-					console.log(` =-=-=-=-= Changed ${key} is now ${newValue} was ${oldValue}`);
+					if (nova.inDevMode()) { console.log(` =-=-=-=-= Changed ${key} is now ${newValue} was ${oldValue}`); }
 
 					if(configsThatTriggersRestart.includes(key)) {
-						console.log(" =-=-=-=-= Should trigger restart, maybe...");
+						if (nova.inDevMode()) { console.log(" =-=-=-=-= Should trigger restart, maybe..."); }
 
 						if(key=="as3.compiler.useDefault") {
+							/** @TODO Should see if the version changed */
 							var defaultSDK = nova.workspace.config.get("as3.sdk.default");
-							var specificSDK = nova.workspace.config.get("as3.compiler.specificSdk");
+							//var specificSDK = nova.workspace.config.get("as3.compiler.specificSdk");
+							var specificSDK = nova.workspace.config.get("as3.compiler.sdk");
 							if(defaultSDK!=specificSDK) {
 								if(specificSDK!="") {
-									console.log("  =-=-=-= Should restart AS3MXML!");
+									if (nova.inDevMode()) { console.log("  =-=-=-= Should restart AS3MXML!"); }
+									console.log(" AS3 Should restart, or maybe send `workspace/didChangeConfiguration` message, but not implemented yet!");
+									// restart();
 								} else {
-									console.log("  =-=-=-= Empty SDK, guess I'll hold off restarting");
+									if (nova.inDevMode()) { console.log("  =-=-=-= Empty SDK, guess I'll hold off restarting"); }
 								}
 							}
 						}
@@ -328,7 +423,9 @@ class AS3MXMLLanguageServer {
 					isThrottled = true;
 					setTimeout(() => (isThrottled = false), 100); // Throttle period
 				} else {
-					console.log(` =-=-=-=-= TROTTLED!!! Changed ${key} is now ${newValue} was ${oldValue}`);
+					if (nova.inDevMode()) {
+						console.log(` =-=-=-=-= TROTTLED!!! Changed ${key} is now ${newValue} was ${oldValue}`);
+					}
 				}
 			});
 		}
@@ -341,10 +438,12 @@ class AS3MXMLLanguageServer {
 			let isThrottled = false;
 			nova.workspace.config.onDidChange(key, function(newValue, oldValue) {
 				if(!isThrottled) {
-					console.log(` =-=-=-=-= WORKSPACE Changed ${key} is now ${newValue} was ${oldValue}`);
+					if (nova.inDevMode()) { console.log(` =-=-=-=-= WORKSPACE Changed ${key} is now ${newValue} was ${oldValue}`); }
 
 					if(configsThatTriggersRestart.includes(key)) {
-						console.log(" =-=-=-=-= WORKSPACE Should trigger restart");
+						if (nova.inDevMode()) { console.log(" =-=-=-=-= WORKSPACE Should trigger restart"); }
+						console.log(" AS3 Should restart, but not implemented yet!");
+						// restart();
 					}
 
 					let errorGeneratingHTML = "";
@@ -422,7 +521,7 @@ class AS3MXMLLanguageServer {
 						if(errorGeneratingHTML) {
 							showNotification("Error Generating HTML Template", errorGeneratingHTML, "", "-template");
 							if (nova.inDevMode()) {
-								console.log(errorGeneratingHTML);
+								console.error(errorGeneratingHTML);
 							}
 						} else {
 							nova.notifications.cancel("as3mxml-nova-message-template");
@@ -439,14 +538,22 @@ class AS3MXMLLanguageServer {
 					isThrottled = true;
 					setTimeout(() => (isThrottled = false), 100); // Throttle period
 				} else {
-					console.log(` =-=-=-=-= THROTTLED!!! WORKSPACE Changed ${key} is now ${newValue} was ${oldValue}`);
+					if (nova.inDevMode()) { console.log(` =-=-=-=-= THROTTLED!!! WORKSPACE Changed ${key} is now ${newValue} was ${oldValue}`); }
 				}
 			});
 		}
 	}
 
 	/**
-	 * WHen the LSP should start
+	 * @TODO
+	 * When we need the LSP to restart
+	 */
+	 restart() {
+		 // Think we need to remove things and reset some of the contexts made
+	 }
+
+	/**
+	 * When the LSP should start
 	 * @param {string} path - The location of the extension
 	 */
 	start(path) {
@@ -455,6 +562,7 @@ class AS3MXMLLanguageServer {
 			console.log(" *** path: " + path);
 		}
 
+		// If restarting this language client, let's stop it and remove the subscriptions.
 		if (this.languageClient) {
 			if (nova.inDevMode()) {
 				console.log("Language client is active, so let's stop it and remove the subscription!");
@@ -595,7 +703,7 @@ class AS3MXMLLanguageServer {
 				}
 
 				client.start();
-				client.onDidStop((error) => { console.log("**** AS3MXML ERROR: " + error + ". It may be still running: ", client.running); });
+				client.onDidStop((error) => { console.error("**** AS3MXML ERROR: " + error + ". It may be still running: ", client.running); });
 
 				// Get the search paths for as3mxml
 				var sdkSearchPath = [];
@@ -732,7 +840,7 @@ class AS3MXMLLanguageServer {
 						if(isWorkspace()) {
 							showNotification("ActionScript 3 not ready", "ActionScript & MXML code intelligence disabled. Either no sdk found or you need to create a file named 'asconfig.json' to enable all features.");
 						} else {
-							showNotification("ActionScript 3 not ready", "ActionScript & MXML code intelligence maybe disabled in file not open in a workspace.");
+							showNotification("ActionScript 3 not ready", "ActionScript & MXML code intelligence maybe disabled in files not open in a workspace.");
 						}
 					}
 				}, 2500);

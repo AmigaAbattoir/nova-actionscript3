@@ -262,6 +262,46 @@ exports.getCurrentDateAsSortableString = function() {
 }
 
 /**
+ * Checks if a file exists
+ *
+ * @param {String} filename - The full path of the file
+ */
+exports.doesFileExist = function(filename) {
+	var stat = nova.fs.stat(filename);
+	if(stat) {
+		if(stat.isFile()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Checks if a folder exists
+ *
+ * @param {String} filename - The full path of the file
+ */
+exports.doesFolderExist = function(filename) {
+	var stat = nova.fs.stat(filename);
+	if(stat) {
+		if(stat.isDirectory()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+exports.ensureExpandedUserPath = function(filename) {
+	// console.log("ensureExpandedUserPath() [[" + filename + "]]")
+	if(filename!=null) {
+		if(filename.charAt(0)=="~") {
+			filename = nova.path.expanduser(filename);
+		}
+	}
+	return filename;
+}
+
+/**
  * Makes sure that we have a folder so we can put stuff in it
  *
  * @returns {boolean} - True if the folder is there, otherwise false

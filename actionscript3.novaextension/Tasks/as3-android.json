@@ -13,7 +13,7 @@
 			{
 				"key": "as3.task.launchMethod",
 				"title": "Launch method",
-				"description": "When running, how should this be launched?",
+				"description": "**NOTE: Currently only runs in simulator!!** When running, how should this be launched?",
 				"type": "enum",
 				"link": "http://www.adobe.com/go/fb_device_help",
 				"default": "desktop",
@@ -118,6 +118,14 @@
 				"default": true
 			},
 			{
+				"key": "as3.task.deviceID",
+				"title": "Device to use",
+				"type": "enum",
+				"resolve": "as3.resolver.androidDevices",
+				"radio": false,
+				"description": "If launching via device, this will be the device to use. If it is currently not plugged in then it will only display UUID of the device."
+			},
+			{
 				"key": "as3.task.clear",
 				"title": "Clear application data on each launch",
 				"type": "boolean",
@@ -149,6 +157,15 @@
 				"allowFiles": false,
 				"placeholder": "The project's Output folder",
 				"description": "The location of where this Task's build will be made. If blank, it uses the project's Output folder. Use \"./\" if you want it at the root of your project."
+			},
+			{
+				"key": "as3.compiler.sdk",
+				"title": "Use a specific SDK for this task",
+				"type": "enum",
+				"radio": false,
+				"resolve": "as3.resolver.sdk",
+				"description": "Use this to select a different SDK to use for building this task. If `None`, it will use the project's settings for the AIR/Flex SDK. You can add entries to this in the Extension's settings under 'SDKs -> Installed SDKs'",
+				"dontallowCustom": true
 			}
 		]
 	},

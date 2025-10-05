@@ -3,7 +3,16 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
-## [0.10.2] - Unreleased
+## [0.11.0] - Unreleased
+
+### Changed
+
+- Now uses a list of installed SDKs instead of one line for entering the location
+  - This will move the "Default AIR SDK" to the first "Installed SDKs" automatically if updating from an older version
+- Task like AIR, Flash, AIR - iOS and AIR Android can have a different SDK used for building
+- Update NS3X2J to match Ant extension's code base
+- Modified how the `-app.xml` is changed so it should work if you have a mix of Flex and ActionScript tasks and want to use the same project
+- Android and iOS Tasks can detect devices and store them (still need to implement running on the device...)
 
 ### Added
 
@@ -14,11 +23,6 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 - Exporting a package with an empty custom ANEs would fail
 - Exporting with ANEs would try to include unpacked ANEs instead
 - Does not ask to import Flash Builder if a file is opened outside of a project
-
-### Changed
-
-- Update NS3X2J to match Ant extension's code base
-- Modified how the `-app.xml` is changed so it should work if you have a mix of Flex and ActionScript tasks and want to use the same project
 
 ## [0.10.1] - 2025-07-01
 
