@@ -7,7 +7,7 @@ const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
 const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
 const { makeNewProject, makeNewFile } = require("/new-utils.js");
-
+const { checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault } = require("/sdk-utils.js");
 var langserver = null;
 var taskprovider = null;
 
@@ -76,31 +76,8 @@ exports.activate = function() {
 			let sdks = nova.config.get("as3.sdk.installed") || [];
 			let results = [];
 			for (let sdkPath of sdks) {
-				try {
-					let label = sdkPath;
-					let airSDKInfo;
-					// If it has a flex-sdk-description.xml, use that, otherwise it should check `airsdk.xml`
-					if(doesFileExist(nova.path.join(sdkPath,"flex-sdk-description.xml"))) {
-						airSDKInfo = getStringOfFile(nova.path.join(sdkPath,"flex-sdk-description.xml"));
-						let flexSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
-						let name = flexSDKXML.findNodesByName("name");
-						let build = flexSDKXML.findNodesByName("build");
-
-						label = " " + name[0]["textContent"] + " (" + build[0]["textContent"] + ")";
-					} else {
-						airSDKInfo = getStringOfFile(nova.path.join(sdkPath,"airsdk.xml"));
-						let airSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
-						let currentNS = airSDKXML.getAttributeFromNodeByName("airSdk","xmlns");
-
-						label = "AIR SDK " + currentNS.split("/").pop();
-					}
-					results.push([sdkPath,label]);
-				} catch (err) { // Fallback: use path for both
-					results.push([sdkPath, sdkPath]);
-				}
+				results.push(checkSDKFolderForInfo(sdkPath));
 			}
-			console.log("RESOLVER SDK: ");
-			consoleLogObject(results)
 			resolve(results);
 		});
 	});
@@ -129,6 +106,98 @@ exports.activate = function() {
 			});
 		});
 	});
+
+	// ---- Install SDK ----
+	nova.commands.register("as3.sdk.installer", () => {
+		return new Promise((resolve, reject) => {
+			nova.workspace.showFileChooser(
+				"Select an AIR/FLEX SDK folder",
+				{ prompt: "Select SDK", allowFiles: false, allowFolders: true, allowMultiple: false },
+				(location) => {
+					if(location) {
+						let sdkPath = location[0];
+						let sdkCheck = checkSDKFolderForInfo(sdkPath);
+
+						var installed = nova.config.get("as3.sdk.installed")
+						if(installed==null) {
+							installed = [];
+						}
+
+						// Check if it's already installed
+						var installedIndex = installed.indexOf(sdkPath);
+
+						if(sdkCheck[0]==sdkCheck[1]) { // No AIR/FLEX ID found...
+							if(installedIndex!=-1) {
+								nova.workspace.showActionPanel("The SDK at " + sdkPath + " is not recognised as an AIR/FLEX SDK.\n\nAre you sure you want to add this? ", { buttons: [ "Yes, Add it", "Cancel" ] },
+									(answer) => {
+										if(answer==0) {
+											installSDK(sdkPath);
+										}
+									}
+								);
+							} else {
+								nova.workspace.showActionPanel("The SDK at " + sdkpath + "\n\nis already installed!");
+							}
+						} else {
+							// It's already default!
+							if(installedIndex==0) {
+								nova.workspace.showActionPanel("The SDK for:\n\n" + sdkCheck[1] + "\n\nis already installed and is the default!");
+							} else if(installedIndex!=-1) {
+								nova.workspace.showActionPanel("The SDK for\n\n" + sdkCheck[1] + "\n\nIs already installed, do you want to make it the default?", { buttons: [ "Make Default","Cancel"] },
+									(answer) => {
+										if(answer==0) {
+											makeSDKDefault(sdkPath);
+										}
+									}
+								);
+							} else {
+								if(installed.length==0) {
+									nova.workspace.showActionPanel("Found\n\n" + sdkCheck[1] + "\n\nDo you want to add this, which will make it the default for further project?", { buttons: [ "Add","Cancel"] },
+										(answer) => {
+											if(answer!=2) {
+												if(answer==0) {
+													installSDK(sdkPath);
+												}
+											}
+										}
+									);
+								} else {
+									nova.workspace.showActionPanel("Found\n\n" + sdkCheck[1] + "\n\nDo you want to add this and/or make it the default?", { buttons: [ "Add","Make Default","Cancel"] },
+										(answer) => {
+											if(answer!=2) {
+												if(answer==0) {
+													installSDK(sdkPath);
+												} else  if(answer==1) {
+													installSDKAsDefault(sdkPath);
+												}
+											}
+										}
+									);
+								}
+							}
+						}
+					}
+				}
+			);
+		});
+	})
+
+	nova.commands.register("as3.sdk.reset", () => {
+		return new Promise((resolve, reject) => {
+			let sdkList = nova.config.get("as3.sdk.installed");
+			if(sdkList==null || sdkList.length==0) {
+				nova.workspace.showActionPanel("The SDK list is empty.\n\nIt will default to using `~/Applications/AIRSDK`. ", { buttons: [ "Okay" ] } );
+			} else {
+				nova.workspace.showActionPanel("This will remove all the SDKs listed as installed and then will default to using `~/Applications/AIRSDK` for this extension. Are you sure? ", { buttons: [ "No, don't", "Yes, clear it" ] },
+					(answer) => {
+						if(answer==1) {
+							nova.config.remove("as3.sdk.installed");
+						}
+					}
+				);
+			}
+		});
+	})
 
 	// ---- Certificate Menu Functions ----
 	nova.commands.register("as3.certificate.create", (workspace) => { return createCertificate(); });
@@ -169,9 +238,9 @@ exports.activate = function() {
 
 	langserver = new AS3MXMLLanguageServer();
 
-	//                                          [ Nova stuff...                     ][ Our params to pass]
+	//                                 [ Nova stuff...                     ][ Our params to pass]
 	nova.commands.register("as3.clean",(workspace, workspacePath, sourcePath, outputPath) => {
-		//                [ Nova stuff ..           ][ Our params]
+	//                                 [ Nova stuff ..           ][ Our params]
 		taskprovider.clean(workspacePath, sourcePath, outputPath);
 	});
 
@@ -199,7 +268,7 @@ exports.activate = function() {
 		taskprovider.packageBuild();
 	});
 
-	nova.commands.register("as3.paneltest", (editor) => {
+	nova.commands.register("as3.paneltest", () => {
 		if (nova.inDevMode()) { console.log("Called... as3.paneltest"); }
 
 		/*
@@ -241,7 +310,7 @@ exports.activate = function() {
 
 	nova.commands.register("as3.as3reference.old",() => { nova.openURL("https://help.adobe.com/en_US/air/build/index.html"); });
 
-	nova.commands.register("as3.restart", (editor) => { /* Not sure this is the best way... */ restart(); });
+	nova.commands.register("as3.restart", () => { /* Not sure this is the best way... */ restart(); });
 }
 
 function restart() {
@@ -307,20 +376,27 @@ class AS3MXMLLanguageServer {
 		*/
 		// Upgrade with <0.11
 		if(nova.config.get("as3.sdk.default")!="") {
-			var installed = nova.config.get("as3.sdk.installed");
-			if(installed==null || installed.length==0) {
-				installed = [];
-				installed.push(nova.config.get("as3.sdk.default"));
-				// Update the installed SDK to the old default one
-				nova.config.set("as3.sdk.installed", installed);
-				// Clear the old preferences so we don't have to do this again.
-				nova.config.set("as3.sdk.default",null);
-				nova.workspace.showActionPanel("With ActionScript 3 V0.11, the handling of SDKs has changed. The `Default AIR SDK path` has been replace with `Installed SDKs`. With this, you can now list multiple SDKs and set ones per project and/or task.\n\nYour Installed SDKs has been updated to include your Default SDK now!");
-				//nova.extension.openChangelog();
-				//nova.openURL("https://github.com/AmigaAbattoir/nova-actionscript3/wiki?");
+			var sdksInstalled = nova.config.get("as3.sdk.installed");
+			var sdkDefault = nova.config.get("as3.sdk.default");
+console.log("installed: ",sdksInstalled);
+console.log("default: ",sdkDefault);
+console.log("default installed: ",nova.config.get("as3.sdk.default"))
+			if(sdksInstalled==null || sdksInstalled.length==0 || (sdksInstalled.length==1 && sdksInstalled=="null")) {
+				if(sdkDefault!=null) {
+					sdksInstalled = [];
+					sdksInstalled.push(nova.config.get("as3.sdk.default"));
+					// Update the installed SDK to the old default one
+					nova.config.set("as3.sdk.installed", sdksInstalled);
+					// Clear the old preferences so we don't have to do this again.
+					nova.config.set("as3.sdk.default",null);
+					nova.workspace.showActionPanel("With ActionScript 3 V0.11, the handling of SDKs has changed. The `Default AIR SDK path` has been replace with `Installed SDKs`. With this, you can now list multiple SDKs and set ones per project and/or task.\n\nYour Installed SDKs has been updated to include " + sdkDefault + " as your Default SDK now!");
+					//nova.extension.openChangelog();
+					//nova.openURL("https://github.com/AmigaAbattoir/nova-actionscript3/wiki?");
+				}
 			}
 		}
-
+console.log("PATH:",path);
+console.log("nova.extension.path:",nova.extension.path);
 		this.start(nova.extension.path)
 	}
 

@@ -47,15 +47,17 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 
 	// If we don't have that, then we use the user's SDKs locations,
 	if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
-		// @TODO Make this the first one in the `as3.sdk.installed`
-		if(exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")) {
+		var sdksInstalled = exports.getWorkspaceOrGlobalConfig("as3.sdk.installed");
+console.log("exports.getWorkspaceOrGlobalConfig(as3.sdk.installed) ",sdksInstalled)
+		if(exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")!=null) {
+console.log("exports.getWorkspaceOrGlobalConfig(as3.sdk.installed) ",sdksInstalled.length)
+console.log(" Setting it to ",exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")[0])
 			flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")[0];
 		} else {
 			flexSDKBase = "~/Applications/AIRSDK";
 		}
 
 		flexSDKBase = ensureExpandedUserPath(flexSDKBase);
-
 		if(doesFolderExist(flexSDKBase) && nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false) {
 			return null;
 		}

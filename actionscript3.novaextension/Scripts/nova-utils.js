@@ -267,11 +267,17 @@ exports.getCurrentDateAsSortableString = function() {
  * @param {String} filename - The full path of the file
  */
 exports.doesFileExist = function(filename) {
-	var stat = nova.fs.stat(filename);
-	if(stat) {
-		if(stat.isFile()) {
-			return true;
+	try {
+		if(filename!=null) {
+			var stat = nova.fs.stat(filename);
+			if(stat) {
+				if(stat.isFile()) {
+					return true;
+				}
+			}
 		}
+	} catch(err) {
+		console.err(err);
 	}
 	return false;
 }
@@ -282,11 +288,17 @@ exports.doesFileExist = function(filename) {
  * @param {String} filename - The full path of the file
  */
 exports.doesFolderExist = function(filename) {
-	var stat = nova.fs.stat(filename);
-	if(stat) {
-		if(stat.isDirectory()) {
-			return true;
+	try {
+		if(filename!=null) {
+			var stat = nova.fs.stat(filename);
+			if(stat) {
+				if(stat.isDirectory()) {
+					return true;
+				}
+			}
 		}
+	} catch(err) {
+		console.error(err)
 	}
 	return false;
 }
