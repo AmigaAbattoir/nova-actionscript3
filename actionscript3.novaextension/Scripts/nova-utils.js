@@ -96,6 +96,24 @@ exports.isWorkspace = function() {
 }
 
 /**
+ * Returns a config, first checking for the extension, then if there is a Workspace value
+ * @param {String} configName - The key of the configuration to get
+ */
+exports.getWorkspaceOrGlobalConfig = function(configName) {
+	var config = nova.config.get(configName);
+	//console.log("*** getWorkspaceOrGlobalConfig() Config " + configName + " is [" + config + "]");
+	if(exports.isWorkspace()) {
+		workspaceConfig = nova.workspace.config.get(configName)
+	//console.log("*** getWorkspaceOrGlobalConfig() Workspace Config " + configName + " is [" + workspaceConfig + "]");
+		if(workspaceConfig) {
+			config = workspaceConfig;
+		}
+	}
+	//console.log("*** getWorkspaceOrGlobalConfig() RETURNING [" + config + "]");
+	return config;
+}
+
+/**
  * Saves all the open text editors!
  */
 exports.saveAllFiles = function() {
@@ -184,7 +202,7 @@ exports.rangeToLspRange = function(document, range) {
 		chars += lineLength;
 	}
 	return null;
-}
+}.
 
 /**
  * Opens a file and dumps it into a string.
@@ -213,7 +231,7 @@ exports.getStringOfWorkspaceFile = function(filename) {
 			contents = contents.replace((/  |\r\n|\n|\r/gm),"");  // contents.replace(/(\r\n|\n|\r)/gm,"")
 		}
 	} catch(error) {
-		console.log("*** ERROR: Could not open file " + nova.path.join(nova.workspace.path, filename) + " for reading. ***");
+		console.error("*** ERROR: Could not open file " + nova.path.join(nova.workspace.path, filename) + " for reading. ***");
 		return null;
 	}
 	return contents;
@@ -221,13 +239,13 @@ exports.getStringOfWorkspaceFile = function(filename) {
 
 /**
  * Opens a file and dumps it into a string.
- * @param {string} filename - The name of the file to open, relative to the workspace
+ * @param {string} filename - The name of the file to open, must be complete path!
  */
 exports.getStringOfFile = function(filename) {
 	var line, contents;
 	try {
 		contents = "";
-		console.log("Trying to open: " + filename);
+		// console.log("Trying to open: " + filename);
 		var file = nova.fs.open(filename);
 		if(file) {
 			do {
@@ -238,10 +256,79 @@ exports.getStringOfFile = function(filename) {
 			} while(line && line.length>0);
 		}
 	} catch(error) {
-		console.log("*** ERROR: Could not open file " + filename + " for reading. " + error + " ***");
+		console.error("*** ERROR: Could not open file " + filename + " for reading. " + error + " ***");
 		return null;
 	}
 	return contents;
+}
+
+/**
+ * Writes a file with JSON from a data passed as the values
+ * @param {string} filename - The name of the file to write, must be complete path!
+ * @param {Object} values - An object of data to save as a JSON file
+ */
+exports.writeStringToFile = function(filename, contents) {
+	try {
+		var file = nova.fs.open(filename,"w");
+		file.write(contents);
+		file.close();
+	} catch(error) {
+		console.erro("*** ERROR: Problem with " + filename + " for writing. " + error + " ***");
+		return null;
+	}
+}
+
+/**
+ * Writes a file with JSON from a data passed as the values
+ * @param {string} filename - The name of the file to write, must be complete path!
+ * @param {Object} values - An object of data to save as a JSON file
+ */
+exports.writeJsonToFile = function(filename, values) {
+	try {
+		var file = nova.fs.open(filename,"w");
+		file.write(JSON.stringify(values,null,2));
+		file.close();
+	} catch(error) {
+		console.error("*** ERROR: Problem with " + filename + " for writing JSON. " + error + " ***");
+		return null;
+	}
+}
+
+/**
+ * This will allow get a file of JSON and return it. If it does not exist in the user's extension
+ * storage, it will copy a default one from the extension.
+ * Eventually, the user can modify that JSON for custom values in a dropdown
+ *
+ * @param {string} filename - The name of the file to load.
+ * It will be reside in the root of `nova.extension.globalStoragePath`, or in a `tempdir` if developing and the app is not installed!
+ * This will also need to have a file in your extension under the folder `Defaults` in order to get the default file.
+ */
+exports.resolveCustomizableJson = function(filename) {
+	var values;
+
+	var userFilePath = nova.path.join(nova.extension.globalStoragePath, "/" + filename)
+	if(nova.inDevMode()) {
+		if(doesFolderExist(nova.extension.globalStoragePath)==false) {
+			/* @NOTE If not installed, but developing, this "globalStoragePath" does NOT always exist!!!
+			 * It only exists if installed, so for testing, we're going to use this!
+			 */
+			userFilePath = nova.path.join(nova.fs.tempdir,"/" + filename);
+			console.log(" *** NOTE: Using tmp/ instead of globalStoragePath since this hasn't been `installed` yet!");
+			// nova.fs.reveal(userFilePath); // Take a look an see if it's there!
+		}
+		}
+
+	// If the user version of this file doesn't exist, then let's copy from the extension!
+	if(doesFileExist(userFilePath)==false) {
+		var extDefault = getStringOfFile(nova.path.join(nova.extension.path, "/Defaults/" + filename));
+		writeStringToFile(userFilePath,extDefault);
+		values = JSON.parse(extDefault);
+	} else {
+		var options = getStringOfFile(userFilePath);
+		values = JSON.parse(options);
+	}
+
+	return values;
 }
 
 /**
@@ -291,6 +378,7 @@ exports.doesFolderExist = function(filename) {
 	try {
 		if(filename!=null) {
 			var stat = nova.fs.stat(filename);
+			exports.consoleLogObject(stat)
 			if(stat) {
 				if(stat.isDirectory()) {
 					return true;
@@ -319,14 +407,14 @@ exports.ensureExpandedUserPath = function(filename) {
  * @returns {boolean} - True if the folder is there, otherwise false
  */
 exports.ensureFolderIsAvailable = function(folder) {
-	console.log("export.ensureFolderIsAvailable  folder is " + folder);
+	// console.log("export.ensureFolderIsAvailable  folder is " + folder);
 	if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
 		// console.log(" Making folder at " + folder + "!!!");
 		nova.fs.mkdir(folder+"/");
 	}
 	// Double check, do we have the folder?
 	if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
-		console.log(" *** ERROR: Failed to make folder at " + folder + "! ***");
+		console.error(" *** ERROR: Failed to make folder at " + folder + "! ***");
 		return false;
 	}
 	return true;
@@ -345,7 +433,7 @@ exports.makeOrClearFolder = function(folder) {
 		return true;
 	} catch(error) {
 		nova.workspace.showErrorMessage("Failed to make folder: " + folder + "\n",error);
-		// console.log("*** ERROR: Failed to make folder " + folder + " *** ");
+		// console.error("*** ERROR: Failed to make folder " + folder + " *** ");
 	}
 	return false;
 }

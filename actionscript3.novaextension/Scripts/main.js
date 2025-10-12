@@ -1,8 +1,8 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
 const { getAIRSDKInfo, determineProjectUUID, determineAneTempPath } = require("./as3-utils.js");
-const { showNotification, consoleLogObject, getStringOfFile, doesFileExist, getProcessResults, getCurrentDateAsSortableString, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette } = require("./nova-utils.js");
-const { isWorkspace, getWorkspaceOrGlobalConfig, determineFlexSDKBase } = require("./config-utils.js");
+const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, consoleLogObject, resolveCustomizableJson, doesFolderExist, getProcessResults, getCurrentDateAsSortableString, quickChoicePalette } = require("./nova-utils.js");
+const { determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
 const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
@@ -94,6 +94,13 @@ exports.activate = function() {
 		});
 	});
 
+	nova.commands.register("as3.resolver.iosDevicesSimulator", (workspace) => {
+		return new Promise((resolve, reject) => {
+			var values = resolveCustomizableJson("ios-devices.json");
+			resolve(values);
+		});
+	});
+
 	nova.commands.register("as3.resolver.androidDevices", (workspace) => {
 		return new Promise((resolve, reject) => {
 			let results = [];
@@ -104,6 +111,13 @@ exports.activate = function() {
 				}
 				resolve(results);
 			});
+		});
+	});
+
+	nova.commands.register("as3.resolver.androidDevicesSimulator", (workspace) => {
+		return new Promise((resolve, reject) => {
+			var values = resolveCustomizableJson("android-devices.json");
+			resolve(values);
 		});
 	});
 
@@ -664,9 +678,11 @@ console.log("nova.extension.path:",nova.extension.path);
 		// Check if the flexSDKBase is valid, if not, warn user and abort!
 		if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
 			if (nova.inDevMode()) {
-				console.log("flexSDKBase accessable? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
+				if(doesFolderExist(flexSDKBase)) {
+					console.error("flexSDKBase exists, but is it accessable??? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
+				}
 			}
-			nova.workspace.showErrorMessage("Configure AIR SDK!\n\nIn order to use this extension you will need to have installed a FlexSDK. Please set the location of \"Default AIR SDK\" in the extension preferences!")
+			nova.workspace.showErrorMessage("Please configure the Installed SDKs!\n\nIn order to use this extension you will need to have installed an AIR or Flex SDK. The default is in `~/Applications/AIRSDK`, but is not available. Please use the `➕ Install SDK` option to add an SDK!")
 		} else {
 			// Keep track of what AIRSDK we're using
 			let airSDKInfo = getAIRSDKInfo(flexSDKBase);

@@ -1,40 +1,4 @@
-const { consoleLogObject, showNotification, doesFileExist, doesFolderExist, ensureExpandedUserPath, isWorkspace } = require("./nova-utils.js");
-
-/**
- * Returns a config, first checking for the extension, then if there is a Workspace value
- * @param {String} configName - The key of the configuration to get
- */
-exports.getWorkspaceOrGlobalConfig = function(configName) {
-	var config = nova.config.get(configName);
-	//console.log("*** getWorkspaceOrGlobalConfig() Config " + configName + " is [" + config + "]");
-	if(exports.isWorkspace()) {
-		workspaceConfig = nova.workspace.config.get(configName)
-	//console.log("*** getWorkspaceOrGlobalConfig() Workspace Config " + configName + " is [" + workspaceConfig + "]");
-		if(workspaceConfig) {
-			config = workspaceConfig;
-		}
-	}
-	//console.log("*** getWorkspaceOrGlobalConfig() RETURNING [" + config + "]");
-	return config;
-}
-
-/**
- * Tell if the current file is being used in a workspace setting or as a independent editor window
- *
- * @see https://github.com/jasonplatts/nova-todo/blob/main/Scripts/functions.js
- * @returns {boolean}  - representing whether or not the current environment is a workspace or
- * Nova window without a workspace.
- */
-exports.isWorkspace = function() {
-	if (nova.workspace.path == undefined || nova.workspace.path == null) {
-		// Opening single file in a Nova editor does not define a workspace. A project must exist.
-		// Opening a remote server environment is also not considered a workspace.
-		return false;
-	} else {
-		// A local project is the only environment considered a Nova workspace.
-		return true;
-	}
-}
+const { consoleLogObject, showNotification, getWorkspaceOrGlobalConfig, doesFileExist, doesFolderExist, ensureExpandedUserPath, isWorkspace } = require("./nova-utils.js");
 
 /**
  * Figures out what the AIR/Flex SDK location is. It checks to see if it's set at the extension
@@ -43,16 +7,16 @@ exports.isWorkspace = function() {
  */
 exports.determineFlexSDKBase = function(selectedSDK = null) {
 	// Check if user setup a specific SDK that should be used by the editor (like in as3mxml)
-	var flexSDKBase = ensureExpandedUserPath( exports.getWorkspaceOrGlobalConfig("as3.sdk.editor") );
+	var flexSDKBase = ensureExpandedUserPath( getWorkspaceOrGlobalConfig("as3.sdk.editor") );
 
 	// If we don't have that, then we use the user's SDKs locations,
 	if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
-		var sdksInstalled = exports.getWorkspaceOrGlobalConfig("as3.sdk.installed");
-console.log("exports.getWorkspaceOrGlobalConfig(as3.sdk.installed) ",sdksInstalled)
-		if(exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")!=null) {
-console.log("exports.getWorkspaceOrGlobalConfig(as3.sdk.installed) ",sdksInstalled.length)
-console.log(" Setting it to ",exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")[0])
-			flexSDKBase = exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")[0];
+		var sdksInstalled = getWorkspaceOrGlobalConfig("as3.sdk.installed");
+console.log("getWorkspaceOrGlobalConfig(as3.sdk.installed) ",sdksInstalled)
+		if(getWorkspaceOrGlobalConfig("as3.sdk.installed")!=null) {
+console.log("getWorkspaceOrGlobalConfig(as3.sdk.installed) ",sdksInstalled.length)
+console.log(" Setting it to ",getWorkspaceOrGlobalConfig("as3.sdk.installed")[0])
+			flexSDKBase = getWorkspaceOrGlobalConfig("as3.sdk.installed")[0];
 		} else {
 			flexSDKBase = "~/Applications/AIRSDK";
 		}
@@ -65,8 +29,8 @@ console.log(" Setting it to ",exports.getWorkspaceOrGlobalConfig("as3.sdk.instal
 
 	// If the Project's setting ask for a specific SDK then check for that one
 	// @NOTE NEED TO UPDATE THIS TO TRANSLATE THE DropDown options
-	if(exports.getWorkspaceOrGlobalConfig("as3.compiler.sdk")) {
-		var specificSdk = ensureExpandedUserPath( exports.getWorkspaceOrGlobalConfig("as3.compiler.sdk") );
+	if(getWorkspaceOrGlobalConfig("as3.compiler.sdk")) {
+		var specificSdk = ensureExpandedUserPath( getWorkspaceOrGlobalConfig("as3.compiler.sdk") );
 		if(doesFolderExist(specificSdk) && nova.fs.access(specificSdk, nova.fs.F_OK | nova.fs.X_OK)!=false) {
 			flexSDKBase = specificSdk;
 		} else {
@@ -89,9 +53,8 @@ console.log(" Setting it to ",exports.getWorkspaceOrGlobalConfig("as3.sdk.instal
 	currentSDKPath = flexSDKBase;
 	nova.workspace.context.set("currentSDKPath", currentSDKPath);
 
-	// console.log("Setting as3.sdk.installed[0]:      " + exports.getWorkspaceOrGlobalConfig("as3.sdk.installed")[0]);
-	// console.log("Setting as3.compiler.useDefault:  " + exports.getWorkspaceOrGlobalConfig("as3.compiler.useDefault"));
-	// console.log("Setting as3.compiler.specificSdk: " + exports.getWorkspaceOrGlobalConfig("as3.compiler.specificSdk"));
+	// console.log("Setting as3.sdk.installed[0]:      " + getWorkspaceOrGlobalConfig("as3.sdk.installed")[0]);
+	// console.log("Setting as3.compiler.specificSdk: " + getWorkspaceOrGlobalConfig("as3.compiler.specificSdk"));
 	// console.log("From Task at hand: " + selectedSDK);
 	// console.log("Using flexSDKBase ------->>>>>> : " + flexSDKBase);
 	return flexSDKBase;

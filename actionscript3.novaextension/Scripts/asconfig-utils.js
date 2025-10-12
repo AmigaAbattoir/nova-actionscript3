@@ -1,4 +1,4 @@
-const { getStringOfFile } = require("./nova-utils.js");
+const { getStringOfFile, writeJsonToFile } = require("./nova-utils.js");
 const { determineFlexSDKBase, getConfigsForBuild } = require("./config-utils.js");
 
 /**
@@ -72,7 +72,5 @@ exports.loadASConfigFile = function() {
  */
 exports.saveASConfigFile = function(content) {
 	nova.workspace.context.set("currentASConfigText",JSON.stringify(content));
-	var asconfigFile = nova.fs.open(nova.workspace.path + "/asconfig.json","w");
-	asconfigFile.write(JSON.stringify(content,null,2));
-	asconfigFile.close();
+	writeJsonToFile(nova.workspace.path + "/asconfig.json",content);
 }
