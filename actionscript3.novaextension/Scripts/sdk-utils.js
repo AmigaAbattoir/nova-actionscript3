@@ -143,6 +143,49 @@ exports.removeSDKPrompt = function() {
 	});
 }
 
+exports.changeDefaultSDKPrompt = function() {
+	return new Promise((resolve, reject) => {
+		let sdkCompleteList = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
+		let sdkList = nova.config.get("as3.sdk.installed");
+
+		if(sdkList==null || sdkList.length==0) {
+			nova.workspace.showInformativeMessage("The SDK list is empty and you cannot remove any.\n\nThe extension will always default to using `~/Applications/AIRSDK`.");
+		} else if(sdkList.length==1) {
+			nova.workspace.showInformativeMessage("There is only 1 SDK installed, so this will be the default");
+		} else {
+			var sdkChoicePromise = sdkChoicePromise = quickChoicePalette(sdkList, "Remove which SDK?").then((choice) => choice);
+			sdkChoicePromise.then((sdk) => {
+				if(sdk!==undefined && sdk.index!=null) {
+					if(sdk.index==0) {
+						nova.workspace.showInformativeMessage("This is already the default SDK!");
+					} else {
+						var message = "Are you sure you want to make the default SDK:\n\n" + exports.getAIRSDKNameFromPath(sdk.value) + "?\n\n";
+						nova.workspace.showActionPanel(message, { buttons: [ "Make Default","Cancel" ] },(result) => {
+							if(result==0) {
+								console.log("BEFORE::")
+								consoleLogObject(sdkList);
+								sdkList.unshift(sdkList.splice(sdk.index, 1)[0]);
+								console.log("after::")
+								consoleLogObject(sdkList);
+
+								//nova.config.set("as3.sdk.installed",sdkList);
+
+								message = "Default SDK was changed.";
+								// Refresh list
+								sdkList = nova.config.get("as3.sdk.installed");
+								if(sdkList!=null && sdkList.length>0) {
+									message += "\n\nThe default extension will now be:\n\n" + exports.getAIRSDKNameFromPath(sdkList[0]);
+								}
+								nova.workspace.showInformativeMessage(message);
+							}
+						});
+					}
+				}
+			});
+		}
+	});
+}
+
 exports.resetSDKListPrompt = function() {
 	return new Promise((resolve, reject) => {
 		let sdkList = nova.config.get("as3.sdk.installed");

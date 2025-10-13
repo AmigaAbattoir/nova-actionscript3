@@ -792,6 +792,10 @@
 				"command": "as3.sdk.installer"
 			},
 			{
+				"title": "✔️ Change default SDK",
+				"command": "as3.sdk.changeDefault"
+			},
+			{
 				"title": "➖ Remove SDK",
 				"command": "as3.sdk.remove"
 			},
