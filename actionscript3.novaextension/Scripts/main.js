@@ -7,7 +7,7 @@ const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
 const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
 const { makeNewProject, makeNewFile } = require("/new-utils.js");
-const { getAIRSDKInfo, generateAIRSDKInstalledInformation, checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault } = require("/sdk-utils.js");
+const { installSDKPrompt, resetSDKListPrompt, getAIRSDKInfo, generateAIRSDKInstalledInformation, checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault } = require("/sdk-utils.js");
 var langserver = null;
 var taskprovider = null;
 
@@ -129,96 +129,9 @@ exports.activate = function() {
 	});
 
 	// ---- Install SDK ----
-	nova.commands.register("as3.sdk.installer", () => {
-		return new Promise((resolve, reject) => {
-			nova.workspace.showFileChooser(
-				"Select an AIR/FLEX SDK folder",
-				{ prompt: "Select SDK", allowFiles: false, allowFolders: true, allowMultiple: false },
-				(location) => {
-					if(location) {
-						let sdkPath = location[0];
-						let sdkCheck = checkSDKFolderForInfo(sdkPath);
+	nova.commands.register("as3.sdk.installer", () => { return installSDKPrompt(); });
 
-						var installed = nova.config.get("as3.sdk.installed")
-						if(installed==null) {
-							installed = [];
-						}
-
-						// Check if it's already installed
-						var installedIndex = installed.indexOf(sdkPath);
-
-						if(sdkCheck[0]==sdkCheck[1]) { // No AIR/FLEX ID found...
-							if(installedIndex!=-1) {
-								nova.workspace.showActionPanel("The SDK at " + sdkPath + " is not recognised as an AIR/FLEX SDK.\n\nAre you sure you want to add this? ", { buttons: [ "Yes, Add it", "Cancel" ] },
-									(answer) => {
-										if(answer==0) {
-											installSDK(sdkPath);
-										}
-									}
-								);
-							} else {
-								nova.workspace.showActionPanel("The SDK at " + sdkpath + "\n\nis already installed!");
-							}
-						} else {
-							// It's already default!
-							if(installedIndex==0) {
-								nova.workspace.showActionPanel("The SDK for:\n\n" + sdkCheck[1] + "\n\nis already installed and is the default!");
-							} else if(installedIndex!=-1) {
-								nova.workspace.showActionPanel("The SDK for\n\n" + sdkCheck[1] + "\n\nIs already installed, do you want to make it the default?", { buttons: [ "Make Default","Cancel"] },
-									(answer) => {
-										if(answer==0) {
-											makeSDKDefault(sdkPath);
-										}
-									}
-								);
-							} else {
-								if(installed.length==0) {
-									nova.workspace.showActionPanel("Found\n\n" + sdkCheck[1] + "\n\nDo you want to add this, which will make it the default for further project?", { buttons: [ "Add","Cancel"] },
-										(answer) => {
-											if(answer!=2) {
-												if(answer==0) {
-													installSDK(sdkPath);
-												}
-											}
-										}
-									);
-								} else {
-									nova.workspace.showActionPanel("Found\n\n" + sdkCheck[1] + "\n\nDo you want to add this and/or make it the default?", { buttons: [ "Add","Make Default","Cancel"] },
-										(answer) => {
-											if(answer!=2) {
-												if(answer==0) {
-													installSDK(sdkPath);
-												} else  if(answer==1) {
-													installSDKAsDefault(sdkPath);
-												}
-											}
-										}
-									);
-								}
-							}
-						}
-					}
-				}
-			);
-		});
-	})
-
-	nova.commands.register("as3.sdk.reset", () => {
-		return new Promise((resolve, reject) => {
-			let sdkList = nova.config.get("as3.sdk.installed");
-			if(sdkList==null || sdkList.length==0) {
-				nova.workspace.showActionPanel("The SDK list is empty.\n\nIt will default to using `~/Applications/AIRSDK`. ", { buttons: [ "Okay" ] } );
-			} else {
-				nova.workspace.showActionPanel("This will remove all the SDKs listed as installed and then will default to using `~/Applications/AIRSDK` for this extension. Are you sure? ", { buttons: [ "No, don't", "Yes, clear it" ] },
-					(answer) => {
-						if(answer==1) {
-							nova.config.remove("as3.sdk.installed");
-						}
-					}
-				);
-			}
-		});
-	})
+	nova.commands.register("as3.sdk.reset", () => { return resetSDKListPrompt(); });
 
 	// ---- Certificate Menu Functions ----
 	nova.commands.register("as3.certificate.create", (workspace) => { return createCertificate(); });

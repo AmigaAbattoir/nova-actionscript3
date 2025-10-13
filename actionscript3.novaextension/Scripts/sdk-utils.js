@@ -1,6 +1,102 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { consoleLogObject, showNotification, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace, getWorkspaceOrGlobalConfig, getStringOfFile } = require("./nova-utils.js");
 
+exports.installSDKPrompt = function(specificSDK = "") {
+	return new Promise((resolve, reject) => {
+		nova.workspace.showFileChooser(
+			"Select " + (specificSDK!="" ? "the " + specificSDK : "an AIR/FLEX" ) + " SDK folder",
+			{ prompt: "Select SDK", allowFiles: false, allowFolders: true, allowMultiple: false },
+			(location) => {
+				if(location) {
+					let sdkPath = location[0];
+					let sdkCheck = exports.checkSDKFolderForInfo(sdkPath);
+
+					var installed = nova.config.get("as3.sdk.installed")
+					if(installed==null) {
+						installed = [];
+					}
+
+					// Check if it's already installed
+					var installedIndex = installed.indexOf(sdkPath);
+
+					if(sdkCheck[0]==sdkCheck[1]) { // No AIR/FLEX ID found...
+						if(installedIndex!=-1) {
+							nova.workspace.showActionPanel("The SDK at " + sdkPath + " is not recognised as an AIR/FLEX SDK.\n\nAre you sure you want to add this? ", { buttons: [ "Yes, Add it", "Cancel" ] },
+								(answer) => {
+									if(answer==0) {
+										exports.installSDK(sdkPath);
+										resolve(sdkPath);
+									}
+								}
+							);
+						} else {
+							nova.workspace.showActionPanel("The SDK at " + sdkpath + "\n\nis already installed!");
+						}
+					} else {
+						// It's already default!
+						if(installedIndex==0) {
+							nova.workspace.showActionPanel("The SDK for:\n\n" + sdkCheck[1] + "\n\nis already installed and is the default!");
+						} else if(installedIndex!=-1) {
+							nova.workspace.showActionPanel("The SDK for\n\n" + sdkCheck[1] + "\n\nIs already installed, do you want to make it the default?", { buttons: [ "Make Default","Cancel"] },
+								(answer) => {
+									if(answer==0) {
+										exports.makeSDKDefault(sdkPath);
+										resolve(sdkPath);
+									}
+								}
+							);
+						} else {
+							if(installed.length==0) {
+								nova.workspace.showActionPanel("Found\n\n" + sdkCheck[1] + "\n\nDo you want to add this, which will make it the default for further project?", { buttons: [ "Add","Cancel"] },
+									(answer) => {
+										if(answer!=2) {
+											if(answer==0) {
+												exports.installSDK(sdkPath);
+												resolve(sdkPath);
+											}
+										}
+									}
+								);
+							} else {
+								nova.workspace.showActionPanel("Found\n\n" + sdkCheck[1] + "\n\nDo you want to add this and/or make it the default?", { buttons: [ "Add","Make Default","Cancel"] },
+									(answer) => {
+										if(answer!=2) {
+											if(answer==0) {
+												exports.installSDK(sdkPath);
+												resolve(sdkPath);
+											} else  if(answer==1) {
+												exports.installSDKAsDefault(sdkPath);
+												resolve(sdkPath);
+											}
+										}
+									}
+								);
+							}
+						}
+					}
+				}
+			}
+		);
+	});
+}
+
+exports.resetSDKListPrompt = function() {
+	return new Promise((resolve, reject) => {
+		let sdkList = nova.config.get("as3.sdk.installed");
+		if(sdkList==null || sdkList.length==0) {
+			nova.workspace.showActionPanel("The SDK list is empty.\n\nIt will default to using `~/Applications/AIRSDK`. ", { buttons: [ "Okay" ] } );
+		} else {
+			nova.workspace.showActionPanel("This will remove all the SDKs listed as installed and then will default to using `~/Applications/AIRSDK` for this extension. Are you sure? ", { buttons: [ "No, don't", "Yes, clear it" ] },
+				(answer) => {
+					if(answer==1) {
+						nova.config.remove("as3.sdk.installed");
+					}
+				}
+			);
+		}
+	});
+}
+
 /**
  * Looks for the `airsdk.xml` in the directory to check what versions of AIR we have. If it's a really old
  * version of the Flex SDK, we'll try to figure out the AIR version with the template of the air descriptor
@@ -107,6 +203,19 @@ exports.getAIRSDKPath = function(sdkName) {
 
 	flexSDKBase = ensureExpandedUserPath(flexSDKBase);
 	return flexSDKBase;
+}
+
+exports.isAIRSDKInstalled = function(sdkName) {
+	var result = false;
+
+	var currentSDKsInstalled = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
+	for(sdk of currentSDKsInstalled) {
+		if(sdk[1]==sdkName) {
+			return true;
+		}
+	}
+
+	return result;
 }
 
 /**

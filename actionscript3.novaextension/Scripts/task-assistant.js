@@ -3,7 +3,7 @@ const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessRes
 const { determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
-const { getAIRSDKInfo } = require("./sdk-utils.js");
+const { installSDKPrompt, getAIRSDKInfo, isAIRSDKInstalled } = require("./sdk-utils.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
@@ -1730,7 +1730,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// @NOTE Not sure what else we would need from this file
 		var isFlex = false;
 		var isLibrary = false;
-		var flexProperties = getStringOfWorkspaceFile(".flexProperties");
+		var flexProperties = getStringOfWorkspaceFile(".flexProperties", false);
 		if(flexProperties!=null) {
 //			var flexPropertiesXml = pjXML.parse(flexProperties);
 			/** @NOTE Not sure we need to check any values, but if it's there, it's MXML vs AS3 project! */
@@ -1746,7 +1746,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		}
 
 		// If this is a library project, then it will have a .flexLibProperties file!!
-		var flexLibProperties = getStringOfWorkspaceFile(".flexLibProperties");
+		var flexLibProperties = getStringOfWorkspaceFile(".flexLibProperties",false);
 		if(flexLibProperties!=null) {
 			nova.workspace.config.set("editor.default_syntax","actionscript");
 			nova.workspace.config.set("as3.application.isFlex",true);
@@ -2041,14 +2041,40 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				this.ensureTaskFolderIsAvailable();
 				this.writeTaskFile("Flash", flashTaskJson);
 			}
-
 		}
 
 		if(flexSDKAskedFor!=null) {
-			showNotification("Check SDK Setting", "The project is looking for the Flex SDK of \"" + flexSDKAskedFor + "\". Please make sure you set this project's settings, select ActionScript 3 and change the Compiler -> AIR/Flex SDK version to the specific SDK.","I did");
+			if(isAIRSDKInstalled(flexSDKAskedFor)==false) {
+				var noticePromise;
+				var notice = nova.notifications.cancel("as3-import-missing-sdk");
+				notice = new NotificationRequest("as3-import-missing-sdk");
+				notice.title = "Check SDK Setting";
+				notice.body = "The project is looking for the Flex SDK of \n\n" + flexSDKAskedFor + "\n\nbut it is not installed.";
+				notice.actions = ["Install an SDK", "Remove this setting", "Ignore for now"];
+				noticePromise = nova.notifications.add(notice);
+				noticePromise.then((reply) => {
+					console.log("AAAA: " + reply.actionIdx);
+					switch(reply.actionIdx) {
+						case 0: {
+							installSDKPrompt(flexSDKAskedFor);
+							break;
+						}
+						case 1: {
+							nova.workspace.config.remove("as3.compiler.sdk");
+							break;
+						}
+					}
+				});
+			}
+
+			nova.workspace.config.set("as3.compiler.sdk",flexSDKAskedFor);
 		}
+
 		// Add a value to keep track that we imported the project, so it doesn't keep asking everytime the project is opened
 		nova.workspace.config.set("as3.project.importedFB","done");
+
+		// Let the context know that it's done.
+		nova.workspace.context.set("importingProjectSetting",false);
 	}
 
 	/**

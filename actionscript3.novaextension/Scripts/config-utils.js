@@ -24,7 +24,13 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 		if(doesFolderExistAndIsAccessible(specificSdk)) {
 			flexSDKBase = specificSdk;
 		} else {
-			showNotification("Could not find project specific AIR SDK", "Please check your installed SDKs. Could not find specific specific AIR SDK at:\n " + specificSdk + "\n using default of:\n " + flexSDKBase, "Oh no!");
+			let message = "Please check your installed SDKs. Could not find specific specific AIR SDK";
+			if(specificSdk==null) {
+				message += ". Using default of:\n " + flexSDKBase;
+			} else {
+				message += " at:\n " + specificSdk + "\n using default of:\n " + flexSDKBase;
+			}
+			showNotification("Could not find project specific AIR SDK", message, "Oh no!");
 		}
 	}
 
@@ -38,16 +44,16 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 		}
 	}
 
-console.log(" USING SDK AT: " + flexSDKBase);
+// console.log(" USING SDK AT: " + flexSDKBase);
 
 	// Set context variable to keep track of it later @NOTE Not sure we need this.
 	currentSDKPath = flexSDKBase;
 	nova.workspace.context.set("currentSDKPath", currentSDKPath);
 
-	console.log("Setting as3.sdk.installed[0]:      " + getWorkspaceOrGlobalConfig("as3.sdk.installed")[0]);
-	console.log("Setting as3.compiler.sdk: " + getWorkspaceOrGlobalConfig("as3.compiler.sdk"));
-	console.log("From Task at hand: " + selectedSDK);
-	console.log("Using flexSDKBase ------->>>>>> : " + flexSDKBase);
+	// console.log("Setting as3.sdk.installed[0]:      " + getWorkspaceOrGlobalConfig("as3.sdk.installed")[0]);
+	// console.log("Setting as3.compiler.sdk: " + getWorkspaceOrGlobalConfig("as3.compiler.sdk"));
+	// console.log("From Task at hand: " + selectedSDK);
+	// console.log("Using flexSDKBase ------->>>>>> : " + flexSDKBase);
 	return flexSDKBase;
 }
 
