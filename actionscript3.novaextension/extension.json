@@ -478,7 +478,7 @@
 					"children": [
 						{
 							"key": "as3.build.componentSet",
-							"title": "Component set:",
+							"title": "Component set",
 							"type":  "enum",
 							"radio": true,
 							"description": "When building a library, setting these will add the frameworks necessary for including the components necessary. Unlike Flash Builder, it will not list which onese are added. If you only want certain libraries, you can select `none` and manually add them below.",
@@ -568,7 +568,7 @@
 					"children": [
 						{
 							"key": "as3.compiler.sdk",
-							"title": "Use different SDK for this project:",
+							"title": "Use different SDK for this project",
 							"type": "enum",
 							"radio": false,
 							"resolve": "as3.resolver.sdk",
