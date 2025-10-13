@@ -1,5 +1,5 @@
 const { consoleLogObject, showNotification, getWorkspaceOrGlobalConfig, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace } = require("./nova-utils.js");
-const { getAIRSDKDefaultPath, getAIRSDKPathFromName } = require("./sdk-utils.js");
+const { getAIRSDKDefaultPath, getAIRSDKNameFromPath, getAIRSDKPathFromName } = require("./sdk-utils.js");
 
 /**
  * Figures out what the AIR/Flex SDK location is. It checks to see if it's set at the extension
@@ -20,16 +20,22 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 
 	// If the workspace config is different, then let's use that
 	if(getWorkspaceOrGlobalConfig("as3.compiler.sdk")) {
-		var specificSdk = getAIRSDKPathFromName(getWorkspaceOrGlobalConfig("as3.compiler.sdk"));
+		var specificSdk = getWorkspaceOrGlobalConfig("as3.compiler.sdk");
+		var specificSdkPath = getAIRSDKPathFromName(specificSdk);
+
 		if(doesFolderExistAndIsAccessible(specificSdk)) {
 			flexSDKBase = specificSdk;
 		} else {
 			let message = "Please check your installed SDKs. Could not find specific specific AIR SDK";
-			if(specificSdk==null) {
-				message += ". Using default of:\n " + flexSDKBase;
+
+			let defaultSDKName = getAIRSDKNameFromPath(flexSDKBase);
+			if(specificSdk!=null) {
+				message += " of:\n\n" + specificSdk + "\n\nu";
 			} else {
-				message += " at:\n " + specificSdk + "\n using default of:\n " + flexSDKBase;
+				message += ". U";
 			}
+			message += "sing default of:\n" + defaultSDKName;
+
 			showNotification("Could not find project specific AIR SDK", message, "Oh no!");
 		}
 	}
