@@ -193,7 +193,7 @@
 					"allowFolders": true,
 					"allowFiles": false,
 					"type": "pathArray",
-					"description": "The paths to SDKs that you have installed that can be used for building.\n\nThe top-most entry will be the default one. If there are no entries, then it will default to ~/Applications/AIRSDK.\n\nIt is recommened that you use the menu option `Extension -> ActionScript 3 -> ➕ Install SDK` to ensure that it's a valid AIR/FLEX SDK."
+					"description": "The paths to SDKs that you have installed that can be used for building and running the extension.\n\nThe top-most entry will be the default one. If there are no entries, then it will default to `~/Applications/AIRSDK`.\n\nIt is recommened that you use the menu option in `Extension -> ActionScript 3` or the commands to `➕ Install SDK`, `➖ Remove SDK` or `➰ Reset SDK List` to help ensure that it's a valid AIR/FLEX SDK. (Note: Don't think in Nova we can disable the +/-/choose buttons on pathArray)"
 				},
 				{
 					"key": "as3.sdk.animate",
@@ -790,6 +790,10 @@
 			{
 				"title": "➕ Install SDK",
 				"command": "as3.sdk.installer"
+			},
+			{
+				"title": "➖ Remove SDK",
+				"command": "as3.sdk.remove"
 			},
 			{
 				"title": "➰ Reset SDK List",

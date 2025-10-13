@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { consoleLogObject, showNotification, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace, getWorkspaceOrGlobalConfig, getStringOfFile } = require("./nova-utils.js");
+const { consoleLogObject, showNotification, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace, getWorkspaceOrGlobalConfig, getStringOfFile, quickChoicePalette } = require("./nova-utils.js");
 
 exports.installSDKPrompt = function(specificSDK = "") {
 	return new Promise((resolve, reject) => {
@@ -77,6 +77,69 @@ exports.installSDKPrompt = function(specificSDK = "") {
 				}
 			}
 		);
+	});
+}
+
+exports.removeSDKPrompt = function() {
+	return new Promise((resolve, reject) => {
+		let sdkCompleteList = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
+		let sdkList = nova.config.get("as3.sdk.installed");
+
+		if(sdkList==null || sdkList.length==0) {
+			nova.workspace.showInformativeMessage("The SDK list is empty and you cannot remove any.\n\nThe extension will always default to using `~/Applications/AIRSDK`.");
+		} else {
+			var sdkChoicePromise;
+			if(sdkList.length==1) {
+				sdkChoicePromise = Promise.resolve( { "value": sdkList[0], "index": 0 } );
+			} else {
+				sdkChoicePromise = quickChoicePalette(sdkList, "Remove which SDK?").then((choice) => choice);
+			}
+
+			sdkChoicePromise.then((sdk) => {
+				if(sdk!==undefined && sdk.index!=null) {
+					var removedDefault = false;
+
+					var message = "Are you sure you want to remove the ";
+					if(sdk.index==0) {
+						removedDefault =true;
+						message += "default ";
+					}
+					message += "SDK of:\n\n" + exports.getAIRSDKNameFromPath(sdk.value) + "?\n\n";
+
+					if(sdk.index==0) {
+						if(sdk.length==1) {
+							message += "This will default to using `~/Applications/AIRSDK`. If there is no SDK is there, the extension will not function properly";
+						} else {
+							message += "The next SDK in the list will become the default."
+						}
+					}
+
+					nova.workspace.showActionPanel(message, { buttons: [ "Remove","Cancel" ] },	(result) => {
+						if(result==0) { // Only Remove is pressed
+							console.log("BEFORE::")
+							consoleLogObject(sdkList);
+							sdkList.splice(sdk.index, 1);
+							console.log("after::")
+							consoleLogObject(sdkList);
+
+							nova.config.set("as3.sdk.installed",sdkList);
+
+							message = "SDK was removed.";
+							// Refresh list
+							sdkList = nova.config.get("as3.sdk.installed");
+							if(sdkList!=null && sdkList.length>0) {
+								if(removedDefault) {
+									message += "\n\nThe default extension will now be:\n\n" + exports.getAIRSDKNameFromPath(sdkList[0]);
+								}
+							} else {
+								message += "\n\nThe extension will attempt to use `~/Applications/AIRSDK` as the default.";
+							}
+							nova.workspace.showInformativeMessage(message);
+						}
+					});
+				}
+			});
+		}
 	});
 }
 
@@ -182,7 +245,12 @@ exports.getAIRSDKDefaultPath = function() {
 	return flexSDKBase;
 }
 
-exports.getAIRSDKPath = function(sdkName) {
+/**
+ * Returns the path of an SDK based on the name of the SDK that is given.
+ * @param {string} sdkName - The name of the SDK
+ * @returns {string|null} - The path of the SDK installed, if it's not installed, then `null` is returned
+ */
+exports.getAIRSDKPathFromName = function(sdkName) {
 	var flexSDKBase = null;
 
 	if(sdkName.indexOf("/")!=-1) {
@@ -203,6 +271,28 @@ exports.getAIRSDKPath = function(sdkName) {
 
 	flexSDKBase = ensureExpandedUserPath(flexSDKBase);
 	return flexSDKBase;
+}
+
+/**
+ * Returns the name of an SDK based on the path of the SDK that is given.
+ * @param {string} sdkName - The path of the SDK
+ * @returns {string|null} - The name of the SDK installed, if it's not installed, then `null` is returned
+ */
+exports.getAIRSDKNameFromPath = function(sdkPath) {
+	var flexSDKName = null;
+
+	var currentSDKsInstalled = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
+	// consoleLogObject(currentSDKsInstalled);
+	for(sdk of currentSDKsInstalled) {
+		console.log("Is " + sdkPath + "  the same as sdk[0]: " + sdk[0] + " or [1]: " + sdk[1]);
+		if(sdk[0]==sdkPath) {
+			console.log("SETTING IT TO "+sdk[1])
+			flexSDKName = sdk[1];
+			continue;
+		}
+	}
+
+	return flexSDKName;
 }
 
 exports.isAIRSDKInstalled = function(sdkName) {

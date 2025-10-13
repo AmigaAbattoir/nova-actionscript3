@@ -7,7 +7,7 @@ const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
 const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
 const { makeNewProject, makeNewFile } = require("/new-utils.js");
-const { installSDKPrompt, resetSDKListPrompt, getAIRSDKInfo, generateAIRSDKInstalledInformation, checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault } = require("/sdk-utils.js");
+const { installSDKPrompt, removeSDKPrompt, resetSDKListPrompt, getAIRSDKInfo, generateAIRSDKInstalledInformation, checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault } = require("/sdk-utils.js");
 var langserver = null;
 var taskprovider = null;
 
@@ -132,6 +132,8 @@ exports.activate = function() {
 	nova.commands.register("as3.sdk.installer", () => { return installSDKPrompt(); });
 
 	nova.commands.register("as3.sdk.reset", () => { return resetSDKListPrompt(); });
+
+	nova.commands.register("as3.sdk.remove", () => { return removeSDKPrompt(); });
 
 	// ---- Certificate Menu Functions ----
 	nova.commands.register("as3.certificate.create", (workspace) => { return createCertificate(); });
