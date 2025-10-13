@@ -293,7 +293,7 @@ exports.resolveCustomizableJson = function(filename) {
 
 	var userFilePath = nova.path.join(nova.extension.globalStoragePath, "/" + filename)
 	if(nova.inDevMode()) {
-		if(doesFolderExist(nova.extension.globalStoragePath)==false) {
+		if(exports.doesFolderExist(nova.extension.globalStoragePath)==false) {
 			/* @NOTE If not installed, but developing, this "globalStoragePath" does NOT always exist!!!
 			 * It only exists if installed, so for testing, we're going to use this!
 			 */
@@ -305,11 +305,11 @@ exports.resolveCustomizableJson = function(filename) {
 
 	// If the user version of this file doesn't exist, then let's copy from the extension!
 	if(exports.doesFileExist(userFilePath)==false) {
-		var extDefault = getStringOfFile(nova.path.join(nova.extension.path, "/Defaults/" + filename));
-		writeStringToFile(userFilePath,extDefault);
+		var extDefault = exports.getStringOfFile(nova.path.join(nova.extension.path, "/Defaults/" + filename));
+		exports.writeStringToFile(userFilePath,extDefault);
 		values = JSON.parse(extDefault);
 	} else {
-		var options = getStringOfFile(userFilePath);
+		var options = exports.getStringOfFile(userFilePath);
 		values = JSON.parse(options);
 	}
 
