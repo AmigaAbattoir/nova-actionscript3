@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 - Exporting a package with an empty custom ANEs would fail
 - Exporting with ANEs would try to include unpacked ANEs instead
 - Does not ask to import Flash Builder if a file is opened outside of a project
+- Creating new Flex Mobile projects
 
 ## [0.10.1] - 2025-07-01
 

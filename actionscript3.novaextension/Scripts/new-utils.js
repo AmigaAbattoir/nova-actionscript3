@@ -300,7 +300,6 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 												if(projectType==NP_TYPE_Flex) {
 													nova.fs.copy(nova.path.join(nova.extension.path, "/Template/Projects/Flex/" + applicationType + ".mxml"),projectFolder + "/src/" + className + ".mxml");
 												} else if(projectType==NP_TYPE_FlexMobile) {
-													nova.fs.copy(nova.path.join(nova.extension.path, "/Template/Projects/" + sourceToCopy + "/Main.mxml"),projectFolder + "/src/" + className + ".mxml");
 													switch(applicationType) {
 														case NP_APPTYPE_Blank: {
 															sourceToCopy = "Mobile Blank";
@@ -325,6 +324,7 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 															break;
 														}
 													}
+													nova.fs.copy(nova.path.join(nova.extension.path, "/Template/Projects/" + sourceToCopy + "/Main.mxml"),projectFolder + "/src/" + className + ".mxml");
 												} else if(projectType==NP_TYPE_ActionScript) {
 													// Make a class file
 													let mainClassAS = getStringOfFile(nova.path.join(nova.extension.path, "/Template/New Class.as"));
@@ -341,6 +341,7 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 													mainClassASFile.close();
 												}
 											} catch(error) {
+												console.error(error);
 												nova.workspace.showErrorMessage("Problem creating basic source files for new project at " + projectFolder);
 											}
 
@@ -351,7 +352,7 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 											taskJson = modifyTaskJson(taskJson, projectType, applicationType)
 
 											// If it's an AIR project, we need to generate an -app.xml file...
-											if(applicationType==NP_APPTYPE_AIR) {
+											if(applicationType==NP_APPTYPE_AIR || projectType==NP_TYPE_FlexMobile) {
 												// From AIRSDK -> template / air /descriptor-template.xml
 												let appXML = getStringOfFile(nova.path.join(flexSDKBase, "templates/air/descriptor-template.xml"));
 												appXML = appXML.replace("<id></id>","<id>" + className + "</id>")
@@ -404,10 +405,12 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 														}
 														case NP_TYPE_FlexMobile:
 														case NP_TYPE_ActionScriptMobile: {
+															/*
 															// Make AIR (Desktop) (there's no other changes needed yet...)
 															var taskFile = nova.fs.open(projectFolder+"/.nova/Tasks/AIR.json","w");
 															taskFile.write(JSON.stringify(taskJson,null,2));
 															taskFile.close();
+															*/
 
 															// Make Android
 															taskJson["extensionTemplate"] = "actionscript-android";

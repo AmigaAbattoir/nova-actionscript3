@@ -906,7 +906,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @returns {string} - A screen size that ADL will understand, ###x###:###x### format
 	 */
 	getFormattedScreenSize(screenSize) {
-		if(screenSize==null || screenSize=="none") {
+		if(screenSize==null || screenSize=="none" || screenSize==false) {
 			nova.workspace.showErrorMessage("Please edit the Task to select a Desktop Device to use for the screen size of the simulator!");
 			return false;
 		} else {
@@ -1565,6 +1565,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			if(projectType=="airmobile") {
 				var screenSize = this.getFormattedScreenSize(config.get("as3.task.deviceToSimulate"));
+				if(screenSize==null || screenSize==false) {
+					return null;
+				}
 				args.push("-screensize");
 				args.push(screenSize);
 			}
