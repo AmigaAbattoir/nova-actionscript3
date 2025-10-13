@@ -402,65 +402,6 @@ exports.resolveStatusCodeFromADT = function(status) {
 }
 
 /**
- * Looks for the `airsdk.xml` in the directory to check what versions of AIR we have. If it's a really old
- * version of the Flex SDK, we'll try to figure out the AIR version with the template of the air descriptor
- *
- * @param {string} flexSDKBase - The location of the AIR/Flex SDK to check
- * @returns {Object} - An object with a `float` containing the `version` of the SDK, as well as an array `appVersions` with the
- * application namespaces (as a `descriptorNamespace` and `swfVersion`), and an array `extensionNamespaces` with the extension
- * namespaces (also as a `descriptorNamespace` and `swfVersion`)
- */
-exports.getAIRSDKInfo = function(flexSDKBase) {
-	let version = 0;
-	let appVersions = [];
-	let extensionNamespaces = [];
-
-	let currentNS = "";
-
-	// Grab the airsdk.xml to check for version numbers
-	try {
-		var airSDKInfo = getStringOfFile(nova.path.join(flexSDKBase,"airsdk.xml"));
-		// If it's not empty, let's parse it from XML and convert it to JSON for easier reference
-		if(airSDKInfo!="") {
-			var airSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
-
-			currentNS = airSDKXML.getAttributeFromNodeByName("airSdk","xmlns");
-			// break into chunks on "/" and then get the last item for the version number
-			version = currentNS.split("/").pop();
-
-			// Used to keep track of what the minimum SWF version is for each descriptor namespace
-			var airAppVersions = airSDKXML.getNodeChildrenByName("applicationNamespaces", "versionMap");
-			airAppVersions.forEach((airAppVersion) => {
-				appVersions.push({
-					"descriptorNamespace": airSDKXML.findChildNodeByName(airAppVersion["children"], "descriptorNamespace")["textContent"],
-					"swfVersion": parseInt(airSDKXML.findChildNodeByName(airAppVersion["children"], "swfVersion")["textContent"])
-				});
-			});
-
-			// Used to keep track of what the minimum SWF version is for ANEs
-			var airExtensionNamespaces = airSDKXML.getNodeChildrenByName("extensionNamespaces", "versionMap");
-			airExtensionNamespaces.forEach((airExtensionNamespace) => {
-				extensionNamespaces.push({
-					"descriptorNamespace": airSDKXML.findChildNodeByName(airExtensionNamespace["children"], "descriptorNamespace")["textContent"],
-					"swfVersion": parseInt(airSDKXML.findChildNodeByName(airExtensionNamespace["children"], "swfVersion")["textContent"])
-				});
-			});
-		}
-	} catch(error) {
-		// Older SDK don't have the airsdk.xml
-		var airTemplate = getStringOfFile(nova.path.join(flexSDKBase,"/templates/air/descriptor-template.xml"));
-		if(airTemplate) {
-			var airTemplateXML = new xmlToJson.ns3x2j(airTemplate);
-
-			currentNS = airTemplateXML.getAttributeFromNodeByName("application","xmlns");
-			version = currentNS.split("/").pop();
-		}
-	}
-
-	return { version: version, appVersions: appVersions, extensionNamespaces: extensionNamespaces }
-}
-
-/**
  * Used to help figure out the minimum  Flash Player version based upon the SWF Version
  * @note Not sure this is needed
  * @param {Number} swfVersion - The version of the SWF

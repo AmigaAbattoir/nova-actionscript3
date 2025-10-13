@@ -1,8 +1,9 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
 const { determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
-const { determineProjectUUID, determineAneTempPath, resolveStatusCodeFromADT, getAIRSDKInfo, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
+const { determineProjectUUID, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
+const { getAIRSDKInfo } = require("./sdk-utils.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
@@ -209,6 +210,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						"releasePath": nova.path.join(nova.workspace.path, releasePath)
 					};
 
+					// If there's a custom SDK for the Task, set it!
+					if(taskConfig["as3.compiler.sdk"] && taskConfig["as3.task.applicationFile"].trim()!="") {
+						configOverrides["sdkBase"] = taskConfig["as3.compiler.sdk"];
+					}
+
 					// If we have a custom ANEs marked, let's also change the build config
 					if(taskConfig["as3.packaging.customANEs"] && taskConfig["as3.packaging.customANEs"]==true) {
 						configOverrides["anes"] =  taskConfig["as3.packaging.anes"];
@@ -236,7 +242,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 					this.build(projectType, "release", true, configOverrides).then((resolve) => {
 						const configValues = getConfigsForPacking(taskConfig["as3.task.applicationFile"],true,configOverrides);
-						let flexSDKBase = configValues.flexSDKBase;
+						let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 						let appXMLName = configValues.appXMLName;
 						let doTimestamp= configValues.doTimestamp;
 						let timestampURL= configValues.timestampURL;
@@ -618,7 +624,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		*/
 
-		let flexSDKBase = configValues.flexSDKBase;
+		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		if(flexSDKBase==null) {
 			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
 			return null;
@@ -939,7 +945,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}, returnAsProcess = false) {
 		const configValues = getConfigsForBuild(true, configOverrides);
 
-		let flexSDKBase = configValues.flexSDKBase;
+		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		if(flexSDKBase==null) {
 			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
 			return null;
@@ -1319,7 +1325,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			return getProcessResults(command, args, nova.workspace.path);
 		} else {
 			if (nova.inDevMode()) {
-				console.log(" #### Okay, should be playing according to Nova!");
+				console.log(" #### Okay, should be built to Nova!");
 			}
 			return new TaskProcessAction(command, { args: args });
 		}
@@ -1338,7 +1344,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// console.log("CONFIG VALUES: ");
 		// consoleLogObject(configValues);
 		// console.log("CONFIG VALUES: ");
-		let flexSDKBase = configValues.flexSDKBase;
+		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		let destDir = configValues.destDir;
 		let appXMLName = configValues.appXMLName;
 		let exportName = configValues.exportName;
@@ -1482,7 +1488,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let args = [];
 
 		const configValues = getConfigsForBuild(true,configOverrides);
-		let flexSDKBase = configValues.flexSDKBase;
+		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		let destDir = configValues.destDir;
 		let appXMLName = configValues.appXMLName;
 		let exportName = configValues.exportName;

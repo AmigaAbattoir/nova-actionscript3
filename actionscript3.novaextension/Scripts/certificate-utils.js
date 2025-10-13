@@ -1,4 +1,4 @@
-const { getProcessResults, consoleLogObject, getStringOfWorkspaceFile, quickChoicePalette, collectInput } = require("./nova-utils.js");
+const { getProcessResults, consoleLogObject, getStringOfWorkspaceFile, doesFolderExistAndIsAccessible, quickChoicePalette, collectInput } = require("./nova-utils.js");
 const { determineFlexSDKBase } = require("./config-utils.js");
 
 /**
@@ -27,7 +27,7 @@ exports.clearExportPassword = function() {
 
 		// Check if there are Tasks, and see if they contain a value for a certificate
 		// @NOTE Unfortunately, it doesn't seem there is a way to get these from Nova, so we have to manually read and hope they are good!
-		if(nova.fs.access(nova.workspace.path + "/.nova/Tasks", nova.fs.F_OK | nova.fs.X_OK)) {
+		if(doesFolderExistAndIsAccessible(nova.workspace.path + "/.nova/Tasks")) {
 			var files = nova.fs.listdir(nova.workspace.path + "/.nova/Tasks/");
 			files.forEach((file) => {
 				if(file.indexOf(".json")!=-1) {
@@ -122,7 +122,7 @@ exports.storeExportPassword = function() {
 
 		// Check if there are Tasks, and see if they contain a value for a certificate
 		// @NOTE Unfortunately, it doesn't seem there is a way to get these from Nova, so we have to manually read and hope they are good!
-		if(nova.fs.access(nova.workspace.path + "/.nova/Tasks", nova.fs.F_OK | nova.fs.X_OK)) {
+		if(doesFolderExistAndIsAccessible(nova.workspace.path + "/.nova/Tasks")) {
 			var files = nova.fs.listdir(nova.workspace.path + "/.nova/Tasks/");
 			files.forEach((file) => {
 				if(file.indexOf(".json")!=-1) {

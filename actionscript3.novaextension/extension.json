@@ -572,7 +572,7 @@
 							"type": "enum",
 							"radio": false,
 							"resolve": "as3.resolver.sdk",
-							"description": "Use this to select a different SDK for this project. If set to `None`, then it will default to the top most SDK in the Extension settings.",
+							"description": "Use this to select a different SDK for this project. If set to `None`, then it will default to the top most `Installed SDK` in the Extension settings.",
 							"dontallowCustom": true
 						}
 					]

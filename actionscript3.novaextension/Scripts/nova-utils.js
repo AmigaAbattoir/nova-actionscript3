@@ -1,4 +1,12 @@
 /**
+ * nova-utils.js
+ *
+ * Some commonly used functions I use in Panic Nova extensions
+ *
+ * @author Christopher Pollati
+ */
+
+/**
  * Quick, easy way to show a notification. If you need it to persist, then add a button
  * to show. This does not resolve any buttons, just there to keep in place!
  * @param {string} title - The title of the notification
@@ -202,46 +210,21 @@ exports.rangeToLspRange = function(document, range) {
 		chars += lineLength;
 	}
 	return null;
-}.
+}
 
 /**
  * Opens a file and dumps it into a string.
  * @param {string} filename - The name of the file to open, relative to the workspace
  */
-exports.getStringOfWorkspaceFile = function(filename) {
-	var line, contents;
-	var trimAll = false; // @NOTE There once was an option because the old XML readers needed this.
-	try {
-		contents = "";
-		//console.log("Trying to open: " + nova.path.join(nova.workspace.path, filename));
-		var file = nova.fs.open(nova.path.join(nova.workspace.path, filename));
-		if(file) {
-			do {
-				line = file.readline();
-				if(line!=null) {
-					if(trimAll) {
-						line = line.trim();
-					}
-					contents += line;
-				}
-			} while(line && line.length>0);
-		}
-
-		if(trimAll) {
-			contents = contents.replace((/  |\r\n|\n|\r/gm),"");  // contents.replace(/(\r\n|\n|\r)/gm,"")
-		}
-	} catch(error) {
-		console.error("*** ERROR: Could not open file " + nova.path.join(nova.workspace.path, filename) + " for reading. ***");
-		return null;
-	}
-	return contents;
+exports.getStringOfWorkspaceFile = function(filename, logAsError = true) {
+	return exports.getStringOfFile(nova.path.join(nova.workspace.path, filename),logAsError);
 }
 
 /**
  * Opens a file and dumps it into a string.
  * @param {string} filename - The name of the file to open, must be complete path!
  */
-exports.getStringOfFile = function(filename) {
+exports.getStringOfFile = function(filename, logAsError = true) {
 	var line, contents;
 	try {
 		contents = "";
@@ -256,7 +239,9 @@ exports.getStringOfFile = function(filename) {
 			} while(line && line.length>0);
 		}
 	} catch(error) {
-		console.error("*** ERROR: Could not open file " + filename + " for reading. " + error + " ***");
+		if(logAsError) {
+			console.log("*** ERROR: Could not open file " + filename + " for reading. " + error + " ***");
+		}
 		return null;
 	}
 	return contents;
@@ -319,7 +304,7 @@ exports.resolveCustomizableJson = function(filename) {
 		}
 
 	// If the user version of this file doesn't exist, then let's copy from the extension!
-	if(doesFileExist(userFilePath)==false) {
+	if(exports.doesFileExist(userFilePath)==false) {
 		var extDefault = getStringOfFile(nova.path.join(nova.extension.path, "/Defaults/" + filename));
 		writeStringToFile(userFilePath,extDefault);
 		values = JSON.parse(extDefault);
@@ -378,10 +363,54 @@ exports.doesFolderExist = function(filename) {
 	try {
 		if(filename!=null) {
 			var stat = nova.fs.stat(filename);
-			exports.consoleLogObject(stat)
 			if(stat) {
 				if(stat.isDirectory()) {
 					return true;
+				}
+			}
+		}
+	} catch(err) {
+		console.error(err)
+	}
+	return false;
+}
+
+/**
+ * Checks if the user has access to
+ *
+ * @param {String} filename - The full path of the file
+ */
+exports.haveAccessTo = function(filename) {
+	try {
+		if(filename!=null) {
+			if(nova.fs.access(filename, nova.fs.F_OK | nova.fs.X_OK)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	} catch(err) {
+		console.error(err)
+	}
+	return false;
+}
+
+/**
+ * Checks if the folder exists and the user has access to it
+ *
+ * @param {String} filename - The full path of the file
+ */
+exports.doesFolderExistAndIsAccessible = function(folderName) {
+	try {
+		if(folderName!=null) {
+			var stat = nova.fs.stat(folderName);
+			if(stat) {
+				if(stat.isDirectory()) {
+					if(nova.fs.access(folderName, nova.fs.F_OK | nova.fs.X_OK)) {
+						return true;
+					} else {
+						return false;
+					}
 				}
 			}
 		}

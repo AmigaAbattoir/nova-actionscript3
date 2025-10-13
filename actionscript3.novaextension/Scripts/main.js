@@ -1,13 +1,13 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { ActionScript3TaskAssistant, getAndroids } = require("./task-assistant.js");
-const { getAIRSDKInfo, determineProjectUUID, determineAneTempPath } = require("./as3-utils.js");
-const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, consoleLogObject, resolveCustomizableJson, doesFolderExist, getProcessResults, getCurrentDateAsSortableString, quickChoicePalette } = require("./nova-utils.js");
+const { ActionScript3TaskAssistant } = require("./task-assistant.js");
+const { determineProjectUUID, determineAneTempPath } = require("./as3-utils.js");
+const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, consoleLogObject, resolveCustomizableJson, doesFolderExist, doesFolderExistAndIsAccessible, getProcessResults, getCurrentDateAsSortableString, quickChoicePalette } = require("./nova-utils.js");
 const { determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
 const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
 const { makeNewProject, makeNewFile } = require("/new-utils.js");
-const { checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault } = require("/sdk-utils.js");
+const { getAIRSDKInfo, generateAIRSDKInstalledInformation, checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault } = require("/sdk-utils.js");
 var langserver = null;
 var taskprovider = null;
 
@@ -57,6 +57,12 @@ var currentASConfigText = "";
  */
 var currentSDKPath = "";
 
+/**
+ * Stores the current installed SDKs
+ * @type {Array}
+ */
+var currentSDKsInstalled = [];
+
 // Used to store session passwords
 /**
  * Extension context that stores certificate passwords for building, but are asked to only keep
@@ -73,10 +79,11 @@ exports.activate = function() {
 	// ---- Resolves configuration dropdowns ----
 	nova.commands.register("as3.resolver.sdk", (workspace) => {
 		return new Promise((resolve, reject) => {
-			let sdks = nova.config.get("as3.sdk.installed") || [];
+			// Using context variable, which should be updated only when SDKs are added/removed
+			let sdks = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
 			let results = [];
-			for (let sdkPath of sdks) {
-				results.push(checkSDKFolderForInfo(sdkPath));
+			for (let sdk of sdks) {
+				results.push(sdk[1]);
 			}
 			resolve(results);
 		});
@@ -350,9 +357,16 @@ function restart() {
 	nova.workspace.context.set("currentASConfigText", currentASConfigText);
 	currentSDKPath = "";
 	nova.workspace.context.set("currentSDKPath", currentSDKPath);
+	currentSDKPath = [];
+	nova.workspace.context.set("currentSDKsInstalled", currentSDKsInstalled);
 
 	// Start up new language server.
 	langserver = new AS3MXMLLanguageServer();
+}
+
+function regenerateCurrentSDKsInstalledContext() {
+	var currentSDKsInstalled = generateAIRSDKInstalledInformation();
+	nova.workspace.context.set("currentSDKsInstalled",JSON.stringify(currentSDKsInstalled));
 }
 
 /**
@@ -432,9 +446,9 @@ console.log("nova.extension.path:",nova.extension.path);
 	 * `asconfig.json` file.
 	 */
 	setupConfigurationWatchers() {
-		// Extension configs we need to watch
+		// The main Extension configs we need to watch
 		const watchedConfigs = [
-			"as3.java.path", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
+			"as3.java.path", "as3.sdk.installed", "as3.sdk.animate", "as3.sdk.editor", "as3.languageServer.path",
 			"as3.languageServer.jvmargs", "as3.languageServer.concurrentRequests",
 		];
 
@@ -481,26 +495,28 @@ console.log("nova.extension.path:",nova.extension.path);
 			let isThrottled = false;
 			nova.config.onDidChange(key, function(newValue, oldValue) {
 				if(!isThrottled) {
-					if (nova.inDevMode()) { console.log(` =-=-=-=-= Changed ${key} is now ${newValue} was ${oldValue}`); }
+					if (nova.inDevMode()) { console.warn(` =-=-=-=-= Changed ${key} is now ${newValue} was ${oldValue}`); }
+
+					if(key=="as3.sdk.installed") {
+						regenerateCurrentSDKsInstalledContext();
+					}
 
 					if(configsThatTriggersRestart.includes(key)) {
-						if (nova.inDevMode()) { console.log(" =-=-=-=-= Should trigger restart, maybe..."); }
+						if (nova.inDevMode()) { console.warn(" =-=-=-=-= Should trigger restart, maybe..."); }
 
-						if(key=="as3.compiler.useDefault") {
-							/** @TODO Should see if the version changed */
-							var defaultSDK = nova.workspace.config.get("as3.sdk.default");
-							//var specificSDK = nova.workspace.config.get("as3.compiler.specificSdk");
-							var specificSDK = nova.workspace.config.get("as3.compiler.sdk");
-							if(defaultSDK!=specificSDK) {
-								if(specificSDK!="") {
-									if (nova.inDevMode()) { console.log("  =-=-=-= Should restart AS3MXML!"); }
-									console.log(" AS3 Should restart, or maybe send `workspace/didChangeConfiguration` message, but not implemented yet!");
-									// restart();
-								} else {
-									if (nova.inDevMode()) { console.log("  =-=-=-= Empty SDK, guess I'll hold off restarting"); }
-								}
-							}
-						}
+						/** @TODO Should see if the version changed */
+						// var defaultSDK = nova.workspace.config.get("as3.sdk.default");
+						// //var specificSDK = nova.workspace.config.get("as3.compiler.specificSdk");
+						// var specificSDK = nova.workspace.config.get("as3.compiler.sdk");
+						// if(defaultSDK!=specificSDK) {
+						// 	if(specificSDK!="") {
+						// 		if (nova.inDevMode()) { console.log("  =-=-=-= Should restart AS3MXML!"); }
+						// 		console.log(" AS3 Should restart, or maybe send `workspace/didChangeConfiguration` message, but not implemented yet!");
+						// 		// restart();
+						// 	} else {
+						// 		if (nova.inDevMode()) { console.log("  =-=-=-= Empty SDK, guess I'll hold off restarting"); }
+						// 	}
+						// }
 					}
 
 					var needAutoASConfig = nova.workspace.config.get("as3.project.asconfigMode");
@@ -667,6 +683,10 @@ console.log("nova.extension.path:",nova.extension.path);
 		// Start 'er up!
 		var base =  nova.path.join(nova.extension.path, "language-server");
 
+		// First, check all the installed SDKs
+		regenerateCurrentSDKsInstalledContext();
+
+		// Now, get an SDK to start using
 		var flexSDKBase = determineFlexSDKBase();
 
 		if (nova.inDevMode()) {
@@ -676,7 +696,7 @@ console.log("nova.extension.path:",nova.extension.path);
 		}
 
 		// Check if the flexSDKBase is valid, if not, warn user and abort!
-		if(flexSDKBase==null || (nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)==false)) {
+		if(doesFolderExistAndIsAccessible(flexSDKBase)==false) {
 			if (nova.inDevMode()) {
 				if(doesFolderExist(flexSDKBase)) {
 					console.error("flexSDKBase exists, but is it accessable??? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
@@ -692,6 +712,7 @@ console.log("nova.extension.path:",nova.extension.path);
 			nova.workspace.context.set("currentAIRAppVersions",JSON.stringify(currentAIRAppVersions));
 			currentAIRExtensionNamespaces = airSDKInfo.extensionNamespaces;
 			nova.workspace.context.set("currentAIRExtensionNamespaces",JSON.stringify(currentAIRExtensionNamespaces));
+			currentSDKPath = airSDKInfo.path;
 
 			if(parseInt(currentAIRSDKVersion)<20) {
 				if(nova.workspace.config.get("as3.project.oldAirWarning")!=flexSDKBase) {
