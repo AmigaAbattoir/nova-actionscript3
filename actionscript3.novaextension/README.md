@@ -4,7 +4,9 @@
 
 This extension brings **ActionScript 3 and MXML** support to **Panic Nova**.
 
-The goal was to be able to use all my old Adobe Flash Build projects and convert them to Nova's workflow. I wanted to be able to build and run projects in Nova without additional setup, just by importing the Flash Builder settings when opening the project. (It's pretty close to it!)
+🆕 Version 0.11: Introduced SDK list management and per-Task SDK selection.
+
+The goal was to be able to use all of my old Adobe Flash Builder projects and convert them to Nova's workflow. I wanted to be able to build and run projects in Nova without additional setup, just by importing the Flash Builder settings when opening the project. (It's pretty close to it!)
 
 ![](assets/screenshot.png)
 
@@ -32,18 +34,17 @@ The goal was to be able to use all my old Adobe Flash Build projects and convert
 
 - 📎 **Clips**
 
+- 🧩 **SDK Management** - Starting with v0.11, the extension uses a list of SDKs
+
 - ▶️ **Tasks**
 
   - Use Nova's Clean/Build/Run for AIR desktop project, mobile project (currently, only through Desktop simulator), and Flash web based project (using **SWFObject** from the AIR SDK or a very basic page using **Ruffle**). Also, limited support for packaging with ANEs.
+  - Tasks can each have their own SDK when building
 
 - 📦 **Exporting AIR Packages**
 
   - AIR, AIRI, Captive bundles, and native installer for Mac should work (_untested for submitting to app stores_).
   - Android and iOS packaging _should_ work (_untested for App Store submission_).
-
-- 🧩 **SDK Management** - Starting with V0.11, the extension uses a list of SDKs
-
-  - Task can each have their own SDKs when building
 
 - 🧰 **ANEs** - Should allow for using ANEs when building/running and for exporting release builds.
 
@@ -56,7 +57,7 @@ The goal was to be able to use all my old Adobe Flash Build projects and convert
 - **MXML** - Nova shows the MXML fine on first load, however, after saving it sometime flags a lot of issues.
 - **Launching AIR projects on actual devices** - Android and iOS
 - **Locale** - Currently set to use en_US
-- **Themes** - Importing Flash Builder projects should store the right value, but currently not honored.
+- **Themes** - Importing Flash Builder projects should store the right value, but currently not honored during builds.
 - **Library** - Automatically managing library builds
 - **Workers & Modules** - I personally never used them, but if you want to help out and have a project that did, contact me!
 
@@ -66,7 +67,7 @@ For Issues, Language Intelligence and Completions, the LSP used is [BowlerHatLLC
 
 AS3MXML requires an `asconfig.json` in the project folder. The extension will ask when opening the project if it should attempt to auto-generate one or if you prefer to maintain it manually. _NOTE:_ If you have used the VSCode extension, and have one already, you can disable the automatic generation but if you switch between Tasks it may not function properly.
 
-For Debugging, [Bowler Hat's SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug) V1.10.0
+For Debugging, [Bowler Hat's SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug) V1.10.0 is used.
 
 For Cleaning/Building/Running and Export Packaging are done by this extension using binaries from the (Harman) Adobe Air or Flex SDK:
 - `mxmlc` for compiling of Flash and AIR project and packaging,
@@ -79,7 +80,7 @@ ActionScript 3 and MXML for Nova requires the following (besides Nova) to be ins
 
 - **Java (JDK 11+)** - AS3MXML requires it, and it also avoids issues with `mxmlc` in some SDKs returning `"Error: null"` when using Java 1.8.
 
-- **(Harman) Adobe Air** or **Flex SDK** - Default path is `~/Applications/AIRSDK` (but can be changed by installing SDKS)
+- **(Harman) Adobe Air** or **Flex SDK** - Default path is `~/Applications/AIRSDK` (but can be changed by installing SDKs)
 
 - **Rosetta 2** (for Apple Silicon Macs) - Required to run SDK tools
 
@@ -103,21 +104,24 @@ Open an `*.as`, or `*.mxml` and it should work. However, there are a few things 
 
 ### 🧩 SDK Setup
 
-Starting with v0.11, SDKs are now managed through a global SDK list, making it easier to install, remove, and select AIR or Flex SDKs without manually editing paths. Once SDKs are installed you can even select which SDK to use per Tasks if you need to.
+Starting with v0.11, SDKs are now managed through a global SDK list, making it easier to install, remove, and select AIR or Flex SDKs without manually editing paths. Once SDKs are installed, you can even select which SDK to use per Task if needed.
 
-- **Migration from Previous Versions** - When updating to v0.11 or later, if you previously had a `Default SDK` path configured, the extension automatically migrates that SDK into your Installed SDKs list.
-The first SDK in that list now acts as your Default SDK.
+If you’re upgrading from an earlier version, your previous `Default SDK` is automatically migrated into the `Installed SDKs` list.
+
+The first SDK in that list now acts as your default SDK.
 
 #### Managing SDKs
 
-While there is a setting of `Installed SDKs`, it is better to use the commands to set it up, either from the **Extension → ActionScript 3**`** menu or from the command palette:
+Although you can edit the `Installed SDKs` list manually, it’s recommended to use these commands instead, either from the **Extensions → ActionScript 3** menu or the Command Palette:
 
- - `➕ Install SDK` - Use to add SDKs. If you have more then one, it will ask if you want that to become the default.
- - `✔️ Change default SDK Change Default SDK` - Use this to change which SDK will be th default. If a project or task does not specify an SDK, this will be the one that's used.
- - `➖ Remove SDK` - When removing, you’ll be prompted to select which SDK to delete from the list. If you remove the first SDK in the list (which is used as the default), the extension automatically promotes the next SDK as the new default and notifies you of the change.
- - `➰ Reset SDK List` - This will remove all the SDKs and default to looking in `~/Applications/AIRSDK`
+ - **`➕ Install SDK`** - Use to add an SDK. If you already have one installed, it will ask whether to make it the new default or simply add it.
+ - **`✔️ Change Default SDK`** - Sets which SDK acts as the default. If a project or task doesn't specify one, this SDK will be used.
+ - **`➖ Remove SDK`** - When removing, you’ll be prompted to select which SDK to delete from the list. If you remove the first SDK in the list (the Default SDK), the extension automatically promotes the next SDK and displays a notification.
+ - **`➰ Reset SDK List`** - This removes all installed SDKs and will look for one in `~/Applications/AIRSDK`
 
-Once added, the SDK appears in your `Installed SDKs` list in the extension’s preferences. Remember that the first SDK in the `Installed SDKs` is always treated as the default SDK to use unless a specific one is set in either the Project's preferences or the Task's preferences.
+After installation, the SDK appears in your `Installed SDKs` list in the extension’s preferences.
+
+The first SDK in the `Installed SDKs` is always treated as the Default SDK, unless a specific one is set in the Project or Task preferences.
 
 #### Managing Installed SDKs Manually
 
@@ -127,25 +131,26 @@ You can view or modify your installed SDKs manually:
  2.	Select **ActionScript 3**, then open the Preferences tab
  3.	Scroll to `Installed SDKs` to view or edit the list
 
-To change the default SDK, make sure you drag the path up to the top of the list!
+To change the Default SDK, make sure you drag the path up to the top of the list!
 
 #### SDK Selection per Task
 
-Each Task (except for Library Tasks) can now use its own SDK, selectable from a dropdown in the Task Preferences.
+Each Task (except Library Tasks) can use its own SDK, selectable from a dropdown in the Task Preferences.
 This allows you to build different targets (desktop, mobile, web) with different SDK versions within the same project.
 
 To configure it:
-	1.	Go to **Project → Tasks → Edit Task...**
-	2.	Select the _Task_ (e.g. AIR - Desktop, AIR - Android, Flash, etc.)
-	3.	Under Use a specific SDK for this task, choose from the dropdown
 
-If set to _None_, the Task automatically uses the Default SDK (the first entry in the `Installed SDKs` list).
+ 1. Go to **Project → Tasks → Edit Task...**
+ 2. Select the _Task_ (e.g. AIR - Desktop, AIR - Android, Flash, etc.)
+ 3. Under Use a specific SDK for this task, choose an SDK from the dropdown.
 
-Note: Library Tasks always use the project’s SDK and cannot override it per task.
+If set to _None_, the Task automatically uses the default SDK (the first entry in the `Installed SDKs` list).
+
+Library Tasks always use the Project SDK and cannot override it.
 
 ### Code Intelligence and Issues
 
-Since the LSP AS3MXML requires requires an `asconfig.json` for code intelligence,  completions, and issues, you will need a file in your project's root. When opening a project you will get prompted:
+Since the LSP AS3MXML requires an `asconfig.json` for code intelligence,  completions, and issues, you will need a file in your project's root. When opening a project you will get prompted:
 
 ![](assets/asconfig-prompt.png)
 
@@ -179,7 +184,7 @@ While Flex Builder / Flash Builder are no longer supported by Adobe, this extens
 
 If you want, you can also change this setting in the **Extensions → Settings → Additional Options... → Prompt to import Flash Builder projects** and disable it.
 
-You can also use the menu option **Extensions → ActionScript 3 → Import Flash Builder project...** to change your project's settings to those used by a Flash Builder project when ever you feel like it.
+You can also use the menu option **Extensions → ActionScript 3 → Import Flash Builder project...** to change your project's settings to those used by a Flash Builder project whenever you need to.
 
 #### SDKs
 
@@ -191,9 +196,9 @@ Then it will prompt you with:
 
 ![](assets/check-sdk-options.png)
 
-- **Install an SDK** - Will bring up the requestor to install an SDK for.
-- **Remove this setting** - Will remove the setting in the Nova project (not the oringal Flash Builder one) which will end up using the default SDK.
-- **Ignore for now** - This will just dismiss the message. If you need you need to either install it yourself or will have to change the project's SDK setting:
+- **Install an SDK** - Will bring up the requestor to install an SDK.
+- **Remove this setting** - Will remove the setting in the Nova project (not the imported Flash Builder one) which will end up using the Default SDK.
+- **Ignore for now** - This will just dismiss the message. If you need to either install it yourself or will have to change the project's SDK setting:
 
    1. Go into your **Project → Project Settings...**
    2. Scroll down to the **Compiler → AIR/Flex SDK version**.
@@ -215,7 +220,7 @@ Prior to AIR SDK 20, some of the executables were still 32bit. Unfortunately, th
  - **Understood** - The message will pop up every time you open the project
  - **Don't Remind Me** - This will not show up again, unless you change the SDK that is being used. It will be reset every time you change SDKs.
 
-That doesn't mean it won't still build, but if you try to play or package may fail:
+That doesn't mean it won't still build, but if you try to play or package it, it may fail:
 
 ![](assets/air-failed.png)
 
@@ -250,7 +255,7 @@ You can also use the menu option **Extensions → ActionScript 3 → Create New 
 
 ### Halo Theme issues
 
-_NOTE:_ Currently, when importing from Flash Builder, it will gather information about the theme, but the process of using this information for building with it has not been completed!
+_NOTE:_ Currently, when importing from Flash Builder it detects and stores theme information, but automatic inclusion during builds isn’t yet implemented!
 
 There is an option that will allow you to build older Flex 3 projects that require embedding Halo with the build. If you try to build and run into errors that say something like  `is only supported by type ... with the theme(s)`, as shown here:
 
@@ -324,11 +329,11 @@ Remember, there's a ton of configs, and in different places:
 
 ### Application Tasks
 
-Task play an important role in build/run as well as exporting of packages. There are different ones available, based on how you plan to run and or package your project. Each project can also include multiple Task, so you can easily switch between building one project for multiple devices. The option to Export Release Build will ask which Task to export.
+Tasks play an important role in build/run as well as exporting of packages. There are different ones available, based on how you plan to run and or package your project. Each project can also include multiple Task, so you can easily switch between building one project for multiple devices. The option to Export Release Build will ask which Task to export.
 
-As of V0.8.2, you can now set custom build/run main application files and destination folders, allowing you to build/launch multiple Tasks at the same time with a different project.
+As of v0.8.2, you can now set custom build/run main application files and destination folders, allowing you to build/launch multiple Tasks at the same time with a different project.
 
-With V0.11.0, you can now specify a specific SDK to use for that task.
+As of v0.11.0, you can now specify a specific SDK to use for that task.
 
 This can be useful if you want to build and run a desktop, Android and iOS build from the same code base at the same time!
 
