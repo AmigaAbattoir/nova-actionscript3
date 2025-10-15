@@ -67,11 +67,11 @@ The goal was to be able to use all of my old Adobe Flash Builder projects and co
 
 ## 📝 Notes
 
-For Issues, Language Intelligence and Completions, the LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.23.0.
+For Issues, Language Intelligence and Completions, the LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) v1.23.0.
 
 AS3MXML requires an `asconfig.json` in the project folder. The extension will ask when opening the project if it should attempt to auto-generate one or if you prefer to maintain it manually. _NOTE:_ If you have used the VSCode extension, and have one already, you can disable the automatic generation but if you switch between Tasks it may not function properly.
 
-For Debugging, [Bowler Hat's SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug) V1.11.0 is used.
+For Debugging, [Bowler Hat's SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug) v1.11.0 is used.
 
 For Cleaning/Building/Running and Export Packaging are done by this extension using binaries from the (Harman) Adobe Air or Flex SDK:
 - `mxmlc` for compiling of Flash and AIR project and packaging,

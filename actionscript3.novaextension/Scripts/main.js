@@ -334,7 +334,7 @@ console.log("default installed: ",nova.config.get("as3.sdk.default"))
 					nova.config.set("as3.sdk.installed", sdksInstalled);
 					// Clear the old preferences so we don't have to do this again.
 					nova.config.set("as3.sdk.default",null);
-					nova.workspace.showActionPanel("With ActionScript 3 V0.11, the handling of SDKs has changed. The `Default AIR SDK path` has been replace with `Installed SDKs`. With this, you can now list multiple SDKs and set ones per project and/or task.\n\nYour Installed SDKs has been updated to include " + sdkDefault + " as your Default SDK now!");
+					nova.workspace.showActionPanel("With ActionScript 3 v0.11, the handling of SDKs has changed. The `Default AIR SDK path` has been replace with `Installed SDKs`. With this, you can now list multiple SDKs and set ones per project and/or task.\n\nYour Installed SDKs has been updated to include " + sdkDefault + " as your Default SDK now!");
 					//nova.extension.openChangelog();
 					//nova.openURL("https://github.com/AmigaAbattoir/nova-actionscript3/wiki?");
 				}

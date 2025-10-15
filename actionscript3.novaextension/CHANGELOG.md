@@ -5,20 +5,20 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 ## [0.11.0] - 2025-10-14
 
-### Changed
+### Added
 
 - Now uses a list of installed SDKs instead of one line for entering the location
   - This will move the "Default AIR SDK" to the first "Installed SDKs" automatically if updating from an older version
-- Task like `AIR`, `Flash`, `AIR - iOS` and `AIR - Android` can have a different SDK used for building
-- Modified how the `-app.xml` is changed so it should work if you have a mix of Flex and ActionScript tasks and want to use the same project
-- Android and iOS device simulators are stored in a JSON file (so eventually we can modify it)
-- Update NS3X2J to match Ant extension's code base
-- Updated AS3MXML to v1.23.0 and SWF Debug to v1.11.0
-
-### Added
-
 - Warns that code intelligence may not work when open ActionScript files outside of a project
 - Android and iOS Tasks can detect devices and store them (still need to implement running on the device...)
+
+### Changed
+
+- Task like `AIR`, `Flash`, `AIR - iOS` and `AIR - Android` can have a different SDK used for building
+- Modified how the `-app.xml` is changed so it should work if you have a mix of Flex and ActionScript Tasks and want to use the same project
+- Android and iOS device simulator lists are stored in a JSON file (so eventually we can modify it)
+- Updated NS3X2J to match Ant extension's code base
+- Updated AS3MXML to v1.23.0 and SWF Debug to v1.11.0
 
 ### Fixed
 
