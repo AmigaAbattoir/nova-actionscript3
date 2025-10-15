@@ -39,11 +39,15 @@ The goal was to be able to use all of my old Adobe Flash Builder projects and co
 - ▶️ **Tasks**
 
   - Use Nova's Clean/Build/Run for AIR desktop project, mobile project (currently, only through Desktop simulator), and Flash web based project (using **SWFObject** from the AIR SDK or a very basic page using **Ruffle**). Also, limited support for packaging with ANEs.
+
   - Tasks can each have their own SDK when building
+
+  - Tasks can also have different main application files and output to different folders
 
 - 📦 **Exporting AIR Packages**
 
   - AIR, AIRI, Captive bundles, and native installer for Mac should work (_untested for submitting to app stores_).
+
   - Android and iOS packaging _should_ work (_untested for App Store submission_).
 
 - 🧰 **ANEs** - Should allow for using ANEs when building/running and for exporting release builds.
@@ -63,11 +67,11 @@ The goal was to be able to use all of my old Adobe Flash Builder projects and co
 
 ## 📝 Notes
 
-For Issues, Language Intelligence and Completions, the LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.22.0.
+For Issues, Language Intelligence and Completions, the LSP used is [BowlerHatLLC/vscode-as3mxml](https://github.com/BowlerHatLLC/vscode-as3mxml) V1.23.0.
 
 AS3MXML requires an `asconfig.json` in the project folder. The extension will ask when opening the project if it should attempt to auto-generate one or if you prefer to maintain it manually. _NOTE:_ If you have used the VSCode extension, and have one already, you can disable the automatic generation but if you switch between Tasks it may not function properly.
 
-For Debugging, [Bowler Hat's SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug) V1.10.0 is used.
+For Debugging, [Bowler Hat's SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug) V1.11.0 is used.
 
 For Cleaning/Building/Running and Export Packaging are done by this extension using binaries from the (Harman) Adobe Air or Flex SDK:
 - `mxmlc` for compiling of Flash and AIR project and packaging,
@@ -391,6 +395,8 @@ This can be useful if you want to build and run a desktop, Android and iOS build
 This extension uses:
 
 - **[AS3MXML](https://github.com/BowlerHatLLC/vscode-as3mxml)**: by [Bowler Hat LLC](https://bowlerhat.dev/) - [John Tynjala](https://www.patreon.com/josht)
+
+- **[SWF Debug](https://github.com/BowlerHatLLC/vscode-swf-debug)**: by [Bowler Hat LLC](https://bowlerhat.dev/) - [John Tynjala](https://www.patreon.com/josht)
 
 - **[Ruffle](https://ruffle.rs/)**: A link to the CDN with the nightly build is included if you make a Flash Task and select the use Ruffle.
 

@@ -3,7 +3,7 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
-## [0.11.0] - Unreleased
+## [0.11.0] - 2025-10-14
 
 ### Changed
 
@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 - Modified how the `-app.xml` is changed so it should work if you have a mix of Flex and ActionScript tasks and want to use the same project
 - Android and iOS device simulators are stored in a JSON file (so eventually we can modify it)
 - Update NS3X2J to match Ant extension's code base
+- Updated AS3MXML to v1.23.0 and SWF Debug to v1.11.0
 
 ### Added
 
@@ -179,7 +180,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 ### Changed
 
 - Setup configuration for the extension based on that of the VSCode one, even if they don't seem like they will work in Nova (like the SDK picker).
-- Using V1.17.0 of Bowler Hat's AS3MXML language-server.
+- Using v1.17.0 of Bowler Hat's AS3MXML language-server.
 
 ## [0.3.0] - 2023-01-27
 
