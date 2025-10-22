@@ -937,11 +937,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return parseInt(dpi);
 	}
 
-
-	runBuild() {
-
-	}
-
 	/**
 	 * Builds the SWF for the project
 	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
