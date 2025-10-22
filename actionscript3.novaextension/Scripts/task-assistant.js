@@ -436,13 +436,15 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									args.push(provisioningProfile);
 								}
 
-								if(doTimestamp==false) {
-									args.push("-tsa");
-									args.push("none");
-								} else {
-									if(timestampURL!=null && timestampURL!="") {
+								if(taskConfig["as3.target"]!="ios") {
+									if(doTimestamp==false ) {
 										args.push("-tsa");
-										args.push(timestampURL);
+										args.push("none");
+									} else {
+										if(timestampURL!=null && timestampURL!="") {
+											args.push("-tsa");
+											args.push(timestampURL);
+										}
 									}
 								}
 
@@ -933,6 +935,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 		}
 		return parseInt(dpi);
+	}
+
+
+	runBuild() {
+
 	}
 
 	/**
