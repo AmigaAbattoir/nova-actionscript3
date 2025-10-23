@@ -3,7 +3,7 @@
 	"name": "ActionScript 3",
 	"organization": "Abattoir Software",
 	"description": "ActionScript 3 & MXML language extension for Nova. Develop apps for Adobe AIR, Adobe Flash Player (and maybe Apache Royale soon).\n\nLSP powered by Bowler Hat LLC's vscode-as3mxml",
-	"version": "0.11.2",
+	"version": "0.11.3",
 	"keywords": ["actionscript 3","flash","air","adobe air","mxml" ],
 	"categories": [
 		"issues",

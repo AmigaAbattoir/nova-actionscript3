@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
+const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
 const { determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
 const { determineProjectUUID, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
@@ -22,13 +22,19 @@ function shouldIgnoreFileName(fileName) {
 	return false;
 }
 
-function displayANEsProjectUUIDError() {
+function displayProjectUUIDError() {
 	var uuidMessage = "Project UUID Missing\n\nPlease use the Import Flash Builder option in the menu,";
 	if(nova.version[0]<10) {
 		uuidMessage += "ensure that `uuidgen` is on your system's path, update to Nova 10+,"
 	}
 	uuidMessage += " or run from the menu `Check Project UUID` to ensure a project UUID is created. Once it's created, you can try again!";
 	nova.workspace.showErrorMessage(uuidMessage);
+}
+
+function displayANEsTempPathError(path) {
+	var message = "ANE Temp Path Errror\n\nThere was a problem extracting ANEs to it's temporary path of:\n" + path + ".\n\n";
+	message += "If you try to build again and this error comes up, please check if that path is a valid one. You can also get this path from the menu `Check ANE temp dir`.";
+	nova.workspace.showErrorMessage(message);
 }
 
 /**
@@ -193,9 +199,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					return;
 				}
 
-				console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-				consoleLogObject(taskConfig);
-				console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+				if(nova.inDevMode()) {
+					console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+					consoleLogObject(taskConfig);
+					console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+				}
 
 				// We need a project UUID which we use to save the certificate password in a later step, but let's check
 				// first. It should generate one if possible, but on the unlikely event, we should abort.
@@ -211,7 +219,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					};
 
 					// If there's a custom SDK for the Task, set it!
-					if(taskConfig["as3.compiler.sdk"] && taskConfig["as3.task.applicationFile"].trim()!="") {
+					if(taskConfig["as3.compiler.sdk"] && taskConfig["as3.compiler.sdk"].trim()!="") {
 						configOverrides["sdkBase"] = taskConfig["as3.compiler.sdk"];
 					}
 
@@ -240,6 +248,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						}
 					}
 
+					showNotification("Export Release Build started","Attempting to package " + taskFileName + "...","Please wait", "-packaging");
 					this.build(projectType, "release", true, configOverrides).then((resolve) => {
 						const configValues = getConfigsForPacking(taskConfig["as3.task.applicationFile"],true,configOverrides);
 						let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
@@ -437,7 +446,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									args.push(provisioningProfile);
 								}
 
-								if(taskConfig["as3.target"]!="ios") {
+								if(taskConfig["as3.target"]!="ios" && taskConfig["as3.target"]!="android") {
 									if(doTimestamp==false ) {
 										args.push("-tsa");
 										args.push("none");
@@ -480,6 +489,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							if(taskConfig["as3.export.folder"]) {
 								exportLocation = nova.path.join(nova.workspace.path, taskConfig["as3.export.folder"]);
 								if(ensureFolderIsAvailable(exportLocation)==false) {
+									cancelNotification("-packaging");
 									nova.workspace.showErrorMessage("Export Release Build failed!\n\nCannot export to folder "+exportLocation);
 								}
 							}
@@ -517,7 +527,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							}
 
 							var anes = taskConfig["as3.packaging.anes"];
-
 							// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 							// ones that to the destination dir.
 							if (nova.inDevMode()) {
@@ -527,7 +536,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							if(anes && anes.length>0) {
 								var aneTempPath = determineAneTempPath("release-");
 								if(aneTempPath==null) {
-									displayANEsProjectUUIDError();
+									cancelNotification("-packaging");
+									displayANEsTempPathError(aneTempPath);
 									return null;
 								}
 								args.push("-extdir");
@@ -559,6 +569,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							});
 							process.start();
 							process.onDidExit((status) => {
+								cancelNotification("-packaging");
 								if (nova.inDevMode()) {
 									consoleLogObject(status);
 								}
@@ -594,13 +605,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							nova.workspace.showErrorMessage("Password failed!\n\n" + reject);
 						});
 					}, (reject) => {
+						cancelNotification("-packaging");
 						// To make this a little neater, remove the workspace's path from the stderr messages
 						var message = reject.stderr.replaceAll(nova.workspace.path,"");
 						nova.workspace.showErrorMessage("Export Release Build failed!\n\nOne or more errors were found while trying to build the release version. Unable to export.\n\n" + message);
 					});
 				},
 				(reject) => {
-					displayANEsProjectUUIDError();
+					displayProjectUUIDError();
 				});
 			});
 		}
@@ -1238,7 +1250,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				var anePrefix = (packageAfterBuild ? "release-" : "");
 				var aneTempPath = determineAneTempPath(anePrefix);
 				if(aneTempPath==null) {
-					displayANEsProjectUUIDError();
+					displayANEsTempPathError(aneTempPath);
 					return null;
 				}
 				var extdir = aneTempPath;
@@ -1453,7 +1465,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(anePaths && anePaths.length>0) {
 				var aneTempPath = determineAneTempPath();
 				if(aneTempPath==null) {
-					displayANEsProjectUUIDError();
+					displayANEsTempPathError(aneTempPath);
 					return null;
 				}
 				debugArgs.exdir = aneTempPath;
@@ -1603,7 +1615,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(anes && anes.length>0) {
 				var aneTempPath = determineAneTempPath();
 				if(aneTempPath==null) {
-					displayANEsProjectUUIDError();
+					displayANEsTempPathError(aneTempPath);
 					return null;
 				}
 				args.push("-extdir");

@@ -34,7 +34,7 @@ exports.showNotification = function(title, body, closeButtonName = "", requestId
  * @param {string} requestIdAddition - The ID of the notification to remove
  */
 exports.cancelNotification = function(requestIdAddition) {
-	nova.notifications.cancel("ant-nova-message"+requestIdAddition);
+	nova.notifications.cancel("as3mxml-nova-message"+requestIdAddition);
 }
 
 /**

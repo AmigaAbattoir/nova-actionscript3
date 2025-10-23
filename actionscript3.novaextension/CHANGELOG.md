@@ -3,6 +3,18 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [0.11.3] - 2025-10-23
+
+### Added
+
+- Added a notification to stay on screen while exporting package
+
+### Fixed
+
+- Packaging broke on using custom SDK and no different application name.
+- Exporting Package for Android failed because of unsupported option of "-tsa"
+- Problems with UUID and ANE temp dir both used the same error message.
+
 ## [0.11.2] - 2025-10-22
 
 ### Fixed
@@ -14,7 +26,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 ### Fixed
 
-- Building for iOS failed because of unsupported option of "-tsa"
+- Exporting Package for iOS failed because of unsupported option of "-tsa"
 
 ## [0.11.0] - 2025-10-14
 
