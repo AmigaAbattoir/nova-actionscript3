@@ -297,7 +297,7 @@ exports.getAIRSDKPathFromName = function(sdkName) {
 	var flexSDKBase = null;
 
 	if(sdkName.indexOf("/")!=-1) {
-		console.log("This may be a path? Just return it")
+		// console.log("This may be a path? Just return it")
 		flexSDKBase = sdkName;
 	} else {
 		var currentSDKsInstalled = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
@@ -327,9 +327,9 @@ exports.getAIRSDKNameFromPath = function(sdkPath) {
 	var currentSDKsInstalled = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
 	// consoleLogObject(currentSDKsInstalled);
 	for(sdk of currentSDKsInstalled) {
-		console.log("Is " + sdkPath + "  the same as sdk[0]: " + sdk[0] + " or [1]: " + sdk[1]);
+		// console.log("Is " + sdkPath + "  the same as sdk[0]: " + sdk[0] + " or [1]: " + sdk[1]);
 		if(sdk[0]==sdkPath) {
-			console.log("SETTING IT TO "+sdk[1])
+			// console.log("SETTING IT TO "+sdk[1])
 			flexSDKName = sdk[1];
 			continue;
 		}

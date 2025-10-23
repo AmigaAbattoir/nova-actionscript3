@@ -369,6 +369,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								}
 							}
 
+							// ------ PACKAGING with ADT! -------- //
 							var command = flexSDKBase + "/bin/adt";
 							var args = [];
 							var env = {};
@@ -1554,8 +1555,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 				args.push(destDir + "/" +  exportName);
 			}
-		} else { // Otherwise, we are running through AIR!
-			var runningOnDevice = false;
+		} else { // Otherwise, we are running through AIR, possibly on a device!
 			// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
 			// To launch ADL, we need to point it to the "-app.xml" file
 			command = flexSDKBase + "/bin/adl";
@@ -1563,6 +1563,18 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			var launchMethod = config.get("as3.task.launchMethod");
 			if(launchMethod=="device") {
 				// @TODO If we don't find devices, ask if they want to continue on desktop or try again?
+				// If we don't have a device, abort and say so.
+				// If one is selected in the task, but not available, ask to Abort or Try Again
+				// If we got the device, then we need to package it to launch and if we do, we need to return the task.
+				// THEN INSTALL
+				// THEN LAUNCH APP
+					// adt -installApp -platform android -device <DEVICE_ID> -package ./bin/YourApp.apk
+					// adt -launchApp -platform android -device <DEVICE_ID> -appid com.company.myapp -startDebugger
+
+					// adt -installApp -platform ios -device <DEVICE_ID> -package ./bin/YourApp.ipa
+					// adt -launchApp -platform ios -device <DEVICE_ID> -appid com.company.myapp -startDebugger
+
+				// RETURNING THE TaskProcessAction as the -launchApp above...
 			}
 
 			if(projectType=="airmobile") {

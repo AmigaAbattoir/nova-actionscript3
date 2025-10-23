@@ -16,21 +16,22 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 	// If we don't have that, then we use the default SDKs location
 	if(doesFolderExistAndIsAccessible(flexSDKBase)==false) {
 		flexSDKBase = getAIRSDKDefaultPath();
+		defaultSDKName = getAIRSDKNameFromPath(flexSDKBase);
 	}
 
 	// If the workspace config is different, then let's use that
 	if(getWorkspaceOrGlobalConfig("as3.compiler.sdk")) {
-		var specificSdk = getWorkspaceOrGlobalConfig("as3.compiler.sdk");
-		var specificSdkPath = getAIRSDKPathFromName(specificSdk);
+		var workspaceSdk = getWorkspaceOrGlobalConfig("as3.compiler.sdk");
+		var workspaceSdkPath = getAIRSDKPathFromName(workspaceSdk);
 
-		if(doesFolderExistAndIsAccessible(specificSdk)) {
-			flexSDKBase = specificSdk;
+		if(doesFolderExistAndIsAccessible(workspaceSdkPath)) {
+			flexSDKBase = workspaceSdkPath;
 		} else {
 			let message = "Please check your installed SDKs. Could not find specific specific AIR SDK";
 
 			let defaultSDKName = getAIRSDKNameFromPath(flexSDKBase);
-			if(specificSdk!=null) {
-				message += " of:\n\n" + specificSdk + "\n\nu";
+			if(workspaceSdk!=null) {
+				message += " of:\n\n" + workspaceSdk + "\n\nu";
 			} else {
 				message += ". U";
 			}
@@ -42,11 +43,11 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 
 	// If there a task assigned SDK, that's what we're using!
 	if(selectedSDK) {
-		selectedSDK = getAIRSDKPathFromName(selectedSDK);
-		if(doesFolderExistAndIsAccessible(selectedSDK)) {
-			flexSDKBase = selectedSDK;
+		selectedSDKPath = getAIRSDKPathFromName(selectedSDK);
+		if(doesFolderExistAndIsAccessible(selectedSDKPath)) {
+			flexSDKBase = selectedSDKPath;
 		} else {
-			showNotification("Could not find specific AIR SDK", "Could not find or use the task's specific AIR SDK at:\n " + selectedSDK + "\n will atempt to use:\n " + flexSDKBase, "Oh no!");
+			showNotification("Could not find specific AIR SDK", "Could not find or use the task's specific AIR SDK at:\n " + selectedSDK + "\n will atempt to use:\n " + getAIRSDKNameFromPath(flexSDKBase), "Oh no!");
 		}
 	}
 

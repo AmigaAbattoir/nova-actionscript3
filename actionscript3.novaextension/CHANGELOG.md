@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [0.11.2] - 2025-10-22
+
+### Fixed
+
+- Prompt saying it's using the wrong SDK
+- Removed extra console logging
+
 ## [0.11.1] - 2025-10-21
 
 ### Fixed
