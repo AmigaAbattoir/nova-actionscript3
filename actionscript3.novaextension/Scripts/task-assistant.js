@@ -213,31 +213,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					/** @TODO Get a setting from the task maybe*/
 					var releasePath = "bin-release-temp";
 
-					// Setup build configuration override
-					var configOverrides = {
-						"releasePath": nova.path.join(nova.workspace.path, releasePath)
-					};
+					// Force the task to use a different output for packaging the we will remove if packaging is complete...
+					taskConfig["as3.task.output"] = nova.path.join(nova.workspace.path, releasePath);
 
-					// If there's a custom SDK for the Task, set it!
-					if(taskConfig["as3.compiler.sdk"] && taskConfig["as3.compiler.sdk"].trim()!="") {
-						configOverrides["sdkBase"] = taskConfig["as3.compiler.sdk"];
-					}
-
-					// If we have a custom ANEs marked, let's also change the build config
-					if(taskConfig["as3.packaging.customANEs"] && taskConfig["as3.packaging.customANEs"]==true) {
-						configOverrides["anes"] =  taskConfig["as3.packaging.anes"];
-						configOverrides["anesIgnoreError"] =  taskConfig["as3.ane.ignoreError"];
-					}
-
-					// What if we have a custom Application file? Let's change that and the export and descriptor file.
-					if(taskConfig["as3.task.applicationFile"] && taskConfig["as3.task.applicationFile"].trim()!="") {
-						let mainApplicationPath = taskConfig["as3.task.applicationFile"];
-						configOverrides["mainApplicationPath"] = mainApplicationPath;
-						const customApp = getAppXMLNameAndExport(mainApplicationPath);
-						configOverrides["exportName"] = customApp.exportName;
-						configOverrides["appXMLName"] = customApp.appXMLName;
-					}
-
+					// Check for iOS Provisioning Profile, if not set abort before even building!!
 					var provisioningProfile;
 					// If we are packaing for iOS, we want to make sure that the provisioning profile is set before attempting to build
 					if(taskConfig["as3.target"]=="ios") {
@@ -248,9 +227,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						}
 					}
 
-					showNotification("Export Release Build started","Attempting to package " + taskFileName + "...","Please wait", "-packaging");
-					this.build(projectType, "release", true, configOverrides).then((resolve) => {
-						const configValues = getConfigsForPacking(taskConfig["as3.task.applicationFile"],true,configOverrides);
+					showNotification("Export Release Build started","Attempting to package " + taskFileName.replace(".json","") + "...","Please wait", "-packaging");
+					this.build(projectType, taskConfig, true).then((resolve) => {
+						const configValues = getConfigsForBuild(taskConfig, true);
+
 						let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 						let appXMLName = configValues.appXMLName;
 						let doTimestamp= configValues.doTimestamp;
@@ -383,6 +363,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							var args = [];
 							var env = {};
 
+							// Replace with function, passing the certificateLocation and password?!
 							if(taskConfig["as3.packaging.type"]=="intermediate") {
 								args.push("-prepare");
 								packageName = packageName.replace(/\.air$/, ".airi");
@@ -627,8 +608,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Array} namespaceManifestEntryManifests - The locations of the manifest XMLs
 	 * @param {Array} namespaceManifestEntryNamespaces - The namespaced used for these manifest XMLs. There needs to be the same amount of `namespaceManifestEntryManifests` and `namespaceManifestEntryNamespaces`!
 	 */
-	buildLibrary(classEntries, resourceDestPathEntries, resourceSourcePathEntries, namespaceManifestEntryManifests, namespaceManifestEntryNamespaces) {
-		const configValues = getConfigsForBuild();
+	buildLibrary(taskConfig) { //},classEntries, resourceDestPathEntries, resourceSourcePathEntries, namespaceManifestEntryManifests, namespaceManifestEntryNamespaces) {
+		const configValues = getConfigsForBuild(taskConfig, false);
+
+		let classEntries = taskConfig["as3.lib.classEntries"];
+		let resourceDestPathEntries = taskConfig["as3.lib.resource.dest"];
+		let resourceSourcePathEntries = taskConfig["as3.lib.resource.source"];
+		let namespaceManifestEntryManifests = taskConfig["as3.lib.nsm.manifest"];
+		let namespaceManifestEntryNamespaces = taskConfig["as3.lib.nsm.namespace"];
 
 		/** @TODO / @NOTE. Looks like FB stores the resources and namespace stuff relative to the main source folder!
 		Should this code be refactored to do the same?
@@ -953,22 +940,20 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	/**
 	 * Builds the SWF for the project
 	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
-	 * @param {string} runMode - What kind of build, either `release`|`debug`
+	 * @param {Object} taskConfig - Values from the Task (converted to an object array of the elements needed)
 	 * @param {boolean} packageAfterBuild - If true, we are going to return the process of building
-	 * @param {Object} configOverrides - A object of variables to override
+	 * @param {boolean} returnAsProcess - If we should return as process like a packageAfterBuild? Not really used
 	 */
-	build(projectType, runMode, packageAfterBuild = false, configOverrides = {}, returnAsProcess = false) {
-		const configValues = getConfigsForBuild(true, configOverrides);
+	build(projectType, taskConfig, packageAfterBuild = false, returnAsProcess = false) {
+		var runMode = taskConfig["actionscript3.request"];
+
+		const configValues = getConfigsForBuild(taskConfig, true);
 
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		if(flexSDKBase==null) {
 			nova.workspace.showErrorMessage("Please configure the Flex SDK base, which is required for building this type of project");
 			return null;
 		}
-
-		// console.log(" ||| build() configOverrides: ");
-		// consoleLogObject(configOverrides);
-		// console.log(" ||| build() configOverrides: ");
 
 		let destDir = configValues.destDir;
 		let mainApplicationPath =  configValues.mainApplicationPath;
@@ -982,18 +967,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let libPaths = configValues.libPaths;
 		let anes = configValues.anes;
 		let compilerAdditional = configValues.compilerAdditional;
-
-		// console.log("destDir = " + configValues.destDir);
-		// console.log("mainApplicationPath =  " + configValues.mainApplicationPath);
-		// console.log("isFlex = " + configValues.isFlex);
-		// console.log("appXMLName = " + configValues.appXMLName);
-		// console.log("mainClass = " + configValues.mainClass);
-		// console.log("mainSrcDir = " + configValues.mainSrcDir);
-		// console.log("exportName = " + configValues.exportName);
-		// console.log("copyAssets = " + configValues.copyAssets);
-		// console.log("sourceDirs = " + configValues.sourceDirs);
-		// console.log("libPaths = " + configValues.libPaths);
-		// console.log("compilerAdditional = " + configValues.compilerAdditional);
 
 		// Check if we are building a Flash project or an AIR one now
 		if(projectType=="flash") {
@@ -1350,11 +1323,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * Run the project with debugger
 	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
 	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
-	 * @param {Object} config - The Task's configs
-	 * @param {Object} configOverrides - Which type of project, "air|airmobile|flex"
+	 * @param {Object} taskConfig - The Task's configs
 	 */
-	debugRun(projectType, projectOS, config, configOverrides) {
-		const configValues = getConfigsForBuild(true,configOverrides);
+	debugRun(projectType, projectOS, taskConfig) {
+		const configValues = getConfigsForBuild(taskConfig, true);
 
 		// console.log("CONFIG VALUES: ");
 		// consoleLogObject(configValues);
@@ -1398,7 +1370,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		if(projectType=="flash") {
 			let fpApp;
-			if(config.get("as3.launch.type")=="browser") {
+			if(taskConfig["as3.launch.type"]=="browser") {
 				fpApp = nova.config.get("as3.flashPlayer.browser");
 
 				debugArgs.program = destDir + "/" +  exportName.replace(".swf",".html");
@@ -1426,7 +1398,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 
 			} else {
-				let launchType = config.get("as3.launch.type");
+				let launchType = task["as3.launch.type"];
 
 				if(launchType=="ruffle") {
 					nova.workspace.showErrorMessage("Using debugger with Ruffle is unsupported. Please change launch type to Flash Player or Browser. Or disable the options to `Enable running with Debugger`.");
@@ -1438,11 +1410,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				debugArgs.runtimeExecutable = fpApp;
 			}
 		} else {
-			var profileType = this.getProfileType(config, projectType, appXMLLocation);
+			var profileType = this.getProfileType(taskConfig, projectType, appXMLLocation);
 			debugArgs.profile = profileType;
 
 			if(projectType=="airmobile") {
-				var simulatorDevice = config.get("as3.task.deviceToSimulate");
+				var simulatorDevice = taskConfig["as3.task.deviceToSimulate"];
 				var screenSize = this.getFormattedScreenSize(simulatorDevice);
 				debugArgs.screensize = screenSize;
 
@@ -1494,15 +1466,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * Runs the project using Nova's task system
 	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
 	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
-	 * @param {Object} config - The Task's configs
-	 * @param {Object} configOverrides - Which type of project, "air|airmobile|flex"
+	 * @param {Object} taskConfig - The Task's configs
 	 */
-	run(projectType, projectOS, config, configOverrides) {
+	run(projectType, projectOS, taskConfig) {
 		// console.log("projectType: " + projectType)
 		let command = "";
 		let args = [];
 
-		const configValues = getConfigsForBuild(true,configOverrides);
+		const configValues = getConfigsForBuild(taskConfig, true);
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		let destDir = configValues.destDir;
 		let appXMLName = configValues.appXMLName;
@@ -1510,17 +1481,19 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let mainSrcDir = configValues.mainSrcDir;
 		// Only needed for AIR:
 		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
+		let anes = configValues.anes;
 
 		// console.log(" DEST DIR: " + destDir);
 		// If we are running Flash
 		if(projectType=="flash") {
 			let fpApp;
-			if(config.get("as3.launch.type")=="browser") {
+			let launchType = taskConfig["as3.launch.type"];
+			if(launchType=="browser") {
 				fpApp = nova.config.get("as3.flashPlayer.browser");
 
 				command = getExec(fpApp);
 				if(command==null) {
-					nova.workspace.showErrorMessage("Flash Player Run/Debug -> " + (config.get("as3.launch.type")=="ruffle" ? "Ruffle" : "Standalone Flash Player") + " Error\n\nProblem finding executable at " + fpApp);
+					nova.workspace.showErrorMessage("Flash Player Run/Debug -> " + (launchType=="ruffle" ? "Ruffle" : "Standalone Flash Player") + " Error\n\nProblem finding executable at " + fpApp);
 					return null;
 				}
 
@@ -1553,11 +1526,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			} else {
 				// Since Flash Player can actually have an executable of Flash Player Debugger or just Flash Player, let's just look in that
 				// .app's Content/MacOS folder! And we can also use that for Ruffle too, that way they user just select's the application!
-				fpApp = (config.get("as3.launch.type")=="ruffle" ? nova.config.get("as3.flashPlayer.ruffle") : nova.config.get("as3.flashPlayer.standalone") )
+				fpApp = (launchType=="ruffle" ? nova.config.get("as3.flashPlayer.ruffle") : nova.config.get("as3.flashPlayer.standalone") )
 
 				command = getExec(fpApp);
 				if(command==null) {
-					nova.workspace.showErrorMessage("Flash Player Run/Debug -> " + (config.get("as3.launch.type")=="ruffle" ? "Ruffle" : "Standalone Flash Player") + " Error\n\nProblem finding executable at " + fpApp);
+					nova.workspace.showErrorMessage("Flash Player Run/Debug -> " + (launchType=="ruffle" ? "Ruffle" : "Standalone Flash Player") + " Error\n\nProblem finding executable at " + fpApp);
 					return null;
 				}
 
@@ -1572,7 +1545,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			// To launch ADL, we need to point it to the "-app.xml" file
 			command = flexSDKBase + "/bin/adl";
 
-			var launchMethod = config.get("as3.task.launchMethod");
+			var launchMethod = taskConfig["as3.task.launchMethod"];
 			if(launchMethod=="device") {
 				// @TODO If we don't find devices, ask if they want to continue on desktop or try again?
 				// If we don't have a device, abort and say so.
@@ -1590,7 +1563,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}
 
 			if(projectType=="airmobile") {
-				var screenSize = this.getFormattedScreenSize(config.get("as3.task.deviceToSimulate"));
+				var screenSize = this.getFormattedScreenSize(taskConfig["as3.task.deviceToSimulate"]);
 				if(screenSize==null || screenSize==false) {
 					return null;
 				}
@@ -1600,18 +1573,20 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			args.push("-profile");
 			// Check if the Task set's the profile or if we need to check in the app-xml
-			var profileType = this.getProfileType(config, projectType, appXMLLocation);
+			var profileType = this.getProfileType(taskConfig, projectType, appXMLLocation);
 			args.push(profileType);
 
 			// ADL wants the directory with the ANEs
 			/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
 			/** @NOTE Should check if there's a difference in the Workspace config and the packaging */
+			/*
 			var anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
 			// If there are ANEs, then we need to include the "ane" folder we made with the extracted
 			// ones that to the destination dir.
 			if (nova.inDevMode()) {
 				console.log("anes: " + JSON.stringify(anes));
 			}
+			*/
 			if(anes && anes.length>0) {
 				var aneTempPath = determineAneTempPath();
 				if(aneTempPath==null) {
@@ -2134,57 +2109,74 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let config = context.config;
 		let action = context.action;
 
-		// Check if task overrides values:
-		let configOverrides = {};
+		// We're going to convert our "config" to an array so that we can pass them to our run/build/clean
+		// and package so that even if we launch them manually without Nova's Build/Run and we can
+		// manually package them.
+		var taskConfig = {};
 
-		// Check if the task is using a different SDK
-		let sdkOverride = config.get("as3.compiler.sdk");
-		if(sdkOverride!=null) {
-			configOverrides.sdkBase = sdkOverride;
-		}
+		var getConfigs = [
+			// Needed for building, running and packaging
+			"as3.compiler.sdk",
+			"as3.task.applicationFile",
+			"as3.task.output",
+			"as3.packaging.customANEs",
+			"as3.packaging.anes",
 
-		// Check if there's an application file set in the Task, if so, we need to override those values!
-		let appFileOverride = config.get("as3.task.applicationFile")?.trim();
-		if(appFileOverride) {
-			configOverrides.mainApplicationPath = appFileOverride;
-		}
+			// Needed for packaging!
+			"as3.export.basename",
+			"as3.packaging.customContents",
+			"as3.packaging.certificate",
+			"as3.packaging.type",
+			"as3.target",
+			"as3.export.folder",
+			"as3.deployment.noFlair",
+			"as3.deployment.target",
+			"as3.deployment.arch",
+			"as3.deployment.platfromsdk",
+			"as3.packaging.provisioningFile",
 
-		// If the task sets a different export folder, we'll need to override it!
-		let exportFolderOverride = config.get("as3.task.output")?.trim();
-//			if(config.get("as3.export.folder")!=null && config.get("as3.export.folder")!="") {
-		if(exportFolderOverride) {
-			configOverrides.releasePath = exportFolderOverride;
-		}
+			// For Flash Browser runs
+			"as3.launch.type",
+			"as3.task.launchMethod",
 
-		// Check if the task has custom ANEs set
-		if(config.get("as3.packaging.customANEs")) {
-			let anePathOverride = config.get("as3.packaging.anes");
-			if(anePathOverride) {
-				configOverrides.anes = anePathOverride;
+			// For Mobile runs
+			"as3.task.deviceToSimulate",
+			"as3.task.profile",
+
+			// For Library Builds
+			"as3.lib.classEntries",
+			"as3.lib.resource.dest",
+			"as3.lib.resource.source",
+			"as3.lib.nsm.manifest",
+			"as3.lib.nsm.namespace",
+
+			// For Other Builds
+			"actionscript3.request"
+		]
+
+		// Lop through the configs to see if we got them
+		getConfigs.forEach((configItem) => {
+			if(config.get(configItem)) {
+				taskConfig[configItem] = config.get(configItem);
 			}
-		}
+		})
+		// consoleLogObject(taskConfig);
 
 		if(action==Task.Build) {
 			if(data.type=="library") {
-				return this.buildLibrary(
-					config.get("as3.lib.classEntries"),
-					config.get("as3.lib.resource.dest"),
-					config.get("as3.lib.resource.source"),
-					config.get("as3.lib.nsm.manifest"),
-					config.get("as3.lib.nsm.namespace")
-				);
+				return this.buildLibrary(taskConfig);
 			} else {
 				/** @TODO, should this be a different config, like build mode with or without debug? */
-				return this.build(data.type,  config.get("actionscript3.request"), false, configOverrides);
+				return this.build(data.type, taskConfig);
 			}
 		} else if(action==Task.Run) {
 			if(config.get("as3.run.withDebugger")) {
-				return this.debugRun(data.type, data.os, config, configOverrides);
+				return this.debugRun(data.type, data.os, taskConfig);
 			} else {
-				return this.run(data.type, data.os, config, configOverrides)
+				return this.run(data.type, data.os, taskConfig)
 			}
 		} else if(action==Task.Clean) {
-			const configValues = getConfigsForBuild(true, configOverrides);
+			const configValues = getConfigsForBuild(taskConfig, true);
 			return new TaskCommandAction("as3.clean", { args: [configValues.destDir] });
 		}
 	}

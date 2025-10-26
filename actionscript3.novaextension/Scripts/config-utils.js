@@ -82,25 +82,24 @@ exports.determineAndroidSDKBase = function() {
 }
 
 /**
+ * @deprecated Use the getConfigsForBuild(), it returns the same stuff, sure there's more, but it's a mess to keep both of these for 3 things.
  * Get a bunch of configurations that are needed to export a package
- * @param {String} file - The name of the main application file (if different than the Workspace's
- * configuration)
- * @returns {Object} - Various configs that are needed when packaging a build
+ * @param {Object} taskConfig - An object of elements from the Task that are needed to adjust settings.
+ * @param {boolean} appendWorkspacePath - `true` if the locations should append the workspace location,
+ * or just be relative (set to `false`)
  */
-exports.getConfigsForPacking = function(file, appendWorkspacePath = false, configOverrides = {}) {
+exports.getConfigsForPacking = function(taskConfig = {}, appendWorkspacePath = false) {
+try{
 	var sdkBase = "";
-	if(configOverrides.sdkBase!=null) {
-		sdkBase = configOverrides.sdkBase;
+	if(taskConfig["as3.compiler.sdk"]) {
+		sdkBase = taskConfig["as3.compiler.sdk"];
 	}
 	const flexSDKBase = exports.determineFlexSDKBase(sdkBase);
-	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
-	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
 
 	//const isFlex = nova.workspace.config.get("as3.application.isFlex");
 	var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
-	if(configOverrides.mainApplicationPath) {
-		// console.log("  XXXXXX OVERRIDING - MAIN APP PATH!");
-		mainApplicationPath = configOverrides.mainApplicationPath;
+	if(taskConfig["as3.task.applicationFile"]?.trim()) {
+		mainApplicationPath = taskConfig["as3.task.applicationFile"]?.trim();
 	}
 
 	var mainSrcDir = nova.workspace.config.get("as3.build.source.main");
@@ -113,19 +112,19 @@ exports.getConfigsForPacking = function(file, appendWorkspacePath = false, confi
 		mainSrcDir = "";
 	}
 	mainSrcDir = ensureExpandedUserPath(mainSrcDir); // If a user shortcut, resolve
-
 	if(appendWorkspacePath) {
 		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
 	}
 
-	// If there is a different file for the mainApplication
-	if(!file) {
-		file = mainApplicationPath;
-	}
-	const appAndExportName = exports.getAppXMLNameAndExport(file);
+	const appAndExportName = exports.getAppXMLNameAndExport(mainApplicationPath);
 	const exportName = appAndExportName.exportName;
 	const appXMLName = appAndExportName.appXMLName;
+
+
 	const packageName = exportName.replace(".swf",".air");
+	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
+	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
+
 
 	const configData = {
 		"flexSDKBase": flexSDKBase,
@@ -142,6 +141,7 @@ exports.getConfigsForPacking = function(file, appendWorkspacePath = false, confi
 	}
 
 	return configData;
+}catch(err) { console.log("err: ",err)}
 }
 
 /**
@@ -171,22 +171,21 @@ exports.getAppXMLNameAndExport = function(file) {
 
 /**
  * Checks settings and generates a bunch of options that are needed for building a project
- * @param {boolean} appendWorkspacePath - If we need to append the Workspace's path to items
- * Generally, false for the `asconfig.json`.
- * @returns {Object} - Loads of settings that are needed for building the project
+ * @returns {Object} taskConfig - An object of elements from the Task that are needed to adjust settings.
+ * @param {boolean} appendWorkspacePath - `true` if the locations should append the workspace location,
+ * or just be relative (set to `false`). Generally, false for the `asconfig.json`.
  */
-exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrides = {}) {
+exports.getConfigsForBuild = function(taskConfig = {}, appendWorkspacePath = false) {
 	// console.log("appendWorkspacePath: " + appendWorkspacePath);
 	var sdkBase = "";
-	if(configOverrides.sdkBase!=null) {
-		sdkBase = configOverrides.sdkBase;
+	if(taskConfig["as3.compiler.sdk"]) {
+		sdkBase = taskConfig["as3.compiler.sdk"];
 	}
 	var flexSDKBase = exports.determineFlexSDKBase(sdkBase);
 
 	var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
-	if(configOverrides.mainApplicationPath) {
-		// console.log("  XXXXXX OVERRIDING - MAIN APP PATH!");
-		mainApplicationPath = configOverrides.mainApplicationPath;
+	if(taskConfig["as3.task.applicationFile"]?.trim()) {
+		mainApplicationPath = taskConfig["as3.task.applicationFile"]?.trim();
 	}
 
 	const mainClass = mainApplicationPath.replace(".mxml","").replace(".as","");
@@ -201,7 +200,6 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 		mainSrcDir = "";
 	}
 	mainSrcDir = ensureExpandedUserPath(mainSrcDir); // If a user shortcut, resolve
-
 	if(appendWorkspacePath) {
 		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
 	}
@@ -236,8 +234,11 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	}
 
 	var anes = nova.workspace.config.get("as3.build.anes"); // Reminder, it's build.anes for the project, Task configs use packaging.anes...
-	if(configOverrides.anes) {
-		anes = configOverrides.anes;
+	if(taskConfig["as3.packaging.customANEs"]) {
+		let anePathOverride = taskConfig["as3.packaging.anes"];
+		if(anePathOverride) {
+			anes = anePathOverride;
+		}
 	}
 	var anePaths = [];
 	if(anes) {
@@ -249,9 +250,9 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	}
 
 	var destDir = nova.workspace.config.get("as3.build.output");
-	if(configOverrides.releasePath) {
-		// console.log("  XXXXXX OVERRIDING - DEST DIR!");
-		destDir = configOverrides.releasePath;
+	// If the task sets a different export folder, we'll need to override it!
+	if(taskConfig["as3.task.output"]?.trim()) {
+		destDir = taskConfig["as3.task.output"]?.trim();
 	}
 
 	// If empty, we will assume the default of bin-debug...
@@ -277,20 +278,26 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 	const isFlex = nova.workspace.config.get("as3.application.isFlex");
 
 	const appAndExportName = exports.getAppXMLNameAndExport(mainApplicationPath);
-	var exportName = appAndExportName.exportName;
-	if(configOverrides.exportName) {
+	const exportName = appAndExportName.exportName;
+	// @NOTE Don't think this was used. Maybe we can now add as a taskConfig if wanted...
+	// if(configOverrides.exportName) {
 		// console.log("  XXXXXX OVERRIDING - exportName!");
-		exportName = configOverrides.exportName;
-	}
-	var appXMLName = appAndExportName.appXMLName;
-	if(configOverrides.appXMLName) {
+		// exportName = configOverrides.exportName;
+	// }
+	const appXMLName = appAndExportName.appXMLName;
+	// @NOTE Don't think this was used. Maybe we can now add as a taskConfig if wanted...
+	// if(configOverrides.appXMLName) {
 		// console.log("  XXXXXX OVERRIDING - appXMLName!");
-		appXMLName = configOverrides.appXMLName;
-	}
+		// appXMLName = configOverrides.appXMLName;
+	// }
 
 	const copyAssets = nova.workspace.config.get("as3.compiler.copy");
 
 	const compilerAdditional = nova.workspace.config.get("as3.compiler.additional");
+
+	const packageName = exportName.replace(".swf",".air");
+	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
+	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
 
 	const configData = {
 		"config": "airmobile",
@@ -312,12 +319,16 @@ exports.getConfigsForBuild = function(appendWorkspacePath = false, configOverrid
 		"compilerAdditional": compilerAdditional,
 		// Used by library building
 		"linkage": linkage,
-		"componentSet": componentSet
+		"componentSet": componentSet,
+		// For Packaging
+		"packageName": packageName,
+		"doTimestamp": doTimestamp,
+		"timestampURL": timestampURL,
 	};
 
 	if(nova.inDevMode()) {
-		// console.log("*** ---===[ Here are the building settings from the project ]===--- ***");
-		// consoleLogObject(configData);
+		console.log("*** ---===[ Here are the building settings from the project ]===--- ***");
+		consoleLogObject(configData);
 	}
 
 	return configData;

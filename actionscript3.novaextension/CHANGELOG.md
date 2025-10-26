@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - Unreleased
+
+### Changed
+
+- Internal changes - Rewrote how Task configs are passed to build and run
+
 ## [0.11.3] - 2025-10-23
 
 ### Added
