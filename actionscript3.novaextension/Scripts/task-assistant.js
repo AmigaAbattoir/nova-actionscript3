@@ -1,6 +1,6 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
-const { determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuild, getConfigsForPacking } = require("./config-utils.js");
+const { determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuildAndPacking } = require("./config-utils.js");
 const { determineProjectUUID, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
 const { installSDKPrompt, getAIRSDKInfo, isAIRSDKInstalled } = require("./sdk-utils.js");
@@ -35,6 +35,25 @@ function displayANEsTempPathError(path) {
 	var message = "ANE Temp Path Errror\n\nThere was a problem extracting ANEs to it's temporary path of:\n" + path + ".\n\n";
 	message += "If you try to build again and this error comes up, please check if that path is a valid one. You can also get this path from the menu `Check ANE temp dir`.";
 	nova.workspace.showErrorMessage(message);
+}
+
+function checkMacBuildForIcons(taskConfig) {
+	const configValues = getConfigsForBuildAndPacking(taskConfig, true);
+	let mainSrcDir = configValues.mainSrcDir;
+	let appXMLName = configValues.appXMLName;
+	let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
+	let appXML = getStringOfFile(appXMLLocation);
+	if(appXML!=null) {
+		// Read the App XML and make sure the Namespace is the same version!
+		var check1 = new xmlToJson.ns3x2j(appXML).findNodesByName("image16x16");
+		var check2 = new xmlToJson.ns3x2j(appXML).findNodesByName("image32x32");
+		var check3 = new xmlToJson.ns3x2j(appXML).findNodesByName("image48x48");
+		var check4 = new xmlToJson.ns3x2j(appXML).findNodesByName("image128x128");
+
+		if(check1.length==0 || check2.length==0 || check3.length==0 || check4.length==0) {
+			showNotification("Default Icon for app may be used","If you do not have <image16x16>, <image32x32>, <image48x48>, and <image128x128> in your app descriptor, you may get an empty, default Mac icon instead","Oh no!","bad-icon");
+		}
+	}
 }
 
 /**
@@ -227,71 +246,13 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						}
 					}
 
+					// If default (desktop), then for Mac, certain icons aren't set, then it will be a default empty icon
+					if(taskConfig["as3.target"]=="default") {
+						checkMacBuildForIcons(taskConfig);
+					}
+
 					showNotification("Export Release Build started","Attempting to package " + taskFileName.replace(".json","") + "...","Please wait", "-packaging");
 					this.build(projectType, taskConfig, true).then((resolve) => {
-						const configValues = getConfigsForBuild(taskConfig, true);
-
-						let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
-						let appXMLName = configValues.appXMLName;
-						let doTimestamp= configValues.doTimestamp;
-						let timestampURL= configValues.timestampURL;
-
-						// Check if there is a custom name in the Task
-						let packageName = configValues.packageName;
-						if(taskConfig["as3.export.basename"] && taskConfig["as3.export.basename"].trim()!="") {
-							packageName = taskConfig["as3.export.basename"];
-							if(packageName.endsWith(".air")==false) {
-								packageName += ".air";
-							}
-						}
-						// Loop through the output, and copy things unless specified to exclude like the .actionScriptProperties
-						let alsoIgnore = nova.workspace.config.get("as3.packaging.excludedFiles");
-						// Check if the Task has custom content setting marked true and then use it says to use custom setting for it!
-						if(taskConfig["as3.packaging.customContents"] && taskConfig["as3.packaging.customContents"]==true) {
-							alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
-						}
-
-						if(alsoIgnore) {
-							alsoIgnore.forEach((ignore) => {
-								//console.log("Ignroe: " + ignore);
-								//console.log("[["+nova.workspace.path + "/" + releasePath + "/" + ignore +"]]");
-								try{
-									if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isFile()) {
-										//console.log("    REMOVE FILE + " + ignore + " !");
-										nova.fs.remove(nova.workspace.path + "/" + releasePath + "/" + ignore);
-									} else if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isDirectory()) {
-										//console.log("    REMOVE DIR + " + ignore + " !");
-										nova.fs.rmdir(nova.workspace.path + "/" + releasePath + "/" + ignore);
-									} else {
-										//console.log("    Don't do anything " + ignore + " !");
-									}
-								} catch(error) {
-									// @TODO, Flash Builder would remove this entry from the excluded items
-									//console.log("    Not there skip " + error);
-								}
-								//console.log("DONE!");
-							});
-						}
-
-						// If default (desktop), then for Mac, certain icons aren't set, then it will be a default empty icon
-						if(taskConfig["as3.target"]=="default") {
-							let mainSrcDir = configValues.mainSrcDir;
-							let appXMLName = configValues.appXMLName;
-							let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
-							let appXML = getStringOfFile(appXMLLocation);
-							if(appXML!=null) {
-								// Read the App XML and make sure the Namespace is the same version!
-								var check1 = new xmlToJson.ns3x2j(appXML).findNodesByName("image16x16");
-								var check2 = new xmlToJson.ns3x2j(appXML).findNodesByName("image32x32");
-								var check3 = new xmlToJson.ns3x2j(appXML).findNodesByName("image48x48");
-								var check4 = new xmlToJson.ns3x2j(appXML).findNodesByName("image128x128");
-
-								if(check1.length==0 || check2.length==0 || check3.length==0 || check4.length==0) {
-									showNotification("Default Icon for app may be used","If you do not have <image16x16>, <image32x32>, <image48x48>, and <image128x128> in your app descriptor, you may get an empty, default Mac icon instead","Oh no!","bad-icon");
-								}
-							}
-						}
-
 						// Check if the Task has a custom certificate set for it!
 						if(taskConfig["as3.packaging.certificate"] && taskConfig["as3.packaging.certificate"]!="") {
 							certificateLocation = taskConfig["as3.packaging.certificate"];
@@ -358,229 +319,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 								}
 							}
 
-							// ------ PACKAGING with ADT! -------- //
-							var command = flexSDKBase + "/bin/adt";
-							var args = [];
-							var env = {};
-
-							// Replace with function, passing the certificateLocation and password?!
-							if(taskConfig["as3.packaging.type"]=="intermediate") {
-								args.push("-prepare");
-								packageName = packageName.replace(/\.air$/, ".airi");
-							} else {
-								args.push("-package");
-
-								// Only for Android building
-								if(taskConfig["as3.target"]=="android") {
-									// Check if we want to disable AIR Flair. I know I do!
-									var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
-									if(noAndroidAirFlair!=undefined) {
-										// console.log("AIR FLAIR: " + noAndroidAirFlair);
-									} else {
-										noAndroidAirFlair = false;
-										// console.log("AIR FLAIR undefined, so now it'll be false!");
-									}
-
-									if(noAndroidAirFlair) {
-										env = { AIR_NOANDROIDFLAIR: "true" };
-									}
-
-									args.push("-target");
-									var targetType = taskConfig["as3.deployment.target"];
-									if(targetType==null) {
-										targetType = "apk"
-									}
-									args.push(targetType);
-									if(targetType.indexOf("aab")!=-1) {
-										packageName = packageName.replace(/\.air$/, ".aab");
-									} else {
-										// @NOTE Not sure what the android-studio packages should be...
-										packageName = packageName.replace(/\.air$/, ".apk");
-									}
-									args.push("-arch");
-									// console.log("taskConfig: ");
-									// consoleLogObject(taskConfig);
-									// console.log("taskConfig[as3.deployment.arch]: " + taskConfig["as3.deployment.arch"]);
-									var archType = taskConfig["as3.deployment.arch"];
-									if(archType==null) {
-										archType = "armv7";
-									}
-									args.push(archType);
-								}else if(taskConfig["as3.target"]=="ios") {
-									args.push("-target");
-									args.push("ipa-debug");
-
-									packageName = packageName.replace(/\.air$/, ".ipa");
-								}
-
-								args.push("-storetype");
-								args.push("pkcs12");
-
-								args.push("-keystore");
-								args.push(certificateLocation);
-
-								args.push("-storepass");
-								args.push(password);
-
-								if(taskConfig["as3.target"]=="ios") {
-									args.push("-provisioning-profile");
-									args.push(provisioningProfile);
-								}
-
-								if(taskConfig["as3.target"]!="ios" && taskConfig["as3.target"]!="android") {
-									if(doTimestamp==false ) {
-										args.push("-tsa");
-										args.push("none");
-									} else {
-										if(timestampURL!=null && timestampURL!="") {
-											args.push("-tsa");
-											args.push(timestampURL);
-										}
-									}
-								}
-
-								// In order to build a native app installer or an app with captive runtime, the `-target`
-								// needs to be after the SIGNING_OPTIONS or it will fails saying "Native signing not supported on mac"
-								if(taskConfig["as3.target"]!="android" && taskConfig["as3.target"]!="ios") {
-									switch(taskConfig["as3.packaging.type"]) {
-										case "signed-native": {
-											nova.workspace.showErrorMessage("Signed native installers not supported (yet)!");
-											args.push("-target");
-											args.push("native");
-
-											packageName = packageName.replace(/\.air$/, ".dmg");
-											break;
-										}
-										case "signed-captive": {
-											args.push("-target");
-											args.push("bundle");
-
-											packageName = packageName.replace(/\.air$/, ".app");
-											break;
-										}
-										default: {
-											break;
-										}
-									}
-								}
-							}
-
-							// Set location and AIR (or APK, AAB, IPA) Package name
-							let exportLocation = nova.workspace.path;
-							if(taskConfig["as3.export.folder"]) {
-								exportLocation = nova.path.join(nova.workspace.path, taskConfig["as3.export.folder"]);
-								if(ensureFolderIsAvailable(exportLocation)==false) {
-									cancelNotification("-packaging");
-									nova.workspace.showErrorMessage("Export Release Build failed!\n\nCannot export to folder "+exportLocation);
-								}
-							}
-							let outputFile = nova.path.join(exportLocation, packageName);
-							args.push(outputFile);
-
-							// Descriptor
-							args.push(appXMLName);
-
-							// Usage
-							let baseFolderPath = nova.path.join(nova.workspace.path, releasePath);
-							let files = listFilesRecursively(baseFolderPath);
-							files.forEach((file) => {
-								if(file!=appXMLName) {
-									//args.push("-C");
-									args.push(file);
-									// console.log("SHOULD INCLUDE: " + file);
-								} else {
-									// console.log("Skip: " + file);
-								}
-							});
-
-							// For Android, add the platform SDK
-							// @TODO Check which version of the SDK this became an option
-							if(taskConfig["as3.target"]=="android") {
-								args.push("-platformsdk");
-								var platformSdk = taskConfig["as3.deployment.platfromsdk"];
-								if(platformSdk==null) {
-									platformSdk = "~/Library/Android/sdk"
-								}
-								if (platformSdk.charAt(0) == "~") {
-									platformSdk = nova.path.expanduser(platformSdk);
-								}
-								args.push(platformSdk);
-							}
-
-							var anes = taskConfig["as3.packaging.anes"];
-							// If there are ANEs, then we need to include the "ane" folder we made with the extracted
-							// ones that to the destination dir.
-							if (nova.inDevMode()) {
-								console.log("anes: " + JSON.stringify(anes));
-							}
-
-							if(anes && anes.length>0) {
-								var aneTempPath = determineAneTempPath("release-");
-								if(aneTempPath==null) {
-									cancelNotification("-packaging");
-									displayANEsTempPathError(aneTempPath);
-									return null;
-								}
-								args.push("-extdir");
-								args.push(aneTempPath+"-packed");
-							}
-
-							args.unshift(command);
-							var process = new Process("/usr/bin/env", {
-								args: args,
-								cwd: baseFolderPath,
-								env: env
-							});
-
-							// consoleLogObject(process);
-							if (nova.inDevMode()) {
-								console.log(" *** COMMAND [[" + command + "]] ARG: \n");
-								consoleLogObject(args);
-							}
-
-							var stdout = "";
-							var stderr = "";
-							process.onStdout(function(line) {
-								if (nova.inDevMode()) { console.log("STDOUT: " + line); }
-								stdout += line;
-							});
-							process.onStderr(function(line) {
-								if (nova.inDevMode()) { console.log("STDERR: " + line); }
-								stderr += line;
-							});
-							process.start();
-							process.onDidExit((status) => {
-								cancelNotification("-packaging");
-								if (nova.inDevMode()) {
-									consoleLogObject(status);
-								}
-								if(status==0) {
-									if(taskConfig["as3.export.deleteAfterSuccess"]!==false) {
-										nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
-										// If there are ANEs, clean them up too!
-										if(anes && anes.length>0) {
-											nova.fs.rmdir(aneTempPath);
-											nova.fs.rmdir(aneTempPath+"-packed");
-										}
-									}
-									nova.workspace.showActionPanel("Export Package Successful!", { buttons: [ "Okay", "Show in Finder"] },
-										(result) => {
-											if(result==1) {
-												nova.fs.reveal(nova.path.join(exportLocation, packageName));
-											}
-										}
-									);
-								} else {
-									var result = resolveStatusCodeFromADT(status);
-									var message = result.message;
-									if (nova.inDevMode()) {
-										console.log("Final RESULT: ");
-										console.log("STDOUT: " + stdout);
-										console.log("STDERR: " + stderr);
-									}
-									nova.workspace.showErrorMessage("Export Package Failed" + "\n\n" + message + "\n\n" + stderr);
-								}
-							})
+							this.package(projectType, taskConfig, releasePath, certificateLocation, password);
 						},(reject) => {
 							// console.log("passwordGet.then((reject): ");
 							nova.workspace.showErrorMessage("Password failed!\n\n" + reject);
@@ -609,7 +348,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Array} namespaceManifestEntryNamespaces - The namespaced used for these manifest XMLs. There needs to be the same amount of `namespaceManifestEntryManifests` and `namespaceManifestEntryNamespaces`!
 	 */
 	buildLibrary(taskConfig) { //},classEntries, resourceDestPathEntries, resourceSourcePathEntries, namespaceManifestEntryManifests, namespaceManifestEntryNamespaces) {
-		const configValues = getConfigsForBuild(taskConfig, false);
+		const configValues = getConfigsForBuildAndPacking(taskConfig, false);
 
 		let classEntries = taskConfig["as3.lib.classEntries"];
 		let resourceDestPathEntries = taskConfig["as3.lib.resource.dest"];
@@ -937,6 +676,286 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return parseInt(dpi);
 	}
 
+	package(projectType, taskConfig, releasePath, certificateLocation, password) {
+		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
+
+		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
+		let appXMLName = configValues.appXMLName;
+		let doTimestamp= configValues.doTimestamp;
+		let timestampURL= configValues.timestampURL;
+
+		// Check for iOS Provisioning Profile
+		var provisioningProfile;
+		// If we are packaing for iOS, we want to make sure that the provisioning profile is set before attempting to build
+		if(taskConfig["as3.target"]=="ios") {
+			provisioningProfile = taskConfig["as3.packaging.provisioningFile"];
+			if(provisioningProfile==undefined || provisioningProfile==null) {
+				nova.workspace.showErrorMessage("When exporting a package for iOS, you must set a provisioningProfile in the Task!");
+				return;
+			}
+		}
+
+		// Check if there is a custom name in the Task
+		let packageName = configValues.packageName;
+		if(taskConfig["as3.export.basename"] && taskConfig["as3.export.basename"].trim()!="") {
+			packageName = taskConfig["as3.export.basename"];
+			if(packageName.endsWith(".air")==false) {
+				packageName += ".air";
+			}
+		}
+		// Loop through the output, and copy things unless specified to exclude like the .actionScriptProperties
+		let alsoIgnore = nova.workspace.config.get("as3.packaging.excludedFiles");
+		// Check if the Task has custom content setting marked true and then use it says to use custom setting for it!
+		if(taskConfig["as3.packaging.customContents"] && taskConfig["as3.packaging.customContents"]==true) {
+			alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
+		}
+
+		if(alsoIgnore) {
+			alsoIgnore.forEach((ignore) => {
+				//console.log("Ignroe: " + ignore);
+				//console.log("[["+nova.workspace.path + "/" + releasePath + "/" + ignore +"]]");
+				try{
+					if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isFile()) {
+						//console.log("    REMOVE FILE + " + ignore + " !");
+						nova.fs.remove(nova.workspace.path + "/" + releasePath + "/" + ignore);
+					} else if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isDirectory()) {
+						//console.log("    REMOVE DIR + " + ignore + " !");
+						nova.fs.rmdir(nova.workspace.path + "/" + releasePath + "/" + ignore);
+					} else {
+						//console.log("    Don't do anything " + ignore + " !");
+					}
+				} catch(error) {
+					// @TODO, Flash Builder would remove this entry from the excluded items
+					//console.log("    Not there skip " + error);
+				}
+				//console.log("DONE!");
+			});
+		}
+
+		var command = flexSDKBase + "/bin/adt";
+		var args = [];
+		var env = {};
+
+		// Replace with function, passing the certificateLocation and password?!
+		if(taskConfig["as3.packaging.type"]=="intermediate") {
+			args.push("-prepare");
+			packageName = packageName.replace(/\.air$/, ".airi");
+		} else {
+			args.push("-package");
+
+			// Only for Android building
+			if(taskConfig["as3.target"]=="android") {
+				// Check if we want to disable AIR Flair. I know I do!
+				var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
+				if(noAndroidAirFlair!=undefined) {
+					// console.log("AIR FLAIR: " + noAndroidAirFlair);
+				} else {
+					noAndroidAirFlair = false;
+					// console.log("AIR FLAIR undefined, so now it'll be false!");
+				}
+
+				if(noAndroidAirFlair) {
+					env = { AIR_NOANDROIDFLAIR: "true" };
+				}
+
+				args.push("-target");
+				var targetType = taskConfig["as3.deployment.target"];
+				if(targetType==null) {
+					targetType = "apk"
+				}
+				args.push(targetType);
+				if(targetType.indexOf("aab")!=-1) {
+					packageName = packageName.replace(/\.air$/, ".aab");
+				} else {
+					// @NOTE Not sure what the android-studio packages should be...
+					packageName = packageName.replace(/\.air$/, ".apk");
+				}
+				args.push("-arch");
+				// console.log("taskConfig: ");
+				// consoleLogObject(taskConfig);
+				// console.log("taskConfig[as3.deployment.arch]: " + taskConfig["as3.deployment.arch"]);
+				var archType = taskConfig["as3.deployment.arch"];
+				if(archType==null) {
+					archType = "armv7";
+				}
+				args.push(archType);
+			}else if(taskConfig["as3.target"]=="ios") {
+				args.push("-target");
+				args.push("ipa-debug");
+
+				packageName = packageName.replace(/\.air$/, ".ipa");
+			}
+
+			args.push("-storetype");
+			args.push("pkcs12");
+
+			args.push("-keystore");
+			args.push(certificateLocation);
+
+			args.push("-storepass");
+			args.push(password);
+
+			if(taskConfig["as3.target"]=="ios") {
+				args.push("-provisioning-profile");
+				args.push(provisioningProfile);
+			}
+
+			if(taskConfig["as3.target"]!="ios" && taskConfig["as3.target"]!="android") {
+				if(doTimestamp==false ) {
+					args.push("-tsa");
+					args.push("none");
+				} else {
+					if(timestampURL!=null && timestampURL!="") {
+						args.push("-tsa");
+						args.push(timestampURL);
+					}
+				}
+			}
+
+			// In order to build a native app installer or an app with captive runtime, the `-target`
+			// needs to be after the SIGNING_OPTIONS or it will fails saying "Native signing not supported on mac"
+			if(taskConfig["as3.target"]!="android" && taskConfig["as3.target"]!="ios") {
+				switch(taskConfig["as3.packaging.type"]) {
+					case "signed-native": {
+						nova.workspace.showErrorMessage("Signed native installers not supported (yet)!");
+						args.push("-target");
+						args.push("native");
+
+						packageName = packageName.replace(/\.air$/, ".dmg");
+						break;
+					}
+					case "signed-captive": {
+						args.push("-target");
+						args.push("bundle");
+
+						packageName = packageName.replace(/\.air$/, ".app");
+						break;
+					}
+					default: {
+						break;
+					}
+				}
+			}
+		}
+
+		// Set location and AIR (or APK, AAB, IPA) Package name
+		let exportLocation = nova.workspace.path;
+		if(taskConfig["as3.export.folder"]) {
+			exportLocation = nova.path.join(nova.workspace.path, taskConfig["as3.export.folder"]);
+			if(ensureFolderIsAvailable(exportLocation)==false) {
+				cancelNotification("-packaging");
+				nova.workspace.showErrorMessage("Export Release Build failed!\n\nCannot export to folder "+exportLocation);
+			}
+		}
+		let outputFile = nova.path.join(exportLocation, packageName);
+		args.push(outputFile);
+
+		// Descriptor
+		args.push(appXMLName);
+
+		// Usage
+		let baseFolderPath = nova.path.join(nova.workspace.path, releasePath);
+		let files = listFilesRecursively(baseFolderPath);
+		files.forEach((file) => {
+			if(file!=appXMLName) {
+				//args.push("-C");
+				args.push(file);
+				// console.log("SHOULD INCLUDE: " + file);
+			} else {
+				// console.log("Skip: " + file);
+			}
+		});
+
+		// For Android, add the platform SDK
+		// @TODO Check which version of the SDK this became an option
+		if(taskConfig["as3.target"]=="android") {
+			args.push("-platformsdk");
+			var platformSdk = taskConfig["as3.deployment.platfromsdk"];
+			if(platformSdk==null) {
+				platformSdk = "~/Library/Android/sdk"
+			}
+			if (platformSdk.charAt(0) == "~") {
+				platformSdk = nova.path.expanduser(platformSdk);
+			}
+			args.push(platformSdk);
+		}
+
+		var anes = taskConfig["as3.packaging.anes"];
+		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
+		// ones that to the destination dir.
+		if (nova.inDevMode()) {
+			console.log("anes: " + JSON.stringify(anes));
+		}
+
+		if(anes && anes.length>0) {
+			var aneTempPath = determineAneTempPath("release-");
+			if(aneTempPath==null) {
+				cancelNotification("-packaging");
+				displayANEsTempPathError(aneTempPath);
+				return null;
+			}
+			args.push("-extdir");
+			args.push(aneTempPath+"-packed");
+		}
+
+		args.unshift(command);
+		var process = new Process("/usr/bin/env", {
+			args: args,
+			cwd: baseFolderPath,
+			env: env
+		});
+
+		// consoleLogObject(process);
+		if (nova.inDevMode()) {
+			console.log(" *** COMMAND [[" + command + "]] ARG: \n");
+			consoleLogObject(args);
+		}
+
+		var stdout = "";
+		var stderr = "";
+		process.onStdout(function(line) {
+			if (nova.inDevMode()) { console.log("STDOUT: " + line); }
+			stdout += line;
+		});
+		process.onStderr(function(line) {
+			if (nova.inDevMode()) { console.log("STDERR: " + line); }
+			stderr += line;
+		});
+		process.start();
+		process.onDidExit((status) => {
+			cancelNotification("-packaging");
+			if (nova.inDevMode()) {
+				consoleLogObject(status);
+			}
+			if(status==0) {
+				if(taskConfig["as3.export.deleteAfterSuccess"]!==false) {
+					nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
+					// If there are ANEs, clean them up too!
+					if(anes && anes.length>0) {
+						nova.fs.rmdir(aneTempPath);
+						nova.fs.rmdir(aneTempPath+"-packed");
+					}
+				}
+				nova.workspace.showActionPanel("Export Package Successful!", { buttons: [ "Okay", "Show in Finder"] },
+					(result) => {
+						if(result==1) {
+							nova.fs.reveal(nova.path.join(exportLocation, packageName));
+						}
+					}
+				);
+			} else {
+				var result = resolveStatusCodeFromADT(status);
+				var message = result.message;
+				if (nova.inDevMode()) {
+					console.log("Final RESULT: ");
+					console.log("STDOUT: " + stdout);
+					console.log("STDERR: " + stderr);
+				}
+				nova.workspace.showErrorMessage("Export Package Failed" + "\n\n" + message + "\n\n" + stderr);
+			}
+		});
+	}
+
 	/**
 	 * Builds the SWF for the project
 	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
@@ -947,7 +966,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	build(projectType, taskConfig, packageAfterBuild = false, returnAsProcess = false) {
 		var runMode = taskConfig["actionscript3.request"];
 
-		const configValues = getConfigsForBuild(taskConfig, true);
+		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		if(flexSDKBase==null) {
@@ -1326,7 +1345,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {Object} taskConfig - The Task's configs
 	 */
 	debugRun(projectType, projectOS, taskConfig) {
-		const configValues = getConfigsForBuild(taskConfig, true);
+		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 
 		// console.log("CONFIG VALUES: ");
 		// consoleLogObject(configValues);
@@ -1473,7 +1492,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		let command = "";
 		let args = [];
 
-		const configValues = getConfigsForBuild(taskConfig, true);
+		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		let destDir = configValues.destDir;
 		let appXMLName = configValues.appXMLName;
@@ -2176,7 +2195,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				return this.run(data.type, data.os, taskConfig)
 			}
 		} else if(action==Task.Clean) {
-			const configValues = getConfigsForBuild(taskConfig, true);
+			const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 			return new TaskCommandAction("as3.clean", { args: [configValues.destDir] });
 		}
 	}

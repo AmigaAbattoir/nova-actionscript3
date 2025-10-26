@@ -82,69 +82,6 @@ exports.determineAndroidSDKBase = function() {
 }
 
 /**
- * @deprecated Use the getConfigsForBuild(), it returns the same stuff, sure there's more, but it's a mess to keep both of these for 3 things.
- * Get a bunch of configurations that are needed to export a package
- * @param {Object} taskConfig - An object of elements from the Task that are needed to adjust settings.
- * @param {boolean} appendWorkspacePath - `true` if the locations should append the workspace location,
- * or just be relative (set to `false`)
- */
-exports.getConfigsForPacking = function(taskConfig = {}, appendWorkspacePath = false) {
-try{
-	var sdkBase = "";
-	if(taskConfig["as3.compiler.sdk"]) {
-		sdkBase = taskConfig["as3.compiler.sdk"];
-	}
-	const flexSDKBase = exports.determineFlexSDKBase(sdkBase);
-
-	//const isFlex = nova.workspace.config.get("as3.application.isFlex");
-	var mainApplicationPath =  nova.workspace.config.get("as3.application.mainApp");
-	if(taskConfig["as3.task.applicationFile"]?.trim()) {
-		mainApplicationPath = taskConfig["as3.task.applicationFile"]?.trim();
-	}
-
-	var mainSrcDir = nova.workspace.config.get("as3.build.source.main");
-	// If empty, we are assuming there is a `src/`...
-	if(mainSrcDir=="") {
-		mainSrcDir = "src";
-	}
-	// If it's a dot slash, we can officially make it empty!
-	if(mainSrcDir=="./") {
-		mainSrcDir = "";
-	}
-	mainSrcDir = ensureExpandedUserPath(mainSrcDir); // If a user shortcut, resolve
-	if(appendWorkspacePath) {
-		mainSrcDir = nova.path.join(nova.workspace.path, mainSrcDir);
-	}
-
-	const appAndExportName = exports.getAppXMLNameAndExport(mainApplicationPath);
-	const exportName = appAndExportName.exportName;
-	const appXMLName = appAndExportName.appXMLName;
-
-
-	const packageName = exportName.replace(".swf",".air");
-	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
-	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
-
-
-	const configData = {
-		"flexSDKBase": flexSDKBase,
-		"mainSrcDir": mainSrcDir,
-		"packageName": packageName,
-		"appXMLName": appXMLName,
-		"doTimestamp": doTimestamp,
-		"timestampURL": timestampURL
-	};
-
-	if(nova.inDevMode()) {
-		// console.log("*** ---===[ Here are the packaging settings from the project ]===--- ***");
-		// consoleLogObject(configData);
-	}
-
-	return configData;
-}catch(err) { console.log("err: ",err)}
-}
-
-/**
  * Figures out the export and appXMLName based on the file given.
  * @param {String} file - The name of the main file that is being built
  * @returns {Object} - An object with the exportName and appXMLName
@@ -175,7 +112,7 @@ exports.getAppXMLNameAndExport = function(file) {
  * @param {boolean} appendWorkspacePath - `true` if the locations should append the workspace location,
  * or just be relative (set to `false`). Generally, false for the `asconfig.json`.
  */
-exports.getConfigsForBuild = function(taskConfig = {}, appendWorkspacePath = false) {
+exports.getConfigsForBuildAndPacking = function(taskConfig = {}, appendWorkspacePath = false) {
 	// console.log("appendWorkspacePath: " + appendWorkspacePath);
 	var sdkBase = "";
 	if(taskConfig["as3.compiler.sdk"]) {
@@ -327,7 +264,7 @@ exports.getConfigsForBuild = function(taskConfig = {}, appendWorkspacePath = fal
 	};
 
 	if(nova.inDevMode()) {
-		console.log("*** ---===[ Here are the building settings from the project ]===--- ***");
+		console.log("*** ---===[ Here are the building and packaging settings from the project ]===--- ***");
 		consoleLogObject(configData);
 	}
 

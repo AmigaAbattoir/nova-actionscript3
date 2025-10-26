@@ -1,11 +1,11 @@
 const { getStringOfFile, writeJsonToFile } = require("./nova-utils.js");
-const { determineFlexSDKBase, getConfigsForBuild } = require("./config-utils.js");
+const { getConfigsForBuildAndPacking } = require("./config-utils.js");
 
 /**
  * Generates a minimal `asconfig.json` file to allow AS3MXML to help with code intelligence.
  */
 exports.makeASConfigFile = function() {
-	const configValues = getConfigsForBuild();
+	const configValues = getConfigsForBuildAndPacking();
 	// This make a minimal asconfig.json.
 	let asconfigContent = {
 		"config": configValues.config,
@@ -36,7 +36,7 @@ exports.updateASConfigFile = function() {
 		asconfig = JSON.parse(asconfigText);
 	}
 
-	const configValues = getConfigsForBuild();
+	const configValues = getConfigsForBuildAndPacking();
 
 	asconfig["config"] = configValues.config;
 	// @NOTE, haven't work on libs yet, but when I do, you need to set: `asconfig["type"] =  "lib"`. Maybe;
