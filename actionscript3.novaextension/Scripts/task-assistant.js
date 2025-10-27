@@ -676,7 +676,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		return parseInt(dpi);
 	}
 
-	package(projectType, taskConfig, releasePath, certificateLocation, password) {
+	/**
+	 * Packages the AIR project. This can be used for final export.
+	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
+	 * @param {Object} taskConfig - Values from the Task (converted to an object array of the elements needed)
+	 * @param {string} releasePath - The path where to place the final output
+	 * @param {string} certificateLocation - The path of the certificate used to sign the package
+	 * @param {string} password - The password used for signing the package
+	 * @param {boolean} forRunOrDebug - Default is `false` for packaging a release, otherwise `true` if this is going to be used for run/debug
+	 */
+	package(projectType, taskConfig, releasePath, certificateLocation, password, forRunOrDebug = false) {
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
@@ -691,7 +700,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			provisioningProfile = taskConfig["as3.packaging.provisioningFile"];
 			if(provisioningProfile==undefined || provisioningProfile==null) {
 				nova.workspace.showErrorMessage("When exporting a package for iOS, you must set a provisioningProfile in the Task!");
-				return;
+				return Promise.reject({success: false});
 			}
 		}
 
@@ -892,7 +901,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(aneTempPath==null) {
 				cancelNotification("-packaging");
 				displayANEsTempPathError(aneTempPath);
-				return null;
+				return Promise.reject({success: false});
 			}
 			args.push("-extdir");
 			args.push(aneTempPath+"-packed");
@@ -922,37 +931,47 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			stderr += line;
 		});
 		process.start();
-		process.onDidExit((status) => {
-			cancelNotification("-packaging");
-			if (nova.inDevMode()) {
-				consoleLogObject(status);
-			}
-			if(status==0) {
-				if(taskConfig["as3.export.deleteAfterSuccess"]!==false) {
-					nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
-					// If there are ANEs, clean them up too!
-					if(anes && anes.length>0) {
-						nova.fs.rmdir(aneTempPath);
-						nova.fs.rmdir(aneTempPath+"-packed");
-					}
-				}
-				nova.workspace.showActionPanel("Export Package Successful!", { buttons: [ "Okay", "Show in Finder"] },
-					(result) => {
-						if(result==1) {
-							nova.fs.reveal(nova.path.join(exportLocation, packageName));
-						}
-					}
-				);
-			} else {
-				var result = resolveStatusCodeFromADT(status);
-				var message = result.message;
+		return new Promise((resolve, reject) => {
+			process.onDidExit((status) => {
+				cancelNotification("-packaging");
 				if (nova.inDevMode()) {
-					console.log("Final RESULT: ");
-					console.log("STDOUT: " + stdout);
-					console.log("STDERR: " + stderr);
+					consoleLogObject(status);
 				}
-				nova.workspace.showErrorMessage("Export Package Failed" + "\n\n" + message + "\n\n" + stderr);
-			}
+				if(status==0) {
+					if(forRunOrDebug==false) {
+						if(taskConfig["as3.export.deleteAfterSuccess"]!==false) {
+							nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
+							// If there are ANEs, clean them up too!
+							if(anes && anes.length>0) {
+								nova.fs.rmdir(aneTempPath);
+								nova.fs.rmdir(aneTempPath+"-packed");
+							}
+						}
+						nova.workspace.showActionPanel("Export Package Successful!", { buttons: [ "Okay", "Show in Finder"] },
+							(result) => {
+								if(result==1) {
+									nova.fs.reveal(nova.path.join(exportLocation, packageName));
+								}
+							}
+						);
+					}
+					resolve({ success: true });
+				} else {
+					var result = resolveStatusCodeFromADT(status);
+					var message = result.message;
+					if (nova.inDevMode()) {
+						console.log("Final RESULT: ");
+						console.log("STDOUT: " + stdout);
+						console.log("STDERR: " + stderr);
+					}
+					if(forRunOrDebug) {
+						nova.workspace.showErrorMessage("Issue Packaging for Device Run" + "\n\n" + message + "\n\n" + stderr);
+					} else {
+						nova.workspace.showErrorMessage("Export Package Failed" + "\n\n" + message + "\n\n" + stderr);
+					}
+					reject({ success: false, message, stderr });
+				}
+			});
 		});
 	}
 
