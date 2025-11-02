@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
-const { determineFlexSDKBase, getAppXMLNameAndExport, getConfigsForBuildAndPacking } = require("./config-utils.js");
-const { determineProjectUUID, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
+const { determineFlexSDKBase, determineAndroidSDKBase, getAppXMLNameAndExport, getConfigsForBuildAndPacking } = require("./config-utils.js");
+const { determineProjectUUID, determineTempPath, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
 const { installSDKPrompt, getAIRSDKInfo, isAIRSDKInstalled } = require("./sdk-utils.js");
 
@@ -37,6 +37,12 @@ function displayANEsTempPathError(path) {
 	nova.workspace.showErrorMessage(message);
 }
 
+function displayTempPathError(path) {
+	var message = "Temp Path Errror\n\nThere was a problem extracting copying file to it's temporary path of:\n" + path + ".\n\n";
+	message += "If you try to build again and this error comes up, please check if that path is a valid one.";
+	nova.workspace.showErrorMessage(message);
+}
+
 function checkMacBuildForIcons(taskConfig) {
 	const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 	let mainSrcDir = configValues.mainSrcDir;
@@ -66,7 +72,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	ignoreCopy = [ ".java", ".class", ".properties", ".mxml", ".as", ".fxg",
 		".classpath", "flex-config.xml", "air-config.xml", "services-config.xml", "remoting-config.xml", "proxy-config.xml", "massaging-config.xml", "data-management-config.xml",
 		// Also, ignore these things.
-		".git",".svn",".DS_Store", "-app.xml"
+		".git",".svn",".DS_Store", "-app.xml",
+		// And these:
+		".apk",".abb",".ipa"
 	];
 
 	/**
@@ -318,6 +326,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									break;
 								}
 							}
+
+console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+console.log("&&&& PACKAGE BUILDER TASKCONFIG &&&&&&&&&&&&&&&&&&&&&&&&")
+consoleLogObject(taskConfig);
+console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 
 							this.package(projectType, taskConfig, releasePath, certificateLocation, password);
 						},(reject) => {
@@ -680,12 +694,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * Packages the AIR project. This can be used for final export.
 	 * @param {string} projectType - Which type of build, "air|airmobile|flex"
 	 * @param {Object} taskConfig - Values from the Task (converted to an object array of the elements needed)
-	 * @param {string} releasePath - The path where to place the final output
+	 * @param {string} releaseFolder - The path where to place the final output
 	 * @param {string} certificateLocation - The path of the certificate used to sign the package
 	 * @param {string} password - The password used for signing the package
 	 * @param {boolean} forRunOrDebug - Default is `false` for packaging a release, otherwise `true` if this is going to be used for run/debug
 	 */
-	package(projectType, taskConfig, releasePath, certificateLocation, password, forRunOrDebug = false) {
+	package(projectType, taskConfig, releaseFolder, certificateLocation, password, forRunOrDebug = false) {
+		console.log("RELEASE PATH for package(): " + releaseFolder);
+
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
@@ -719,17 +735,27 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			alsoIgnore = taskConfig["as3.packaging.excludedFiles"];
 		}
 
+		// When packaging, unless for run on devices, we will use the workspace path
+		let basePath = nova.workspace.path;
+		if(forRunOrDebug) {
+			basePath = determineTempPath();
+			if(basePath==null) { /** @NOTE: Hmm, error should be in determineTempPath()... */
+				displayTempPathError(basePath);
+				return Promise.reject({success: false});
+			}
+		}
+
 		if(alsoIgnore) {
 			alsoIgnore.forEach((ignore) => {
 				//console.log("Ignroe: " + ignore);
-				//console.log("[["+nova.workspace.path + "/" + releasePath + "/" + ignore +"]]");
+				//console.log("[["+ + "/" + releaseFolder + "/" + ignore +"]]");
 				try{
-					if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isFile()) {
+					if(nova.fs.stat(basePath + "/" + releaseFolder + "/" + ignore).isFile()) {
 						//console.log("    REMOVE FILE + " + ignore + " !");
-						nova.fs.remove(nova.workspace.path + "/" + releasePath + "/" + ignore);
-					} else if(nova.fs.stat(nova.workspace.path + "/" + releasePath + "/" + ignore).isDirectory()) {
+						nova.fs.remove(basePath + "/" + releaseFolder + "/" + ignore);
+					} else if(nova.fs.stat(basePath + "/" + releaseFolder + "/" + ignore).isDirectory()) {
 						//console.log("    REMOVE DIR + " + ignore + " !");
-						nova.fs.rmdir(nova.workspace.path + "/" + releasePath + "/" + ignore);
+						nova.fs.rmdir( + "/" + releaseFolder + "/" + ignore);
 					} else {
 						//console.log("    Don't do anything " + ignore + " !");
 					}
@@ -768,16 +794,23 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 
 				args.push("-target");
-				var targetType = taskConfig["as3.deployment.target"];
-				if(targetType==null) {
-					targetType = "apk"
-				}
-				args.push(targetType);
-				if(targetType.indexOf("aab")!=-1) {
-					packageName = packageName.replace(/\.air$/, ".aab");
-				} else {
-					// @NOTE Not sure what the android-studio packages should be...
+				if(forRunOrDebug) {
+					targetType = "apk-debug";
+					args.push(targetType);
+
 					packageName = packageName.replace(/\.air$/, ".apk");
+				} else {
+					var targetType = taskConfig["as3.deployment.target"];
+					if(targetType==null) {
+						targetType = "apk"
+					}
+					args.push(targetType);
+					if(targetType.indexOf("aab")!=-1) {
+						packageName = packageName.replace(/\.air$/, ".aab");
+					} else {
+						// @NOTE Not sure what the android-studio packages should be...
+						packageName = packageName.replace(/\.air$/, ".apk");
+					}
 				}
 				args.push("-arch");
 				// console.log("taskConfig: ");
@@ -790,7 +823,11 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				args.push(archType);
 			}else if(taskConfig["as3.target"]=="ios") {
 				args.push("-target");
-				args.push("ipa-debug");
+				if(forRunOrDebug) {
+					args.push("ipa-debug");
+				} else {
+					args.push("ipa");
+				}
 
 				packageName = packageName.replace(/\.air$/, ".ipa");
 			}
@@ -849,13 +886,19 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		// Set location and AIR (or APK, AAB, IPA) Package name
 		let exportLocation = nova.workspace.path;
-		if(taskConfig["as3.export.folder"]) {
-			exportLocation = nova.path.join(nova.workspace.path, taskConfig["as3.export.folder"]);
-			if(ensureFolderIsAvailable(exportLocation)==false) {
-				cancelNotification("-packaging");
-				nova.workspace.showErrorMessage("Export Release Build failed!\n\nCannot export to folder "+exportLocation);
+		// For Running, we will force using the `basePath` which is in a temp folder!
+		if(forRunOrDebug) {
+			exportLocation = basePath;
+		} else {
+			if(taskConfig["as3.export.folder"]) {
+				exportLocation = nova.path.join(basePath, taskConfig["as3.export.folder"]);
 			}
 		}
+		if(ensureFolderIsAvailable(exportLocation)==false) {
+			cancelNotification("-packaging");
+			nova.workspace.showErrorMessage("Export Release Build failed!\n\nCannot export to folder "+exportLocation);
+		}
+
 		let outputFile = nova.path.join(exportLocation, packageName);
 		args.push(outputFile);
 
@@ -863,7 +906,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		args.push(appXMLName);
 
 		// Usage
-		let baseFolderPath = nova.path.join(nova.workspace.path, releasePath);
+		let baseFolderPath = nova.path.join(basePath, releaseFolder);
 		let files = listFilesRecursively(baseFolderPath);
 		files.forEach((file) => {
 			if(file!=appXMLName) {
@@ -897,7 +940,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		}
 
 		if(anes && anes.length>0) {
-			var aneTempPath = determineAneTempPath("release-");
+			var aneTempPath = determineAneTempPath((forRunOrDebug ? "" : "release-"));
 			if(aneTempPath==null) {
 				cancelNotification("-packaging");
 				displayANEsTempPathError(aneTempPath);
@@ -940,7 +983,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				if(status==0) {
 					if(forRunOrDebug==false) {
 						if(taskConfig["as3.export.deleteAfterSuccess"]!==false) {
-							nova.fs.rmdir(nova.path.join(nova.workspace.path, releasePath));
+							nova.fs.rmdir(nova.path.join(basePath, releaseFolder));
 							// If there are ANEs, clean them up too!
 							if(anes && anes.length>0) {
 								nova.fs.rmdir(aneTempPath);
@@ -955,7 +998,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							}
 						);
 					}
-					resolve({ success: true });
+					resolve({ success: true, packageName: outputFile });
 				} else {
 					var result = resolveStatusCodeFromADT(status);
 					var message = result.message;
@@ -964,11 +1007,12 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						console.log("STDOUT: " + stdout);
 						console.log("STDERR: " + stderr);
 					}
+					const shortError = (stderr.split("\nusage:")[0] || stderr).trim();
+					var title = "Export Package Failed";
 					if(forRunOrDebug) {
-						nova.workspace.showErrorMessage("Issue Packaging for Device Run" + "\n\n" + message + "\n\n" + stderr);
-					} else {
-						nova.workspace.showErrorMessage("Export Package Failed" + "\n\n" + message + "\n\n" + stderr);
+						title = "Issue Packaging for Device Run";
 					}
+					nova.workspace.showErrorMessage(title + "\n\n" + message + "\n\nError: " + shortError);
 					reject({ success: false, message, stderr });
 				}
 			});
@@ -1103,7 +1147,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// Copy the other files in html-template (except index.template.html!)
 				fileNamesToExclude = [ "index.template.html" ];
 				fileExtensionsToExclude = [];
-				this.copyAssetsOf(nova.workspace.path+"/html-template", destDir, false).then(() => {
+				this.copyAssetsOf(nova.workspace.path+"/html-template", destDir).then(() => {
 					if (nova.inDevMode()) {
 						console.log("All assets copied successfully.");
 					}
@@ -1149,7 +1193,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					ensureFolderIsAvailable(destDir);
 
 					// console.log(`Starting to copy assets from [[${copyDir}]] to [[${destDir}]]`);
-					return this.copyAssetsOf(copyDir, destDir, packageAfterBuild); // Return the Promise
+					return this.copyAssetsOf(copyDir, destDir);
 				});
 
 				Promise.all(copyPromises).then(() => {
@@ -1581,84 +1625,225 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		} else { // Otherwise, we are running through AIR, possibly on a device!
 			// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
 			// To launch ADL, we need to point it to the "-app.xml" file
-			command = flexSDKBase + "/bin/adl";
+			//command = flexSDKBase + "/bin/adl";
 
 			var launchMethod = taskConfig["as3.task.launchMethod"];
 			if(launchMethod=="device") {
-				// @TODO If we don't find devices, ask if they want to continue on desktop or try again?
-				// If we don't have a device, abort and say so.
+				// @TODO
+				// If we don't have any connected device, abort and say so.
 				// If one is selected in the task, but not available, ask to Abort or Try Again
-				// If we got the device, then we need to package it to launch and if we do, we need to return the task.
-				// THEN INSTALL
-				// THEN LAUNCH APP
-					// adt -installApp -platform android -device <DEVICE_ID> -package ./bin/YourApp.apk
-					// adt -launchApp -platform android -device <DEVICE_ID> -appid com.company.myapp -startDebugger
 
-					// adt -installApp -platform ios -device <DEVICE_ID> -package ./bin/YourApp.ipa
-					// adt -launchApp -platform ios -device <DEVICE_ID> -appid com.company.myapp -startDebugger
-
-				// RETURNING THE TaskProcessAction as the -launchApp above...
-			}
-
-			if(projectType=="airmobile") {
-				var screenSize = this.getFormattedScreenSize(taskConfig["as3.task.deviceToSimulate"]);
-				if(screenSize==null || screenSize==false) {
-					return null;
+				let deviceNumber = 1; // GET DEVICE FROM CROSS REFERENCE UUID AND ADT OUTPUT...
+				var deviceId = taskConfig["as3.task.deviceID"];
+// try{
+ 				// Let's make sure we have a temp folder to dump stuff to
+				var tempDirBase = determineTempPath();
+				if(tempDirBase==null) {
+					displayTempPathError(tempDirBase);
+					return Promise.reject();
 				}
-				args.push("-screensize");
-				args.push(screenSize);
-			}
+// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+// console.log("TEMP DIR: " + tempDirBase);
+// console.log("destDir: " + destDir);
+// console.log("taskConfig[as3.task.output]: " + taskConfig["as3.task.output"]);
+// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+				// Copy the build to a temporary folder as we need to modify the app.xml a bit
+				var tempOutputFolder = nova.path.join(tempDirBase,taskConfig["as3.task.output"])
+				this.copyAssetsOf(destDir, tempOutputFolder, true).then(() => {
+					// Modify the app.xml so both a real release and the debug can be installed, and our debug certificate doesn't interfere.
+					let appXMLLocation = nova.path.join(tempOutputFolder, appXMLName);
+					let appXML = getStringOfFile(appXMLLocation);
+					if(appXML==null) {
+						nova.workspace.showErrorMessage("Failed modifying APP XML for debug packaing at: " + appXMLLocation);
+						return Promise.reject();
+					}
 
-			args.push("-profile");
-			// Check if the Task set's the profile or if we need to check in the app-xml
-			var profileType = this.getProfileType(taskConfig, projectType, appXMLLocation);
-			args.push(profileType);
+					var debugPackageId;
+					// Replace the app.xml <id> and <name> for the debug version
+					try {
+						appXML = appXML.replace("</id>",".DEBUG</id>");
+						debugPackageId = appXML.match(/<id>([^<]*)<\/id>/i)[1];
+						appXML = appXML.replace("</name>"," Debug</name>");
+						var appXMLFile = nova.fs.open(appXMLLocation, "w");
+						appXMLFile.write(appXML);
+						appXMLFile.close();
+					} catch(error) {
+						nova.workspace.showErrorMessage("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid.");
+						console.log("*** ERROR: APP XML file! error: ",error);
+						consoleLogObject(error);
+						return Promise.reject();
+					}
 
-			// ADL wants the directory with the ANEs
-			/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
-			/** @NOTE Should check if there's a difference in the Workspace config and the packaging */
-			/*
-			var anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
-			// If there are ANEs, then we need to include the "ane" folder we made with the extracted
-			// ones that to the destination dir.
-			if (nova.inDevMode()) {
-				console.log("anes: " + JSON.stringify(anes));
-			}
-			*/
-			if(anes && anes.length>0) {
-				var aneTempPath = determineAneTempPath();
-				if(aneTempPath==null) {
-					displayANEsTempPathError(aneTempPath);
+					// //var releasePath = "bin-release-temp";
+					// // Force the task to use a different output for packaging the we will remove if packaging is complete...
+					// var originalReleasePath = taskConfig["as3.task.output"]// = nova.path.join(nova.workspace.path, releasePath);
+//
+					// // Modify export folder for building debug in special temp, but store so we can resort to simulator if no device build works:
+					// var originalExportFolder = taskConfig["as3.export.folder"];
+
+	// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+	// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+	// consoleLogObject(taskConfig);
+	// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+	// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+
+					showNotification("Packaging Debug build...","Trying to package","Please wait...", "-runOnDevice");
+					let packaging = this.package(projectType, taskConfig, nova.path.relative(destDir,nova.workspace.path), nova.extension.path + "/Defaults/android-debug.p12","password", true)
+					packaging.then((results) => {
+						consoleLogObject(results);
+
+						if(results.success) {
+							showNotification("📲  Installing test build...","Trying to install","Please wait...", "-runOnDevice");
+							let packageName = results.packageName;
+
+							command = flexSDKBase + "/bin/adt";
+							args = [
+								"-installApp",
+								"-platform", "android",
+								"-device", deviceId,
+								"-package", packageName,
+							];
+
+							var installPackage = getProcessResults(command, args, "", {}, true)
+							installPackage.then((results) => {
+								console.log(" INSTALL PACKAGE RESULTS: ");
+								consoleLogObject(results)
+
+								// cancelNotification("-runOnDevice");
+								showNotification("🏃‍♂️ Trying to run test build...","Trying to run","Please wait...", "-runOnDevice");
+
+								/* Uh, this may not work with Android anymore! Maybe it works with iOS??
+								command = flexSDKBase + "/bin/adt";
+								args = [ "-launchApp", "-platform", "android", "-device", deviceId, "-appid", debugPackageId ]
+								// if(debug) {
+								// 	args.push("-startDebugger");
+								// }
+								*/
+
+								// Need to use Android's ADB to launch, thanks Google!
+								const androidSDKBase = determineAndroidSDKBase();
+								command = androidSDKBase + "/platform-tools/adb";
+								args = [
+									"shell",
+									"monkey",
+									"-p",
+									debugPackageId,
+									"-c",
+									"android.intent.category.LAUNCHER",
+									"1"
+								];
+
+
+								cancelNotification("-runOnDevice");
+								/** @NOTE, this should return as the TaskProcessAction!!!! Just using this to test!!*/
+								//return new TaskProcessAction(command, { shell: false, args: args, env: {} });
+								var launchPackage= getProcessResults(command, args, "", {}, true);
+								launchPackage.then((result) => {
+									cancelNotification("-runOnDevice");
+									showNotification("🎯  Running","Launched on device " + deviceId + "!");
+								}).catch((error) => {
+									consoleLogObject(error);
+									showNotification("FAILED Installing test build...","Error: "+error,"Boo hoo", "-runOnDevice");
+								});
+							}).catch((error) => {
+								cancelNotification("-runOnDevice");
+								var result = resolveStatusCodeFromADT(error.status);
+								var message = result.message;
+								if(error.status==14 && error.stderr.indexOf("INSTALL_FAILED_NO_MATCHING_ABIS")!=-1) {
+									message += "\n\nThis can happen if you built for armv7, but the device only supports armv8!";
+								}
+								nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\n" + message + "\n\nError: " + error.stderr);
+							});
+						} else {
+							cancelNotification("-runOnDevice");
+							nova.workspace.showErrorMessage("Problem building package to install on device.");
+							return null;
+						}
+					}).catch((error) => {
+						console.log("I FAILED!");
+						consoleLogObject(error);
+						reject(error);
+						return null;
+					});
+				}).catch((error) => {
+					nova.workspace.showErrorMessage("Error during asset copying: " + error);
+					if (nova.inDevMode()) {
+						console.error("Error during asset copying:", error);
+					}
 					return null;
+				});
+				// I'm guessing if we get to the point where we can't install, we can try issueing run(), but change the taskConfig["as3.task.launchMethod"] to something other than device to make it run the simulator.
+// } catch(error) { console.log("ERRROR: ",error);}
+			} else {
+
+
+
+
+
+
+
+				if(projectType=="airmobile") {
+					var screenSize = this.getFormattedScreenSize(taskConfig["as3.task.deviceToSimulate"]);
+					if(screenSize==null || screenSize==false) {
+						return null;
+					}
+					args.push("-screensize");
+					args.push(screenSize);
 				}
-				args.push("-extdir");
-				args.push(aneTempPath);
+
+				args.push("-profile");
+				// Check if the Task set's the profile or if we need to check in the app-xml
+				var profileType = this.getProfileType(taskConfig, projectType, appXMLLocation);
+				args.push(profileType);
+
+				// ADL wants the directory with the ANEs
+				/** @TODO Change to task pointer, or get Workspace and then replace with task value if available!  */
+				/** @NOTE Should check if there's a difference in the Workspace config and the packaging */
+				/*
+				var anes = config.get("as3.packaging.anes");//nova.workspace.config.get("as3.packaging.anes");
+				// If there are ANEs, then we need to include the "ane" folder we made with the extracted
+				// ones that to the destination dir.
+				if (nova.inDevMode()) {
+					console.log("anes: " + JSON.stringify(anes));
+				}
+				*/
+				if(anes && anes.length>0) {
+					var aneTempPath = determineAneTempPath();
+					if(aneTempPath==null) {
+						displayANEsTempPathError(aneTempPath);
+						return null;
+					}
+					args.push("-extdir");
+					args.push(aneTempPath);
+				}
+
+				// The app.xml file
+				args.push(destDir + "/" + appXMLName);
+
+				// Root directory goes next
+				// "--" then args go now...
+				if (nova.inDevMode()) {
+					console.log(" *** Attempting to Run ADL with [[" + command + "]] ARG: \n");
+					consoleLogObject(args);
+				}
+
+				// Possible errors:
+				//
+				// application descriptor not found
+				// Task Terminated with exit code 6
+				// --
+				// error while loading initial content
+				// Task Terminated with exit code 9
 			}
 
-			// The app.xml file
-			args.push(destDir + "/" + appXMLName);
+console.log("WHat's the dilly yo!?! " + command,args);
 
-			// Root directory goes next
-			// "--" then args go now...
-			if (nova.inDevMode()) {
-				console.log(" *** Attempting to Run ADL with [[" + command + "]] ARG: \n");
-				consoleLogObject(args);
-			}
-
-			// Possible errors:
-			//
-			// application descriptor not found
-			// Task Terminated with exit code 6
-			// --
-			// error while loading initial content
-			// Task Terminated with exit code 9
+			return new TaskProcessAction(command, {
+				shell: true,
+				args: args,
+				env: {}
+			});
 		}
-
-		return new TaskProcessAction(command, {
-			shell: true,
-			args: args,
-			env: {}
-		});
 	}
 
 	/**
@@ -1666,25 +1851,24 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 *
 	 * @param {string} src - The source of the files to copy
 	 * @param {string} dest - The destination folder location
-	 * @param {boolean} packageAfterBuild - If we want to package the files after building
+	 * @param {boolean} forceAll - Default is `false`. If true, it will copy all files, ignoring any "ignore" settings
 	 * @returns {Promise} - A resolve if everything copies, otherwise a reject with an error message
 	 */
-	copyAssetsOf(src, dest, packageAfterBuild = false) {
+	copyAssetsOf(src, dest, forceAll = false) {
 		return new Promise((resolve, reject) => {
 			try {
 				// Get all the entries in this folder
 				const entries = nova.fs.listdir(src);
 				const copyPromises = entries.map(filename => {
 					// Check if it's a file that doesn't need to be included when packaging in general. (We also remove user specifics later)
-					if(shouldIgnoreFileName(filename)==false) {
-						const currPath = nova.path.join(src, filename);
+					if(forceAll || shouldIgnoreFileName(filename)==false) {
+						const currPath = nova.path.normalize(nova.path.join(src, filename)); // @NOTE Had to add normalize, some files wouldn't copy to temp without it!
 						const stats = nova.fs.stat(currPath);
 						if (!stats) {
 							return Promise.reject(new Error(`Unable to stat path: ${currPath}`));
 						}
 
-						const destPath = nova.path.join(dest, filename);
-
+						const destPath = nova.path.normalize(nova.path.join(dest, filename)); // @NOTE Had to add normalize, some files wouldn't copy to temp without it!
 						if (stats.isSymbolicLink()) {
 							// If it's a symbolic link, we need to get the real path
 							return resolveSymLink(currPath)
@@ -1706,7 +1890,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 									} else {
 										// If it's a symbolic link to a folder, let's copy the real files to our destination path!
 										ensureFolderIsAvailable(destPath);
-										return this.copyAssetsOf(resolvedPath, destPath, packageAfterBuild);
+										return this.copyAssetsOf(resolvedPath, destPath, forceAll);
 									}
 								});
 						} else if (stats.isFile()) {
@@ -1728,7 +1912,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 							// Make a folder, if it doesn't already exist.
 							ensureFolderIsAvailable(destPath);
 							// Go and copy this directory of stuff
-							return this.copyAssetsOf(currPath, destPath, packageAfterBuild);
+							return this.copyAssetsOf(currPath, destPath, forceAll);
 						} else {
 							// Don't know what else would come up here. But just to be safe
 							console.log(`Skipping unsupported file type: ${currPath}`);
@@ -2155,41 +2339,49 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		var getConfigs = [
 			// Needed for building, running and packaging
 			"as3.compiler.sdk",
-			"as3.task.applicationFile",
-			"as3.task.output",
-			"as3.packaging.customANEs",
 			"as3.packaging.anes",
+			"as3.packaging.customANEs",
+			"as3.task.applicationFile",
+			"as3.task.launchMethod",
+			"as3.task.output",
 
 			// Needed for packaging!
+			"as3.deployment.arch",
+			"as3.deployment.noFlair",
+			"as3.deployment.platfromsdk",
+			"as3.deployment.target",
 			"as3.export.basename",
-			"as3.packaging.customContents",
+			"as3.export.deleteAfterSuccess",
+			"as3.export.folder",
 			"as3.packaging.certificate",
+			"as3.packaging.customSignature",
+			"as3.packaging.customContents",
+			"as3.packaging.excludedFiles",
+			"as3.packaging.provisioningFile",
+			"as3.packaging.timestamp",
 			"as3.packaging.type",
 			"as3.target",
-			"as3.export.folder",
-			"as3.deployment.noFlair",
-			"as3.deployment.target",
-			"as3.deployment.arch",
-			"as3.deployment.platfromsdk",
-			"as3.packaging.provisioningFile",
 
 			// For Flash Browser runs
 			"as3.launch.type",
-			"as3.task.launchMethod",
 
 			// For Mobile runs
+			"as3.run.withDebugger",
+			"as3.task.deviceID",
 			"as3.task.deviceToSimulate",
 			"as3.task.profile",
+			"as3.task.launchOnDevice",
 
 			// For Library Builds
 			"as3.lib.classEntries",
+			"as3.lib.nsm.namespace",
+			"as3.lib.nsm.manifest",
 			"as3.lib.resource.dest",
 			"as3.lib.resource.source",
-			"as3.lib.nsm.manifest",
-			"as3.lib.nsm.namespace",
 
 			// For Other Builds
-			"actionscript3.request"
+			"actionscript3.request",
+			"as3.buildtype"
 		]
 
 		// Lop through the configs to see if we got them

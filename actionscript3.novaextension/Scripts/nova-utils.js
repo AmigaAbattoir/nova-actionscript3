@@ -18,6 +18,11 @@
  */
 exports.showNotification = function(title, body, closeButtonName = "", requestIdAddition = "") {
 	//if (nova.inDevMode()) {
+		// If there's another one, let's cancel it or it might not show up!
+		if(requestIdAddition!="") {
+			exports.cancelNotification(requestIdAddition);
+		}
+
 		let request = new NotificationRequest("as3mxml-nova-message"+requestIdAddition);
 
 		request.title = nova.localize(title);
@@ -46,7 +51,8 @@ exports.cancelNotification = function(requestIdAddition) {
  * @retruns {Promise} - If the status is 0, then it `resolves` otherwise `rejects`. Both will
  * return back an object containing status, stdout and stderr.
  */
-exports.getProcessResults = function(command, args = [], cwd = "", env = {}) {
+exports.getProcessResults = function(command, args = [], cwd = "", env = {}, debugOutput = false) {
+//try{
 	var proc = new Promise((resolve, reject) => {
 		var stdout = "";
 		var stderr = "";
@@ -55,22 +61,22 @@ exports.getProcessResults = function(command, args = [], cwd = "", env = {}) {
 		process.onStdout(line => stdout += line);
 		process.onStderr(line => stderr += line);
 		process.onDidExit(status => {
-			/*
-			console.log("getProcessResults() status: " + status);
-			console.log("                    stdout: " + stdout);
-			console.log("                    stderr: " + stderr);
-			console.log("                    command: " + command);
-			console.log("                    args: ");
-			consoleLogObject(args);
-			console.log("                    cwd: " + cwd);
-			console.log("                    env: ");
-			consoleLogObject(env);
-			*/
+			if(debugOutput) {
+				console.log("getProcessResults() status: " + status);
+				console.log("                    stdout: " + stdout);
+				console.log("                    stderr: " + stderr);
+				console.log("                    command: " + command);
+				console.log("                    args: ");
+				exports.consoleLogObject(args);
+				console.log("                    cwd: " + cwd);
+				console.log("                    env: ");
+				exports.consoleLogObject(env);
+			}
 			let results = { status: status, stdout: stdout, stderr: stderr };
-			/*
-			console.log("getProcessResults() results: ");
-			consoleLogObject(results);
-			*/
+			if(debugOutput) {
+				console.log("getProcessResults() results: ");
+				exports.consoleLogObject(results);
+			}
 			if(status===0) {
 				console.log("getProcessResults() Going to resolve...");
 				resolve(results);
@@ -81,7 +87,7 @@ exports.getProcessResults = function(command, args = [], cwd = "", env = {}) {
 		});
 		process.start();
 	});
-
+// } catch(error) { console.error("ERROR: ",error); }
 	return proc;
 }
 

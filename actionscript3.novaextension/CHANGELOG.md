@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 - Internal changes - Rewrote how Task configs are passed to build and run
 
+### Fixed
+
+- Checking ANE temp path failed version check (was set high for debugging)
+
 ## [0.11.3] - 2025-10-23
 
 ### Added

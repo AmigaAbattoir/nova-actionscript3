@@ -32,10 +32,12 @@ exports.determineProjectUUID = function() {
 }
 
 /**
- * Get's the temp path to use for ANEs. Since this isn't async, we could end up with
- * @returns {string} - The location of a temp directory to extract ANEs to.
+ * Get's the temp path to use for projects. This can be used for copying assets to package for
+ * debug, as well as a location for the debug package (ie. debug.ipa/debug.apk).
+ * @returns {string} - The location of a temp directory. Something like:
+ * `/var/folders/p_/<"Random characters">/T/com.abattoirsoftware.actionscript3/<UUID>/`
  */
-exports.determineAneTempPath = function(prefix = "") {
+exports.determineTempPath = function() {
 	var uuid = nova.workspace.config.get("as3.application.projectUUID");
 
 	if (!uuid || uuid===null) {
@@ -51,13 +53,27 @@ exports.determineAneTempPath = function(prefix = "") {
 		}
 	}
 
-	var anePath = nova.path.join(nova.fs.tempdir, uuid, prefix + "ane");
+	var tempPath = nova.path.join(nova.fs.tempdir, uuid);
 
 	// Make sure that the temp dir exists!
 	ensureFolderIsAvailable(nova.fs.tempdir);
 	ensureFolderIsAvailable(nova.fs.tempdir + "/" + uuid);
 
-	return anePath;
+	return tempPath;
+}
+
+/**
+ * Get's the temp path to use for ANEs.
+ * @param {string} prefix - Optional name before "ane" in the folder
+ * @returns {string} - The location of a temp directory to extract ANEs to, something like:
+ * `/var/folders/p_/<"Random characters">/T/com.abattoirsoftware.actionscript3/<UUID>/<prefix>ane/`
+ */
+exports.determineAneTempPath = function(prefix = "") {
+	var tempDir = exports.determineTempPath();
+	if(tempDir!=null) {
+		var anePath = nova.path.join(tempDir + "/" + prefix + "ane");
+		return anePath;
+	}
 }
 
 /**
