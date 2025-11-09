@@ -1570,13 +1570,10 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	 * UUID and name. If the user enters a valid device, it will modify the `taskConfid` with the approriate
 	 * value to launch on a device.
 	 * @param {Array} devices - Results from a call to get the devices for that platform
-	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
-	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
 	 * @param {Object} taskConfig - The Task's configs
-	 * @param {boolean} debugMode - `true` if we want to do this as a debug, otherwise `false`
 	 * @returns {Object} - An update `taskConfig` with the selected UUID of the device to launch on
 	 */
-	selectDeviceToLaunchOn(devices, projectType, projectOS, taskConfig, debugMode) {
+	selectDeviceToLaunchOn(devices, taskConfig) {
 		return new Promise((resolve, reject) => {
 			var deviceChoice = quickChoicePalette(devices.map(d => `${d.uuid} - ${d.model}`), "Launch on which device?").then((choice) => {
 				if(choice) { // If there was a choice made
@@ -1598,12 +1595,10 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	 * no preferred device, launch on the first if there's one device, otherwise ask which one. If there
 	 * is a preferred device, check if we found it, other wise ask what to do. If there are no devices
 	 * either, we'll ask too.
-	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
 	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
 	 * @param {Object} taskConfig - The Task's configs
-	 * @param {boolean} debugMode - `true` if we want to do this as a debug, otherwise `false`
 	 */
-	resolveDeviceSelection(projectType, projectOS, taskConfig, debugMode) {
+	resolveDeviceSelection(projectOS, taskConfig) {
 		return getSelectedDevices(projectOS).then((devices) => {
 try {
 			let deviceId = taskConfig["as3.task.deviceID"];
@@ -1620,13 +1615,13 @@ try {
 					taskConfig["as3.task.deviceID"] = devices[0].uuid;
 					return taskConfig;
 				} else if(devices.length>1) { // Found multiple devices, ask which one!
-					return this.selectDeviceToLaunchOn(devices, projectType, projectOS, taskConfig, debugMode).then(() => taskConfig);
+					return this.selectDeviceToLaunchOn(devices, taskConfig).then(() => taskConfig);
 				}
 			} else {
 				let foundPreferredDevice = devices.find(d => d.uuid==deviceId);
 				if(foundPreferredDevice==undefined) {
 					let message;
-					let deviceButtons = ["🔄 Recheck", "🧑‍💻 Run in Simulator", "❌ Cancel"];
+					let deviceButtons = ["🔄 Recheck", "🖥️ Run in Simulator", "❌ Cancel"];
 					if (devices.length === 0) {
 						// No devices at all — then we don't have any other options than those above
 						message = "No connected " + displayDeviceType(projectOS) + " devices were found. ";
@@ -1637,10 +1632,10 @@ try {
 						}
 						if(devices.length==1) {
 							message += "However, a device " +  devices[0].uuid + " - " + devices[0].model + " was found. ";
-							deviceButtons.unshift("📲 Use other device");
+							deviceButtons.unshift("📲 Use found device");
 						} else if(devices.length>1) {
 							message += "However, other devices were found. ";
-							deviceButtons.unshift("📲 Select another device");
+							deviceButtons.unshift("📲 Select device");
 						}
 					}
 
@@ -1648,20 +1643,20 @@ try {
 						nova.workspace.showActionPanel(message, { buttons: deviceButtons }, (result) => {
 							switch (deviceButtons[result]) {
 								case "🔄 Recheck": {
-									resolve(this.resolveDeviceSelection(projectType, projectOS, taskConfig, debugMode));
+									resolve(this.resolveDeviceSelection(projectOS, taskConfig));
 									break;
 								}
-								case "🧑‍💻 Run in Simulator":
+								case "🖥️ Run in Simulator":
 									taskConfig["as3.task.launchMethod"] = "simulator";
 									resolve(taskConfig);
 									break;
-								case "📲 Use other device": {
+								case "📲 Use found device": {
 									taskConfig["as3.task.deviceID"] = devices[0].uuid;
 									resolve(taskConfig);
 									break;
 								}
-								case "📲 Select another device": {
-									resolve(this.selectDeviceToLaunchOn(devices, projectType, projectOS, taskConfig, debugMode).then(() => taskConfig));
+								case "📲 Select device": {
+									resolve(this.selectDeviceToLaunchOn(devices, taskConfig).then(() => taskConfig));
 									break;
 								}
 								default: {
@@ -1713,7 +1708,7 @@ try {
 try {
 	// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
 	// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
-		return this.resolveDeviceSelection(projectType, projectOS, taskConfig, debugMode).then((resolvedConfig) => {
+		return this.resolveDeviceSelection(projectOS, taskConfig).then((resolvedConfig) => {
 			// console.log("resolvedConfig: ");
 			// consoleLogObject(resolvedConfig);
 
