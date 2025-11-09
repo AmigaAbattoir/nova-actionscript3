@@ -213,6 +213,24 @@
 						"values": [
 							["captive", "Export application with captive runtime"]
 						]
+					},
+					{
+						"key": "as3.deployment.target",
+						"title": "Target",
+						"type": "enum",
+						"description": "The type of package to create.",
+						"radio": false,
+						"default": "ipa-debug",
+						"values": [
+							["ipa-test", "IPA for testing"],
+							["ipa-debug", "IPA for debugging"],
+							["ipa-app-store", "IPA for App Store"],
+							["ipa-ad-hoc", "IPA for ad-hoc install"],
+							["ipa-test-interpreter", "IPA for quick testing (interpreter)"],
+							["ipa-debug-interpreter", "IPA for quick debugging (interpreter)"],
+							["ipa-test-interpreter-simulator", "IPA for testing on Simulator"],
+							["ipa-debug-interpreter-simulator", "IPA for debugging on Simulator"]
+						]
 					}
 				]
 			},
