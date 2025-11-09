@@ -5,6 +5,11 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 ## [0.12.0] - Unreleased
 
+### Added
+
+- Launch on device for Android in place
+- Added more package option for iOS
+
 ### Changed
 
 - Internal changes - Rewrote how Task configs are passed to build and run

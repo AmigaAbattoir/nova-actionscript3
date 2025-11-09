@@ -22,7 +22,7 @@
 			{
 				"key": "as3.task.launchMethod",
 				"title": "Launch method",
-				"description": "**NOTE: Currently only runs in simulator!!** When running, how should this be launched?",
+				"description": "When running, how should this be launched?\n\nOn iOS devices,you will need to manually start the app. If no device is selected the first connected device will be used to launch. However, if you set this, then this will be the preferred device to launch on.",
 				"type": "enum",
 				"link": "http://www.adobe.com/go/fb_device_help",
 				"default": "desktop",

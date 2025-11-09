@@ -4,6 +4,7 @@ const { determineFlexSDKBase, determineAndroidSDKBase, getAppXMLNameAndExport, g
 const { determineProjectUUID, determineTempPath, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
 const { installSDKPrompt, getAIRSDKInfo, isAIRSDKInstalled } = require("./sdk-utils.js");
+const { getSelectedDevices } = require("./device-utils.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
@@ -62,6 +63,20 @@ function checkMacBuildForIcons(taskConfig) {
 	}
 }
 
+function displayDeviceType(type) {
+	switch(type) {
+		case "ios": {
+			type = "iOS";
+			break;
+		}
+		case "android": {
+			type = "Android";
+			break;
+		}
+	}
+	return type;
+}
+
 /**
  * The Task Assistant that handles all the things for Task.
  */
@@ -89,6 +104,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		"extensionTemplate" : "",
 		"extensionValues": { }
 	};
+
+	oops = 0;
 
 	/**
 	 * Clean the build directory. Basically, delete the dir then make it again.
@@ -1016,7 +1033,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 					if(forRunOrDebug) {
 						title = "Issue Packaging for Device Run";
 					}
-					nova.workspace.showErrorMessage(title + "\n\n" + message + "\n\nError: " + shortError);
+					nova.workspace.showErrorMessage(title + "\n\n" + message + "\n\nErro AAAr: " + shortError);
 					reject({ success: false, message, stderr });
 				}
 			});
@@ -1549,6 +1566,334 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	}
 
 	/**
+	 * Used to determine which device to try and run on. Makes a palette choice option showing the device's
+	 * UUID and name. If the user enters a valid device, it will modify the `taskConfid` with the approriate
+	 * value to launch on a device.
+	 * @param {Array} devices - Results from a call to get the devices for that platform
+	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
+	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
+	 * @param {Object} taskConfig - The Task's configs
+	 * @param {boolean} debugMode - `true` if we want to do this as a debug, otherwise `false`
+	 * @returns {Object} - An update `taskConfig` with the selected UUID of the device to launch on
+	 */
+	selectDeviceToLaunchOn(devices, projectType, projectOS, taskConfig, debugMode) {
+		return new Promise((resolve, reject) => {
+			var deviceChoice = quickChoicePalette(devices.map(d => `${d.uuid} - ${d.model}`), "Launch on which device?").then((choice) => {
+				if(choice) { // If there was a choice made
+					let deviceSplit = choice.value.split(" - ");
+					if(deviceSplit.length>0) {
+						let device = deviceSplit[0].trim();
+						if(device!=null && device!="") {
+							taskConfig["as3.task.deviceID"] = device;
+							resolve(taskConfig);
+						}
+					}
+				}
+			});
+		});
+	}
+
+	/**
+	 * Tries to figure out how to launch on a device. First checking available devices. Then if there is
+	 * no preferred device, launch on the first if there's one device, otherwise ask which one. If there
+	 * is a preferred device, check if we found it, other wise ask what to do. If there are no devices
+	 * either, we'll ask too.
+	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
+	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
+	 * @param {Object} taskConfig - The Task's configs
+	 * @param {boolean} debugMode - `true` if we want to do this as a debug, otherwise `false`
+	 */
+	resolveDeviceSelection(projectType, projectOS, taskConfig, debugMode) {
+		return getSelectedDevices(projectOS).then((devices) => {
+try {
+			let deviceId = taskConfig["as3.task.deviceID"];
+
+			// console.log(" WANT DEVICE: [[ " + deviceId);
+			// // Adding fake devices to test selection and fallbacks
+			// devices.push({ uuid: "123456789ABCDEF", model: "Fake Device 1"} );
+			// devices.push({ uuid: "ABCDEF123456789", model: "Fake Device 3"} );
+			// consoleLogObject(devices);
+
+			// If no preferred devices are set, then we just default to first or ask which one and return!
+			if(!deviceId) {
+				if(devices.length==1) { // Only found one, use that!
+					taskConfig["as3.task.deviceID"] = devices[0].uuid;
+					return taskConfig;
+				} else if(devices.length>1) { // Found multiple devices, ask which one!
+					return this.selectDeviceToLaunchOn(devices, projectType, projectOS, taskConfig, debugMode).then(() => taskConfig);
+				}
+			} else {
+				let foundPreferredDevice = devices.find(d => d.uuid==deviceId);
+				if(foundPreferredDevice==undefined) {
+					let message;
+					let deviceButtons = ["🔄 Recheck", "🧑‍💻 Run in Simulator", "❌ Cancel"];
+					if (devices.length === 0) {
+						// No devices at all — then we don't have any other options than those above
+						message = "No connected " + displayDeviceType(projectOS) + " devices were found. ";
+					} else {
+						// If there was a preferred device that wasn't found
+						if(deviceId) {
+							message = "Your preferred device was not found. "
+						}
+						if(devices.length==1) {
+							message += "However, a device " +  devices[0].uuid + " - " + devices[0].model + " was found. ";
+							deviceButtons.unshift("📲 Use other device");
+						} else if(devices.length>1) {
+							message += "However, other devices were found. ";
+							deviceButtons.unshift("📲 Select another device");
+						}
+					}
+
+					return new Promise((resolve) => {
+						nova.workspace.showActionPanel(message, { buttons: deviceButtons }, (result) => {
+							switch (deviceButtons[result]) {
+								case "🔄 Recheck": {
+									resolve(this.resolveDeviceSelection(projectType, projectOS, taskConfig, debugMode));
+									break;
+								}
+								case "🧑‍💻 Run in Simulator":
+									taskConfig["as3.task.launchMethod"] = "simulator";
+									resolve(taskConfig);
+									break;
+								case "📲 Use other device": {
+									taskConfig["as3.task.deviceID"] = devices[0].uuid;
+									resolve(taskConfig);
+									break;
+								}
+								case "📲 Select another device": {
+									resolve(this.selectDeviceToLaunchOn(devices, projectType, projectOS, taskConfig, debugMode).then(() => taskConfig));
+									break;
+								}
+								default: {
+									resolve(null);
+									break;
+								}
+							}
+						});
+					});
+				}
+			}
+			console.info("Returning taskConfig.... ")
+			// Preferred device found and ready to go
+			return taskConfig;
+} catch(error) { console.error(error.message); console.error(error.stack); }
+		});
+	}
+
+	/**
+	 * Handles launching on the device, selecting it, packaging, installing then launching.
+	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
+	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
+	 * @param {Object} taskConfig - The Task's configs
+	 * @param {boolean} debugMode - `true` if we want to do this as a debug, otherwise `false`
+	 */
+	launchOnDevice(projectType, projectOS, taskConfig, debugMode = false) {
+		console.warn(" Launch on device OOPS count: " + this.oops);
+		this.oops++;
+		if(this.oops>10) {
+			return null;
+		}
+
+		console.log("------------------------- LAUNCH ON DEVICE CALLED _--------------------");
+		let command = "";
+		let args = [];
+
+		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
+		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
+		let destDir = configValues.destDir;
+		let appXMLName = configValues.appXMLName;
+		let exportName = configValues.exportName;
+		let mainSrcDir = configValues.mainSrcDir;
+		// Only needed for AIR:
+		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
+		let anes = configValues.anes;
+
+		var deviceId = taskConfig["as3.task.deviceID"];
+
+try {
+	// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+	// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+		return this.resolveDeviceSelection(projectType, projectOS, taskConfig, debugMode).then((resolvedConfig) => {
+			// console.log("resolvedConfig: ");
+			// consoleLogObject(resolvedConfig);
+
+			if(taskConfig["as3.task.launchMethod"]=="simulator") {
+				if(debugMode) {
+					return this.debugRun(projectType, projectOS, taskConfig);
+				} else {
+					return this.run(projectType, projectOS, taskConfig);
+				}
+			}
+
+			if(!resolvedConfig) {
+				return null;
+			}
+
+			deviceId = taskConfig["as3.task.deviceID"];
+			if(projectOS=="ios") {
+				deviceId = "1"; // GET DEVICE FROM CROSS REFERENCE UUID AND ADT OUTPUT...
+			}
+				// Let's make sure we have a temp folder to dump stuff to
+			var tempDirBase = determineTempPath();
+			if(tempDirBase==null) {
+				displayTempPathError(tempDirBase);
+				return Promise.reject(new Error("Issues with temp path"));
+			}
+
+			// This will get filled in later
+			var debugPackageId = "";
+
+// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+// console.log("TEMP DIR: " + tempDirBase);
+// console.log("destDir: " + destDir);
+// console.log("taskConfig[as3.task.output]: " + taskConfig["as3.task.output"]);
+// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+			// Copy the build to a temporary folder as we need to modify the app.xml a bit
+			var tempOutputFolder = nova.path.join(tempDirBase,taskConfig["as3.task.output"]);
+
+			return this.copyAssetsOf(destDir, tempOutputFolder, true).then(() => {
+				// Modify the app.xml so both a real release and the debug can be installed, and our debug certificate doesn't interfere.
+				let appXMLLocation = nova.path.join(tempOutputFolder, appXMLName);
+				let appXML = getStringOfFile(appXMLLocation);
+				if(appXML==null) {
+					return Promise.reject(new Error("Failed modifying APP XML for debug packaing at: " + appXMLLocation));
+				}
+
+				try {
+					// Replace the app.xml <id> on Android
+					if(projectOS=="android") {
+						appXML = appXML.replace("</id>",".DEBUG</id>");
+					}
+					debugPackageId = appXML.match(/<id>([^<]*)<\/id>/i)[1];
+					// Replace the app.xml <name> for the debug version
+					appXML = appXML.replace("</name>"," Debug</name>");
+					var appXMLFile = nova.fs.open(appXMLLocation, "w");
+					appXMLFile.write(appXML);
+					appXMLFile.close();
+				} catch(error) {
+					console.log("*** ERROR: APP XML file! error: ",error);
+					consoleLogObject(error);
+					return Promise.reject(new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid."));
+				}
+
+				return;
+			}).then(() => {
+				// //var releasePath = "bin-release-temp";
+				// // Force the task to use a different output for packaging the we will remove if packaging is complete...
+				// var originalReleasePath = taskConfig["as3.task.output"]// = nova.path.join(nova.workspace.path, releasePath);
+				//
+				// // Modify export folder for building debug in special temp, but store so we can resort to simulator if no device build works:
+				// var originalExportFolder = taskConfig["as3.export.folder"];
+
+				// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+				console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+				consoleLogObject(taskConfig);
+				console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+				// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+
+				showNotification("Packaging Debug build...","📦 Trying to package","Please wait...", "-runOnDevice");
+				let certificateLocation = nova.extension.path + "/Defaults/android-debug.p12";
+				let password = "password";
+				if(projectOS=="ios") { // Need to use user's certificate, no way around it.
+					certificateLocation = taskConfig["as3.packaging.certificate"];
+					password = "password";
+				}
+
+				// console.log("certificateLocation: " + certificateLocation);
+				// console.log("password: " + password);
+
+				return this.package(projectType, taskConfig, nova.path.relative(destDir,nova.workspace.path), certificateLocation, password, true).then((results) => ({ results }));
+			}).then(({ results }) => {
+				// Install
+				if(results.success==false) {
+					return Promise.reject(new Error("Problem building package to install on device."));
+				}
+
+				showNotification("📲  Installing test build...","Trying to install","Please wait...", "-runOnDevice");
+				let packageName = results.packageName;
+				command = flexSDKBase + "/bin/adt";
+				args = [
+					"-installApp",
+					"-device", deviceId,
+					"-package", packageName,
+					"-platform", projectOS
+				];
+
+				return getProcessResults(command, args, "", {}, true).then(() => ({ debugPackageId }));
+			}).then(() => {
+				console.log("RESULTS ASIFHAKSHFAKSHF")
+				showNotification("🏃‍♂️ Trying to run test build...","Trying to run","", "-runOnDevice");
+
+				let launchCommand, launchArgs;
+				if(projectOS=="ios") {
+					// Show notice it's installed and you have to launch it yourself!
+					launchCommand = flexSDKBase + "/bin/adt";
+					launchArgs = [ "-launchApp", "-platform", "android", "-device", deviceId, "-appid", debugPackageId ]
+				} else if(projectOS=="android") {
+					/* Uh, this may not work with Android anymore! Maybe it works with iOS??
+					command = flexSDKBase + "/bin/adt";
+					args = [ "-launchApp", "-platform", "android", "-device", deviceId, "-appid", debugPackageId ]
+					// if(debug) {
+					// 	args.push("-startDebugger");
+					// }
+					*/
+					// Need to use Android's ADB to launch, thanks Google!
+					const androidSDKBase = determineAndroidSDKBase();
+					launchCommand = androidSDKBase + "/platform-tools/adb";
+					launchArgs = [
+						"shell",
+						"monkey",
+						"-p",
+						debugPackageId,
+						"-c",
+						"android.intent.category.LAUNCHER",
+						"1"
+					];
+				}
+
+				return new TaskProcessAction(launchCommand, {
+					shell: true,
+					args: launchArgs,
+					env: {}
+				});
+			}).catch(error => {
+				cancelNotification("-runOnDevice");
+				console.error("Launch on device error: ");
+				consoleLogObject(error);
+				if(error.status) {
+					var result = resolveStatusCodeFromADT(error.status);
+					var message = result.message;
+					if(error.status==14 && error.stderr.indexOf("INSTALL_FAILED_NO_MATCHING_ABIS")!=-1) {
+						message += "\n\nThis can happen if you built for armv7, but the device only supports armv8!";
+					}
+					nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\n" + message + "\n\nADT Error: " + error.stderr);
+				} else {
+					nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\nError: VVV" + error);
+				}
+				return Promise.reject(new Error("Issue Installing Package for Device Run"));
+			});
+		}).catch(error => {
+			consoleLogObject(error);
+			console.error("GET DEV ERORR: ",error);
+			console.error("GET DEV ERORR: ",error.stack);
+/*
+			// Should ask if we want to try reconnecting and scanning, or just use simulator
+			nova.workspace.showWarningMessage("No connected " + projectOS + " devices found, and there was an error on launching... — launching in simulator instead.");
+
+			// Fake it as a simulator!
+			taskConfig["as3.task.launchMethod"] = "simulator";
+			if(debugMode) {
+				return this.debugRun(projectType, projectOS, taskConfig);
+			} else {
+				return this.run(projectType, projectOS, taskConfig);
+			}
+*/
+			return null;
+		});
+} catch(error) { console.error(error.message); console.error(error.stack); return null; }
+	}
+
+	/**
 	 * Runs the project using Nova's task system
 	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
 	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
@@ -1632,160 +1977,10 @@ console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 		} else { // Otherwise, we are running through AIR, possibly on a device!
 			// @NOTE See https://help.adobe.com/en_US/air/build/WSfffb011ac560372f-6fa6d7e0128cca93d31-8000.html
 			// To launch ADL, we need to point it to the "-app.xml" file
-			//command = flexSDKBase + "/bin/adl";
+			command = flexSDKBase + "/bin/adl";
 
 			if(taskConfig["as3.task.launchMethod"]=="device") {
-				// @TODO
-				// If we don't have any connected device, abort and say so.
-				// If one is selected in the task, but not available, ask to Abort or Try Again
-
-				var deviceId = taskConfig["as3.task.deviceID"];
-				if(projectOS=="ios") {
-					deviceId = "1"; // GET DEVICE FROM CROSS REFERENCE UUID AND ADT OUTPUT...
-				}
- 				// Let's make sure we have a temp folder to dump stuff to
-				var tempDirBase = determineTempPath();
-				if(tempDirBase==null) {
-					displayTempPathError(tempDirBase);
-					return Promise.reject();
-				}
-
-				// This will get filled in later
-				var debugPackageId = "";
-
-console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-console.log("TEMP DIR: " + tempDirBase);
-console.log("destDir: " + destDir);
-console.log("taskConfig[as3.task.output]: " + taskConfig["as3.task.output"]);
-console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-				// Copy the build to a temporary folder as we need to modify the app.xml a bit
-				var tempOutputFolder = nova.path.join(tempDirBase,taskConfig["as3.task.output"]);
-
-				return this.copyAssetsOf(destDir, tempOutputFolder, true).then(() => {
-					// Modify the app.xml so both a real release and the debug can be installed, and our debug certificate doesn't interfere.
-					let appXMLLocation = nova.path.join(tempOutputFolder, appXMLName);
-					let appXML = getStringOfFile(appXMLLocation);
-					if(appXML==null) {
-						throw new Error("Failed modifying APP XML for debug packaing at: " + appXMLLocation);
-						// nova.workspace.showErrorMessage("Failed modifying APP XML for debug packaing at: " + appXMLLocation);
-						// return Promise.reject();
-					}
-
-					try {
-						// Replace the app.xml <id> on Android
-						if(projectOS=="android") {
-							appXML = appXML.replace("</id>",".DEBUG</id>");
-						}
-						debugPackageId = appXML.match(/<id>([^<]*)<\/id>/i)[1];
-						// Replace the app.xml <name> for the debug version
-						appXML = appXML.replace("</name>"," Debug</name>");
-						var appXMLFile = nova.fs.open(appXMLLocation, "w");
-						appXMLFile.write(appXML);
-						appXMLFile.close();
-					} catch(error) {
-						console.log("*** ERROR: APP XML file! error: ",error);
-						consoleLogObject(error);
-						throw new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid.");
-						// nova.workspace.showErrorMessage("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid.");
-						// return Promise.reject();
-					}
-
-					return;
-				}).then(() => {
-					// //var releasePath = "bin-release-temp";
-					// // Force the task to use a different output for packaging the we will remove if packaging is complete...
-					// var originalReleasePath = taskConfig["as3.task.output"]// = nova.path.join(nova.workspace.path, releasePath);
-					//
-					// // Modify export folder for building debug in special temp, but store so we can resort to simulator if no device build works:
-					// var originalExportFolder = taskConfig["as3.export.folder"];
-
-					console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-					console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-					consoleLogObject(taskConfig);
-					console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-					console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-
-					showNotification("Packaging Debug build...","Trying to package","Please wait...", "-runOnDevice");
-					let certificateLocation = nova.extension.path + "/Defaults/android-debug.p12";
-					let password = "password";
-					if(projectOS=="ios") { // Need to use user's certificate, no way around it.
-						certificateLocation = taskConfig["as3.packaging.certificate"];
-						password = "KSm1sf1ts";
-					}
-
-					console.log("certificateLocation: " + certificateLocation);
-					console.log("password: " + password);
-
-					return this.package(projectType, taskConfig, nova.path.relative(destDir,nova.workspace.path), certificateLocation, password, true).then((results) => ({ results }));
-				}).then(({ results }) => {
-					// Install
-					consoleLogObject(results);
-					if(results.success==false) {
-						throw new Error("Problem building package to install on device.");
-					}
-
-					showNotification("📲  Installing test build...","Trying to install","Please wait...", "-runOnDevice");
-					let packageName = results.packageName;
-					command = flexSDKBase + "/bin/adt";
-					args = [
-						"-installApp",
-						"-device", deviceId,
-						"-package", packageName,
-						"-platform", projectOS
-					];
-
-					return getProcessResults(command, args, "", {}, true).then(() => ({ debugPackageId }));
-				}).then(() => {
-					showNotification("🏃‍♂️ Trying to run test build...","Trying to run","", "-runOnDevice");
-
-					let launchCommand, launchArgs;
-					if(projectOS=="ios") {
-						// Show notice it's installed and you have to launch it yourself!
-						launchCommand = flexSDKBase + "/bin/adt";
-						launchArgs = [ "-launchApp", "-platform", "android", "-device", deviceId, "-appid", debugPackageId ]
-					} else if(projectOS=="android") {
-						/* Uh, this may not work with Android anymore! Maybe it works with iOS??
-						command = flexSDKBase + "/bin/adt";
-						args = [ "-launchApp", "-platform", "android", "-device", deviceId, "-appid", debugPackageId ]
-						// if(debug) {
-						// 	args.push("-startDebugger");
-						// }
-						*/
-						// Need to use Android's ADB to launch, thanks Google!
-						const androidSDKBase = determineAndroidSDKBase();
-						launchCommand = androidSDKBase + "/platform-tools/adb";
-						launchArgs = [
-							"shell",
-							"monkey",
-							"-p",
-							debugPackageId,
-							"-c",
-							"android.intent.category.LAUNCHER",
-							"1"
-						];
-					}
-
-					return new TaskProcessAction(launchCommand, {
-						shell: false,
-						args: launchArgs,
-						env: {}
-					});
-				}).catch(error => {
-					cancelNotification("-runOnDevice");
-					console.error("Launch on device error: ");
-					consoleLogObject(error);
-					if(error.status) {
-						var result = resolveStatusCodeFromADT(error.status);
-						var message = result.message;
-						if(error.status==14 && error.stderr.indexOf("INSTALL_FAILED_NO_MATCHING_ABIS")!=-1) {
-							message += "\n\nThis can happen if you built for armv7, but the device only supports armv8!";
-						}
-						nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\n" + message + "\n\nADT Error: " + error.stderr);
-					} else {
-						nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\nError: " + error);
-					}
-					return null;
-				});
+				return this.launchOnDevice(projectType, projectOS, taskConfig, false);
 			} else {
 				if(projectType=="airmobile") {
 					var screenSize = this.getFormattedScreenSize(taskConfig["as3.task.deviceToSimulate"]);
@@ -2323,6 +2518,8 @@ console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 		let data = context.data;
 		let config = context.config;
 		let action = context.action;
+
+		this.oops = 0;
 
 		// We're going to convert our "config" to an array so that we can pass them to our run/build/clean
 		// and package so that even if we launch them manually without Nova's Build/Run and we can

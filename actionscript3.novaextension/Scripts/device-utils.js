@@ -90,3 +90,18 @@ exports.getIOSDevices = function() {
 		});
 	});
 }
+
+/**
+ * Gets a list of devices based on which type of device
+ * @param {string} os - (ios|android) The type of device to get
+ * @returns {Array} - An array
+ */
+exports.getSelectedDevices = function(os) {
+	return new Promise((resolve, reject) => {
+		if(os=="ios") {
+			resolve(exports.getIOSDevices());
+		} else if(os=="android") {
+			resolve(exports.getAndroidDevices());
+		}
+	});
+}
