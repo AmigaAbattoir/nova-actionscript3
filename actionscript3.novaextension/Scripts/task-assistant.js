@@ -1033,7 +1033,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 					if(forRunOrDebug) {
 						title = "Issue Packaging for Device Run";
 					}
-					nova.workspace.showErrorMessage(title + "\n\n" + message + "\n\nErro AAAr: " + shortError);
+					nova.workspace.showErrorMessage(title + "\n\n" + message + "\n\n" + shortError);
 					reject({ success: false, message, stderr });
 				}
 			});
@@ -1615,7 +1615,7 @@ try {
 					taskConfig["as3.task.deviceID"] = devices[0].uuid;
 					return taskConfig;
 				} else if(devices.length>1) { // Found multiple devices, ask which one!
-					return this.selectDeviceToLaunchOn(devices, taskConfig).then(() => taskConfig);
+					return this.selectDeviceToLaunchOn(devices, taskConfig).then(() => ({ taskConfig, devices }));
 				}
 			} else {
 				let foundPreferredDevice = devices.find(d => d.uuid==deviceId);
@@ -1648,15 +1648,15 @@ try {
 								}
 								case "🖥️ Run in Simulator":
 									taskConfig["as3.task.launchMethod"] = "simulator";
-									resolve(taskConfig);
+									resolve({taskConfig, devices});
 									break;
 								case "📲 Use found device": {
 									taskConfig["as3.task.deviceID"] = devices[0].uuid;
-									resolve(taskConfig);
+									resolve({taskConfig, devices});
 									break;
 								}
 								case "📲 Select device": {
-									resolve(this.selectDeviceToLaunchOn(devices, taskConfig).then(() => taskConfig));
+									resolve(this.selectDeviceToLaunchOn(devices, taskConfig).then(() => resolve({taskConfig, devices})));
 									break;
 								}
 								default: {
@@ -1670,7 +1670,7 @@ try {
 			}
 			console.info("Returning taskConfig.... ")
 			// Preferred device found and ready to go
-			return taskConfig;
+			return {taskConfig, devices} ;
 } catch(error) { console.error(error.message); console.error(error.stack); }
 		});
 	}
@@ -1708,10 +1708,17 @@ try {
 try {
 	// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
 	// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
-		return this.resolveDeviceSelection(projectOS, taskConfig).then((resolvedConfig) => {
+		return this.resolveDeviceSelection(projectOS, taskConfig).then((result) => {
 			// console.log("resolvedConfig: ");
 			// consoleLogObject(resolvedConfig);
+			if(!result) {
+				return null;
+			}
 
+			taskConfig = result.taskConfig;
+			var devices = result.devices;
+
+			// If we resolved to the simulator, jump to that...
 			if(taskConfig["as3.task.launchMethod"]=="simulator") {
 				if(debugMode) {
 					return this.debugRun(projectType, projectOS, taskConfig);
@@ -1720,15 +1727,11 @@ try {
 				}
 			}
 
-			if(!resolvedConfig) {
-				return null;
-			}
-
 			deviceId = taskConfig["as3.task.deviceID"];
-			if(projectOS=="ios") {
-				deviceId = "1"; // GET DEVICE FROM CROSS REFERENCE UUID AND ADT OUTPUT...
-			}
-				// Let's make sure we have a temp folder to dump stuff to
+			let deviceInfo = devices.find(d => d.uuid==deviceId);
+			let deviceHandle = deviceInfo.transportID; // Needed for iOS stuff
+
+			// Let's make sure we have a temp folder to dump stuff to
 			var tempDirBase = determineTempPath();
 			if(tempDirBase==null) {
 				displayTempPathError(tempDirBase);
@@ -1771,6 +1774,8 @@ try {
 					return Promise.reject(new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid."));
 				}
 
+				console.info("debugPackageId:: " + debugPackageId);
+
 				return;
 			}).then(() => {
 				// //var releasePath = "bin-release-temp";
@@ -1780,12 +1785,14 @@ try {
 				// // Modify export folder for building debug in special temp, but store so we can resort to simulator if no device build works:
 				// var originalExportFolder = taskConfig["as3.export.folder"];
 
+console.info("what about in the next then()?? debugPackageId:: " + debugPackageId);
 				// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 				console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 				consoleLogObject(taskConfig);
 				console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 				// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
+				/** @TODO Something like export packaging where the password is a Promise and asks for the password for iOS only, */
 				showNotification("Packaging Debug build...","📦 Trying to package","Please wait...", "-runOnDevice");
 				let certificateLocation = nova.extension.path + "/Defaults/android-debug.p12";
 				let password = "password";
@@ -1804,53 +1811,75 @@ try {
 					return Promise.reject(new Error("Problem building package to install on device."));
 				}
 
+				let installDeviceId = deviceId;
+				// For some reason, iOS uses the "device handle" to install/launch instead of the UUID like Android
+				if(projectOS=="ios") {
+					installDeviceId = deviceHandle;
+				}
+
 				showNotification("📲  Installing test build...","Trying to install","Please wait...", "-runOnDevice");
 				let packageName = results.packageName;
 				command = flexSDKBase + "/bin/adt";
 				args = [
 					"-installApp",
-					"-device", deviceId,
+					"-device", installDeviceId,
 					"-package", packageName,
 					"-platform", projectOS
 				];
 
 				return getProcessResults(command, args, "", {}, true).then(() => ({ debugPackageId }));
 			}).then(() => {
-				console.log("RESULTS ASIFHAKSHFAKSHF")
+				console.info("How's the debug package iD? ");
+				consoleLogObject(debugPackageId);
+
 				showNotification("🏃‍♂️ Trying to run test build...","Trying to run","", "-runOnDevice");
 
-				let launchCommand, launchArgs;
-				if(projectOS=="ios") {
-					// Show notice it's installed and you have to launch it yourself!
-					launchCommand = flexSDKBase + "/bin/adt";
-					launchArgs = [ "-launchApp", "-platform", "android", "-device", deviceId, "-appid", debugPackageId ]
-				} else if(projectOS=="android") {
-					/* Uh, this may not work with Android anymore! Maybe it works with iOS??
-					command = flexSDKBase + "/bin/adt";
-					args = [ "-launchApp", "-platform", "android", "-device", deviceId, "-appid", debugPackageId ]
-					// if(debug) {
-					// 	args.push("-startDebugger");
-					// }
-					*/
-					// Need to use Android's ADB to launch, thanks Google!
-					const androidSDKBase = determineAndroidSDKBase();
-					launchCommand = androidSDKBase + "/platform-tools/adb";
-					launchArgs = [
-						"shell",
-						"monkey",
-						"-p",
-						debugPackageId,
-						"-c",
-						"android.intent.category.LAUNCHER",
-						"1"
-					];
-				}
+				/* @NOTE ADB's launching for "run" doesn't work any more for either Android or iOS. "Debug" running does work for Android, not iOS */
+				// launchCommand = flexSDKBase + "/bin/adt";
+				// launchArgs = [ "-launchApp", "-platform", projectOS, "-device", deviceId, "-appid", debugPackageId ]
+				// if(debug) {
+				// 	args.push("-startDebugger");
+				// }
 
-				return new TaskProcessAction(launchCommand, {
-					shell: true,
-					args: launchArgs,
-					env: {}
-				});
+				let launchCommand, launchArgs, launchWithShell;
+//
+				// if(debugMode) {
+//
+				// } else {
+					if(projectOS=="ios") {
+						/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
+						launchCommand = "xcrun";
+						launchArgs = [
+							"devicectl",
+							"device",
+							"process",
+							"launch",
+							"--console",
+							"--device",
+							deviceId,
+							debugPackageId
+						];
+					} else if(projectOS=="android") {
+						// Need to use Android's ADB to launch, thanks Google!
+						const androidSDKBase = determineAndroidSDKBase();
+						launchCommand = androidSDKBase + "/platform-tools/adb";
+						launchArgs = [
+							"shell",
+							"monkey",
+							"-p",
+							debugPackageId,
+							"-c",
+							"android.intent.category.LAUNCHER",
+							"1"
+						];
+					// }
+
+					return new TaskProcessAction(launchCommand, {
+						shell: true,
+						args: launchArgs,
+						env: {}
+					});
+				}
 			}).catch(error => {
 				cancelNotification("-runOnDevice");
 				console.error("Launch on device error: ");
@@ -2462,7 +2491,6 @@ console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 				notice.actions = ["Install an SDK", "Remove this setting", "Ignore for now"];
 				noticePromise = nova.notifications.add(notice);
 				noticePromise.then((reply) => {
-					console.log("AAAA: " + reply.actionIdx);
 					switch(reply.actionIdx) {
 						case 0: {
 							installSDKPrompt(flexSDKAskedFor);

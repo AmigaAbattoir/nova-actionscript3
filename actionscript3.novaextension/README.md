@@ -44,6 +44,8 @@ The goal was to be able to use all of my old Adobe Flash Builder projects and co
 
   - Tasks can also have different main application files and output to different folders
 
+  - Starting with v0.12 you can launch on iOS and Android devices
+
 - 📦 **Exporting AIR Packages**
 
   - AIR, AIRI, Captive bundles, and native installer for Mac should work (_untested for submitting to app stores_).
@@ -90,6 +92,14 @@ ActionScript 3 and MXML for Nova requires the following (besides Nova) to be ins
 
 ### Optional
 
+If developing Android apps, then you will need:
+
+- **Android SDK tools** - Default settings look for it in `~/Libarary/Android/SDK`, but you can configure that differently.
+
+For iOS apps, you will need to have:
+
+- **XCode 15+** - This is also used to launch a test run on your iOS device if you choose to.
+
 These are only needed if you plan on running Flash Player projects:
 
 - **Flash Player** (Standalone) - If trying to run Flash projects
@@ -99,6 +109,7 @@ These are only needed if you plan on running Flash Player projects:
 - **Old Chrome/Chromium with PPAPI Flash Player** - Version prior to V88 should be able to run in browser
 
   ![](assets/flash-in-web-small.png)
+
 
 ## 🚀 Usage
 
