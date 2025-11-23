@@ -77,6 +77,76 @@ function displayDeviceType(type) {
 	return type;
 }
 
+function determineCertificatePassword(certificateLocation) {
+	return new Promise((resolve, reject) => {
+		var certificateName = certificateLocation.split("/").pop();
+
+		// Check if we have the password stored in the user's Keychain
+		var passwordCheck = getCertificatePasswordInKeychain(certificateLocation);
+
+		// If not, then check if we saved for the session
+		if(passwordCheck=="") {
+			passwordCheck = getSessionCertificatePassword(certificateLocation);
+		}
+
+		// This will be a promise, I promise!
+		var passwordGet;
+
+		// If password is empty, let's try to get it.
+		if(passwordCheck=="") {
+			// Need to get password
+			passwordGet = promptForPassword(certificateLocation,false).then((password) => {
+				if(password!=undefined) {
+					// Return a new Promise with the results of the how to save window
+					return new Promise((resolve) => {
+						// Ask to save, use one time, or for session?
+						let saveButtons = ["This time","Save to Keychain","Use this session","Abort"];
+						nova.workspace.showActionPanel("Password accecpted. How would you like to use it? You can use this one time, or choose to save until you quit Nova, or store it in your Keychain.",
+						{ buttons: saveButtons }, (saveType) => {
+							resolve({ saveType: saveButtons[saveType], password: password });
+						});
+
+					});
+				}
+			}).catch((error) => {
+				passwordGet = Promise.resolve({ saveType: "Abort", password: "" });
+			});
+		} else {
+			// We have a password stored already, so we can say this time..,, fulfill the promise
+			passwordGet = Promise.resolve( { saveType: "This time", password: passwordCheck });
+		}
+
+		passwordGet.then((reply) => {
+			var password;
+			switch(reply.saveType) {
+				case "This time": {
+					password = reply.password;
+					break;
+				}
+				case "Save to Keychain": {
+					password = reply.password;
+					setCertificatePasswordInKeychain(certificateLocation,password);
+					break;
+				}
+				case "Use this session": {
+					password = reply.password;
+					setSessionCertificatePassword(certificateLocation,password);
+					// @TODO Set context variable to track password.
+					break;
+				}
+				case "Abort": {
+					// @TODO Ask to remove build?
+					resolve(null);
+					return;
+					break;
+				}
+			}
+
+			resolve({ saveType: "This time", password: password });
+		});
+	});
+}
+
 /**
  * The Task Assistant that handles all the things for Task.
  */
@@ -104,8 +174,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		"extensionTemplate" : "",
 		"extensionValues": { }
 	};
-
-	oops = 0;
 
 	/**
 	 * Clean the build directory. Basically, delete the dir then make it again.
@@ -272,7 +340,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					}
 
 					// If default (desktop), then for Mac, certain icons aren't set, then it will be a default empty icon
-					if(taskConfig["as3.target"]=="default") {
+					if(taskConfig["as3.target"]=="default" || taskConfig["as3.target"]=="mac") {
 						checkMacBuildForIcons(taskConfig);
 					}
 
@@ -282,74 +350,16 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						if(taskConfig["as3.packaging.certificate"] && taskConfig["as3.packaging.certificate"]!="") {
 							certificateLocation = taskConfig["as3.packaging.certificate"];
 						}
-						var certificateName = certificateLocation.split("/").pop();
 
-						// Check if we have the password stored in the user's Keychain
-						var passwordCheck = getCertificatePasswordInKeychain(certificateLocation);
-
-						// If not, then check if we saved for the session
-						if(passwordCheck=="") {
-							passwordCheck = getSessionCertificatePassword(certificateLocation);
-						}
-
-						// This will be a promise, I promise!
-						var passwordGet;
-
-						// If password is empty, let's try to get it.
-						if(passwordCheck=="") {
-							// Need to get password
-							passwordGet = promptForPassword(certificateLocation,false).then((password) => {
-								if(password!=undefined) {
-									// Return a new Promise with the results of the how to save window
-									return new Promise((resolve) => {
-										// Ask to save, use one time, or for session?
-										let saveButtons = ["This time","Save to Keychain","Use this session","Abort"];
-										nova.workspace.showActionPanel("Password accecpted. How would you like to use it? You can use this one time, or choose to save until you quit Nova, or store it in your Keychain.",
-										{ buttons: saveButtons }, (saveType) => {
-											resolve({ saveType: saveButtons[saveType], password: password });
-										});
-
-									});
-								}
-							}).catch((error) => {
-								passwordGet = Promise.resolve({ saveType: "Abort", password: "" });
-							});
-						} else {
-							// We have a password stored already, so we can say this time..,, fulfill the promise
-							passwordGet = Promise.resolve( { saveType: "This time", password: passwordCheck });
-						}
-
-						passwordGet.then((reply) => {
-							var password;
-							switch(reply.saveType) {
-								case "This time": {
-									password = reply.password;
-									break;
-								}
-								case "Save to Keychain": {
-									password = reply.password;
-									setCertificatePasswordInKeychain(certificateLocation,password);
-									break;
-								}
-								case "Use this session": {
-									password = reply.password;
-									setSessionCertificatePassword(certificateLocation,password);
-									// @TODO Set context variable to track password.
-									break;
-								}
-								case "Abort": {
-									// @TODO Ask to remove build?
-									return;
-									break;
-								}
-							}
-
+						determineCertificatePassword(certificateLocation).then((results) => {
+							pasword = results.password;
+/*
 console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 console.log("&&&& PACKAGE BUILDER TASKCONFIG &&&&&&&&&&&&&&&&&&&&&&&&")
 consoleLogObject(taskConfig);
 console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-
+*/
 							this.package(projectType, taskConfig, releasePath, certificateLocation, password);
 						},(reject) => {
 							// console.log("passwordGet.then((reject): ");
@@ -716,7 +726,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	 * @param {string} password - The password used for signing the package
 	 * @param {boolean} forRunOrDebug - Default is `false` for packaging a release, otherwise `true` if this is going to be used for run/debug
 	 */
-	package(projectType, taskConfig, releaseFolder, certificateLocation, password, forRunOrDebug = false) {
+	package(projectType, taskConfig, releaseFolder, certificateLocation, password, forRunOrDebug = false, debugMode = false) {
 		console.log("RELEASE PATH for package(): " + releaseFolder);
 
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
@@ -788,6 +798,9 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 		var args = [];
 		var env = {};
 
+		var archType = taskConfig["as3.deployment.arch"];
+		var currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
+
 		// Replace with function, passing the certificateLocation and password?!
 		if(taskConfig["as3.packaging.type"]=="intermediate") {
 			args.push("-prepare");
@@ -816,6 +829,11 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 					targetType = "apk-debug";
 					args.push(targetType);
 
+					if(debugMode) {
+						args.push("-listen");
+						args.push("7936");
+					}
+
 					packageName = packageName.replace(/\.air$/, ".apk");
 				} else {
 					var targetType = taskConfig["as3.deployment.target"];
@@ -830,13 +848,19 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 						packageName = packageName.replace(/\.air$/, ".apk");
 					}
 				}
+
 				args.push("-arch");
-				// console.log("taskConfig: ");
-				// consoleLogObject(taskConfig);
-				// console.log("taskConfig[as3.deployment.arch]: " + taskConfig["as3.deployment.arch"]);
-				var archType = taskConfig["as3.deployment.arch"];
 				if(archType==null) {
-					archType = "armv7";
+					archType = "armv7";  // Or should this now be armv8?
+				} else {
+					if(archType=="armv8") {
+						// If less than 33.1, there's no armv8 support, so we definitely can fail now!
+						if(currentAIRSDKVersion<33.1) {
+							console.log(currentAIRSDKVersion);
+							nova.workspace.showErrorMessage("When exporting for Android armv8, make sure you are using AIR SDK 33.1.1.533 or greater, current version is " + currentAIRSDKVersion);
+							return Promise.reject({success: false});
+						}
+					}
 				}
 				args.push(archType);
 			}else if(taskConfig["as3.target"]=="ios") {
@@ -955,11 +979,6 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 
 		var anes = taskConfig["as3.packaging.anes"];
 		// If there are ANEs, then we need to include the "ane" folder we made with the extracted
-		// ones that to the destination dir.
-		if (nova.inDevMode()) {
-			console.log("anes: " + JSON.stringify(anes));
-		}
-
 		if(anes && anes.length>0) {
 			var aneTempPath = determineAneTempPath((forRunOrDebug ? "" : "release-"));
 			if(aneTempPath==null) {
@@ -1019,20 +1038,40 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 							}
 						);
 					}
+					// Check for warnings
+					// For Android, if permissions were not set properly, this will show (@NOTE could check earlier)
+					if(stdout.indexOf("Warning: Application has not specified its permission requirements in application.xml")!=-1) {
+						showNotification("Packaging warning!","Application has not specified its permission requirements in application.xml which may cause it not to run properly on the device!","I will fix!","-package-warning");
+					}
 					resolve({ success: true, packageName: outputFile });
 				} else {
-					var result = resolveStatusCodeFromADT(status);
+					var result = resolveStatusCodeFromADT(status, stderr);
 					var message = result.message;
 					if (nova.inDevMode()) {
 						console.log("Final RESULT: ");
 						console.log("STDOUT: " + stdout);
 						console.log("STDERR: " + stderr);
 					}
-					const shortError = (stderr.split("\nusage:")[0] || stderr).trim();
-					var title = "Export Package Failed";
-					if(forRunOrDebug) {
-						title = "Issue Packaging for Device Run";
+					var shortError = "Unknown error";
+					if(stderr.length==0) {
+						shortError = stdout;
+					} else {
+						shortError = (stderr.split("\nusage:")[0] || stderr).trim();
+						var title = "Export Package Failed";
+						if(forRunOrDebug) {
+							title = "Issue Packaging for Device Run";
+						}
+						if(shortError.indexOf("-arch must be followed by (armv7 | x86)")!=-1) {
+							shortError += "\n\n" + "Please select an appropriate architecture in your Task setting.";
+							if(archType=="armv8") {
+								let currentAIRSDKVersion = parseFloat(nova.workspace.context.get("currentAIRSDKVersion"));
+								if(currentAIRSDKVersion<33.2) {
+									shortError += "\n\n" + "Please make sure you are using AIR SDK 33.1.1.533 or greater!";
+								}
+							}
+						}
 					}
+
 					nova.workspace.showErrorMessage(title + "\n\n" + message + "\n\n" + shortError);
 					reject({ success: false, message, stderr });
 				}
@@ -1441,7 +1480,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 		let mainSrcDir = configValues.mainSrcDir;
 		// Only needed for AIR:
 		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
-		let anePaths = configValues.anePaths;
+		let anes = configValues.anes;
 
 		var base = nova.path.join(nova.extension.path, "debugger");
 
@@ -1513,6 +1552,11 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 				debugArgs.runtimeExecutable = fpApp;
 			}
 		} else {
+			// If launching on device is selected, let this function figure it out!
+			if(taskConfig["as3.task.launchMethod"]=="device") {
+				return this.launchOnDevice(projectType, projectOS, taskConfig, true);
+			}
+
 			var profileType = this.getProfileType(taskConfig, projectType, appXMLLocation);
 			debugArgs.profile = profileType;
 
@@ -1537,13 +1581,13 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 				debugArgs.platform = versionPlatform;
 			}
 
-			if(anePaths && anePaths.length>0) {
+			if(anes && anes.length>0) {
 				var aneTempPath = determineAneTempPath();
 				if(aneTempPath==null) {
 					displayANEsTempPathError(aneTempPath);
 					return null;
 				}
-				debugArgs.exdir = aneTempPath;
+				debugArgs.exdir = aneTempPath + "/";
 			}
 
 			debugArgs.runtimeExecutable = flexSDKBase + "/bin/adl";
@@ -1600,7 +1644,6 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	 */
 	resolveDeviceSelection(projectOS, taskConfig) {
 		return getSelectedDevices(projectOS).then((devices) => {
-try {
 			let deviceId = taskConfig["as3.task.deviceID"];
 
 			// console.log(" WANT DEVICE: [[ " + deviceId);
@@ -1609,19 +1652,22 @@ try {
 			// devices.push({ uuid: "ABCDEF123456789", model: "Fake Device 3"} );
 			// consoleLogObject(devices);
 
-			// If no preferred devices are set, then we just default to first or ask which one and return!
-			if(!deviceId) {
+			// If no preferred devices are set and we have devices, then we just default to first or ask which one and return!
+			if(!deviceId && devices.length>0) {
 				if(devices.length==1) { // Only found one, use that!
 					taskConfig["as3.task.deviceID"] = devices[0].uuid;
-					return taskConfig;
+					return { taskConfig, devices };
 				} else if(devices.length>1) { // Found multiple devices, ask which one!
 					return this.selectDeviceToLaunchOn(devices, taskConfig).then(() => ({ taskConfig, devices }));
 				}
 			} else {
 				let foundPreferredDevice = devices.find(d => d.uuid==deviceId);
-				if(foundPreferredDevice==undefined) {
+				if(foundPreferredDevice==undefined || devices.length==0) {
 					let message;
 					let deviceButtons = ["🔄 Recheck", "🖥️ Run in Simulator", "❌ Cancel"];
+					if(nova.inDevMode()) {
+						deviceButtons.push("DEV CHEAT");
+					}
 					if (devices.length === 0) {
 						// No devices at all — then we don't have any other options than those above
 						message = "No connected " + displayDeviceType(projectOS) + " devices were found. ";
@@ -1632,7 +1678,7 @@ try {
 						}
 						if(devices.length==1) {
 							message += "However, a device " +  devices[0].uuid + " - " + devices[0].model + " was found. ";
-							deviceButtons.unshift("📲 Use found device");
+							deviceButtons.unshift("📱Use found device");
 						} else if(devices.length>1) {
 							message += "However, other devices were found. ";
 							deviceButtons.unshift("📲 Select device");
@@ -1642,6 +1688,11 @@ try {
 					return new Promise((resolve) => {
 						nova.workspace.showActionPanel(message, { buttons: deviceButtons }, (result) => {
 							switch (deviceButtons[result]) {
+								case "DEV CHEAT": { // Only use for testing/developing extension
+									taskConfig["as3.task.deviceID"] = "no devices[0].uuid";
+									resolve({taskConfig, devices});
+									break;
+								}
 								case "🔄 Recheck": {
 									resolve(this.resolveDeviceSelection(projectOS, taskConfig));
 									break;
@@ -1650,7 +1701,7 @@ try {
 									taskConfig["as3.task.launchMethod"] = "simulator";
 									resolve({taskConfig, devices});
 									break;
-								case "📲 Use found device": {
+								case "📱 Use found device": {
 									taskConfig["as3.task.deviceID"] = devices[0].uuid;
 									resolve({taskConfig, devices});
 									break;
@@ -1668,10 +1719,8 @@ try {
 					});
 				}
 			}
-			console.info("Returning taskConfig.... ")
-			// Preferred device found and ready to go
+			// Preferred device was found and ready to go
 			return {taskConfig, devices} ;
-} catch(error) { console.error(error.message); console.error(error.stack); }
 		});
 	}
 
@@ -1683,12 +1732,6 @@ try {
 	 * @param {boolean} debugMode - `true` if we want to do this as a debug, otherwise `false`
 	 */
 	launchOnDevice(projectType, projectOS, taskConfig, debugMode = false) {
-		console.warn(" Launch on device OOPS count: " + this.oops);
-		this.oops++;
-		if(this.oops>10) {
-			return null;
-		}
-
 		console.log("------------------------- LAUNCH ON DEVICE CALLED _--------------------");
 		let command = "";
 		let args = [];
@@ -1696,21 +1739,43 @@ try {
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		let destDir = configValues.destDir;
+		let destDirRelative = nova.path.relative(destDir,nova.workspace.path);
 		let appXMLName = configValues.appXMLName;
 		let exportName = configValues.exportName;
 		let mainSrcDir = configValues.mainSrcDir;
+		let certificate = configValues.certificate;
 		// Only needed for AIR:
 		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
 		let anes = configValues.anes;
 
-		var deviceId = taskConfig["as3.task.deviceID"];
+		// Later in thens...
+		var deviceHandle = null;
+		var debugPackageId = "";
+		var packageFileName = null;
 
+		// Quick checks before even checking devices.
+		// iOS - Make sure we have a Certificate and Provisioning Profile!!
+		if(projectOS=="ios") {
+			let hasCertificate = (certificate==null) ? false : true;
+			let provisioningProfile = taskConfig["as3.packaging.provisioningFile"];
+			let hasProvisioningProfile = (provisioningProfile==undefined || provisioningProfile==null)  ? false : true;
+
+			if(hasCertificate==false || hasProvisioningProfile==false) {
+				let message = "Even when testing on an iOS device, your project and/or Tasks will need to have";
+				message += (hasCertificate==false && hasProvisioningProfile==false) ? " both" : "";
+				message += (hasCertificate==false)                                  ? " an Apple iOS developer certificate converted into P12 format set as the Certificate" : "";
+				message += (hasCertificate==false && hasProvisioningProfile==false) ? " and" : "";
+				message += (hasProvisioningProfile==false)                          ? " a Provisioning file value set." : ".";
+				nova.workspace.showErrorMessage(message);
+				return;
+			}
+		}
+
+		var deviceId = taskConfig["as3.task.deviceID"];
 try {
-	// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
-	// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+		console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+		console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
 		return this.resolveDeviceSelection(projectOS, taskConfig).then((result) => {
-			// console.log("resolvedConfig: ");
-			// consoleLogObject(resolvedConfig);
 			if(!result) {
 				return null;
 			}
@@ -1727,9 +1792,12 @@ try {
 				}
 			}
 
+			// Otherwise, let's try the device
 			deviceId = taskConfig["as3.task.deviceID"];
 			let deviceInfo = devices.find(d => d.uuid==deviceId);
-			let deviceHandle = deviceInfo.transportID; // Needed for iOS stuff
+			if(deviceInfo) {
+				deviceHandle = deviceInfo.transportID; // Needed for iOS stuff
+			}
 
 			// Let's make sure we have a temp folder to dump stuff to
 			var tempDirBase = determineTempPath();
@@ -1738,19 +1806,24 @@ try {
 				return Promise.reject(new Error("Issues with temp path"));
 			}
 
-			// This will get filled in later
-			var debugPackageId = "";
+			// @NOTE Should check if there is an output folder first, if not, build
+			// @NOTE Should check if any files were modfided since last packaging, then we can skip building the package
 
-// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-// console.log("TEMP DIR: " + tempDirBase);
-// console.log("destDir: " + destDir);
-// console.log("taskConfig[as3.task.output]: " + taskConfig["as3.task.output"]);
-// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 			// Copy the build to a temporary folder as we need to modify the app.xml a bit
-			var tempOutputFolder = nova.path.join(tempDirBase,taskConfig["as3.task.output"]);
+			var tempOutputFolder = nova.path.join(tempDirBase, destDirRelative); // Change to temp dir + destDir
+			ensureFolderIsAvailable(tempOutputFolder);
+
+			// Do we really need to repackage??? Maybe we can skip if nothing's been modified since!
+			if(this.checkIfModifiedAfterBuild(tempOutputFolder, exportName)==false) {
+				console.info("  #### HEY YOU CAN SKIP COPYING AND PACKAGING, JUST GET TO INSTALLING!! #### ");
+				console.info("  #### BUT! We still need to figure out the .... ####");
+				console.info("  #### tempOutputFolder: ",tempOutputFolder);
+				console.info("  #### debugPackageID: (look at code below...)");
+				console.info("  #### package filename: (look in package(), could we move some of that logic into the getConfigsForBuildAndPacking()??");
+			}
 
 			return this.copyAssetsOf(destDir, tempOutputFolder, true).then(() => {
-				// Modify the app.xml so both a real release and the debug can be installed, and our debug certificate doesn't interfere.
+				// Now, that we copied the files, modify the app.xml so both a real release and the debug can be installed, and our debug certificate doesn't interfere.
 				let appXMLLocation = nova.path.join(tempOutputFolder, appXMLName);
 				let appXML = getStringOfFile(appXMLLocation);
 				if(appXML==null) {
@@ -1758,12 +1831,19 @@ try {
 				}
 
 				try {
-					// Replace the app.xml <id> on Android
+					// On Android, let's replace the app.xml <id> so we can use our debug certificate
 					if(projectOS=="android") {
 						appXML = appXML.replace("</id>",".DEBUG</id>");
 					}
 					debugPackageId = appXML.match(/<id>([^<]*)<\/id>/i)[1];
-					// Replace the app.xml <name> for the debug version
+					// If "No AIR Flare" is not turned on or set, we need to adjust the package id that we will use!
+					if(projectOS=="android") {
+						var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
+						if(noAndroidAirFlair==undefined || noAndroidAirFlair==false) {
+							debugPackageId = "air." + debugPackageId; // The package will have AIR flair
+						}
+					}
+					// Replace the app.xml <name> for the debug version for both iOS and Android
 					appXML = appXML.replace("</name>"," Debug</name>");
 					var appXMLFile = nova.fs.open(appXMLLocation, "w");
 					appXMLFile.write(appXML);
@@ -1771,81 +1851,230 @@ try {
 				} catch(error) {
 					console.log("*** ERROR: APP XML file! error: ",error);
 					consoleLogObject(error);
-					return Promise.reject(new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid."));
+					return Promise.reject(new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's contents that it is valid."));
 				}
-
-				console.info("debugPackageId:: " + debugPackageId);
-
 				return;
 			}).then(() => {
-				// //var releasePath = "bin-release-temp";
-				// // Force the task to use a different output for packaging the we will remove if packaging is complete...
-				// var originalReleasePath = taskConfig["as3.task.output"]// = nova.path.join(nova.workspace.path, releasePath);
-				//
-				// // Modify export folder for building debug in special temp, but store so we can resort to simulator if no device build works:
-				// var originalExportFolder = taskConfig["as3.export.folder"];
-
-console.info("what about in the next then()?? debugPackageId:: " + debugPackageId);
-				// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-				console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-				consoleLogObject(taskConfig);
-				console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-				// console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-
-				/** @TODO Something like export packaging where the password is a Promise and asks for the password for iOS only, */
 				showNotification("Packaging Debug build...","📦 Trying to package","Please wait...", "-runOnDevice");
-				let certificateLocation = nova.extension.path + "/Defaults/android-debug.p12";
-				let password = "password";
-				if(projectOS=="ios") { // Need to use user's certificate, no way around it.
-					certificateLocation = taskConfig["as3.packaging.certificate"];
-					password = "password";
+				if(projectOS=="android") {
+					return Promise.resolve({
+						certificateLocation: nova.extension.path + "/Defaults/android-debug.p12",
+						password: "password"
+					});
+				} else {
+					// iOS needs to use user's certificate, no way around it.
+					let certificateLocation = taskConfig["as3.packaging.certificate"];
+					// and we need their password...
+					return determineCertificatePassword(certificateLocation).then((result) => {
+						return {
+							certificateLocation: certificateLocation,
+							password: result.password
+						};
+					});
 				}
-
-				// console.log("certificateLocation: " + certificateLocation);
-				// console.log("password: " + password);
-
-				return this.package(projectType, taskConfig, nova.path.relative(destDir,nova.workspace.path), certificateLocation, password, true).then((results) => ({ results }));
+			}).then(({ certificateLocation, password }) => {
+				console.info("Packaging...");
+				// Return the results of packaging to next then
+				return this.package(projectType, taskConfig, destDirRelative, certificateLocation, password, true, debugMode).then((results) => ({ results }));
+				/** @DEBUG QUICKER
+				return Promise.resolve({ success: true, packageName: "/var/folders/p_/sjwgjr310zd4zpj5bgx458p00000gn/T/com.abattoirsoftware.actionscript3/f7302921-497b-4102-b046-71e156176d35/SnakeInTheGrassMobile.apk"});
+				*/
 			}).then(({ results }) => {
+				console.info("Installing...");
+				console.log("RESULTS: ")
+				consoleLogObject(results)
+				/** @DEBUG QUICKER
+				if(results==undefined) {
+					results = { success: true, packageName: "/private/var/folders/p_/sjwgjr310zd4zpj5bgx458p00000gn/T/com.abattoirsoftware.actionscript3/f7302921-497b-4102-b046-71e156176d35/SnakeInTheGrassMobile.apk"};
+				}
+				*/
+
 				// Install
 				if(results.success==false) {
 					return Promise.reject(new Error("Problem building package to install on device."));
 				}
 
-				let installDeviceId = deviceId;
+				var installDeviceId = deviceId;
 				// For some reason, iOS uses the "device handle" to install/launch instead of the UUID like Android
 				if(projectOS=="ios") {
-					installDeviceId = deviceHandle;
+					installDeviceId = deviceHandle.toString();
 				}
 
 				showNotification("📲  Installing test build...","Trying to install","Please wait...", "-runOnDevice");
-				let packageName = results.packageName;
+				packageFileName = results.packageName;
 				command = flexSDKBase + "/bin/adt";
 				args = [
 					"-installApp",
 					"-device", installDeviceId,
-					"-package", packageName,
+					"-package", packageFileName,
 					"-platform", projectOS
 				];
 
+				console.log("ARRRRRRG:");
+				consoleLogObject(args)
+
+				/** @DEBUG QUICKER
+				debugPackageId = "air.com.abattoirsoftware.SnakeInTheGrass.DEBUG"; return;
+				*/
 				return getProcessResults(command, args, "", {}, true).then(() => ({ debugPackageId }));
 			}).then(() => {
 				console.info("How's the debug package iD? ");
 				consoleLogObject(debugPackageId);
+				// debugPackageId = "air.com.abattoirsoftware.SnakeInTheGrass.DEBUG";
+				console.log("DEBUG MODE: ")
+				console.log(debugMode);
+				showNotification("🏃 Trying to run test build...","Trying to run","", "-runOnDevice");
 
-				showNotification("🏃‍♂️ Trying to run test build...","Trying to run","", "-runOnDevice");
+				let launchCommand, launchArgs;
+				const androidSDKBase = determineAndroidSDKBase();
+				if(debugMode) {
+					var connectIP = "127.0.0.1";
+					var connectPort = 7936;
 
-				/* @NOTE ADB's launching for "run" doesn't work any more for either Android or iOS. "Debug" running does work for Android, not iOS */
-				// launchCommand = flexSDKBase + "/bin/adt";
-				// launchArgs = [ "-launchApp", "-platform", projectOS, "-device", deviceId, "-appid", debugPackageId ]
-				// if(debug) {
-				// 	args.push("-startDebugger");
-				// }
+					var base = nova.path.join(nova.extension.path, "debugger");
 
-				let launchCommand, launchArgs, launchWithShell;
-//
-				// if(debugMode) {
-//
-				// } else {
+					var actionArgs = [];
+					// Pass the Flex SDK
+					actionArgs.push("-Dflexlib=" + flexSDKBase+"/frameworks");
+					if(isWorkspace()) { // For workspaces, pass the folder
+						actionArgs.push("-Dworkspace=" + nova.workspace.path);
+					}
+					//uncomment to debug the SWF debugger JAR
+					// actionArgs.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
+					actionArgs.push("-cp");
+					actionArgs.push("" + base + "/bin/*:" + base + "/bundled-debugger/*");
+					actionArgs.push("com.as3mxml.vscode.SWFDebug");
+					// actionArgs.push("--connect", connectIP + ":" + connectPort);
+
+					var debugArgs = {};
+					debugArgs.request = "attach";
+					debugArgs.port = connectPort;
+					if(anes) {
+						debugArgs.exdir = anes
+					}
+
+					if(projectOS=="ios") {
+						connectIP = "192.168.123.129";
+						// actionArgs.push("--connect", connectIP + ":" + connectPort);
+						debugArgs.applicationID = debugPackageId;
+						// Override for testing...
+						debugArgs.connect = false;   // over WIFI should be false
+						debugArgs.platform = "ios";
+
+
+					var action = new TaskDebugAdapterAction("actionscript3");
+					action.adapterStart = "launch"; // We want Nova to launch it!
+					action.args = actionArgs;
+					action.command = "/usr/bin/java";
+					action.cwd = nova.workspace.path;
+					action.debugArgs = debugArgs;
+
+					action.debugRequest = "attach";
+						action.socketHost = connectIP;
+						action.socketPort = connectPort;
+						// action.socketHost = connectIP;
+						// action.socketPort = connectPort;
+						//action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
+
+						return action;
+					} else if(projectOS=="android") {
+						// MODE 1 - USE SWF-DEBUG ONLY....
+						if(false) {
+							// To install with SWF Debug
+							debugArgs.bundle = packageFileName;
+							// To Launch with SWF Debug
+							debugArgs.applicationID = debugPackageId;
+							debugArgs.connect = true;// true; // For Android true, over WIFI should be false
+							debugArgs.platform = "android";
+
+							var action = new TaskDebugAdapterAction("actionscript3");
+							action.adapterStart = "launch"; // We want Nova to launch it!
+							action.args = actionArgs;
+							action.command = "/usr/bin/java";
+							action.cwd = nova.workspace.path;
+							action.debugArgs = debugArgs;
+
+							action.debugRequest = "attach";
+							// action.socketHost = connectIP;
+							// action.socketPort = connectPort;
+							// action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
+
+							console.log("Action: --------------");
+							consoleLogObject(action);
+							console.log("Action ARGS: --------------");
+							consoleLogObject(actionArgs);
+							console.log("Debug ARGS: --------------");
+							consoleLogObject(debugArgs)
+
+							return action;
+						} else {
+							var adb = androidSDKBase + "/platform-tools/adb";
+							// var adb = flexSDKBase + "/lib/android/bin/adb";
+							// Setup port forwarding on Android...
+							return getProcessResults(adb, [ "forward", "tcp:7936", "tcp:7936"] , "", {}, true).then(() => {
+								console.log(" I should have forwarded the port, now I should enable debugger mode!");
+								// Now, enable AIR debugger mode on device...
+								return getProcessResults(adb, [ "shell", "setprop", "debug."+debugPackageId, "1"], "", {}, true).then(() => {
+									// Now we can launch the app!
+									return getProcessResults(adb,  [
+											"shell", "am", "start",
+											"-n", debugPackageId + "/.AIRAppEntry",
+											"--ez", "debuggable", "true",
+											"--ez", "remoteDebug", "true",
+											"--ez", "port", "7936"
+										], "", {}, true).then((result) => {
+											console.log("Launched ANDROID.");
+											console.log("RESULTS FROM LAUNCH...");
+											consoleLogObject(result);
+											if(result.status==0) {
+												console.log("HOLD ON! for a sec and a half....");
+												// Wait for runtime to connect?
+												return new Promise(r => setTimeout(r, 1000)).then(() => {
+													debugArgs.connect = true;// true; // For Android true, over WIFI should be false
+													debugArgs.platform = "android";
+													//debugArgs.platformSdk = androidSDKBase;
+													console.log("readying to returning ACTION....");
+
+													debugArgs.connect = true; // For Android true
+													debugArgs.platform = "android";
+													// debugArgs.platformSdk = androidSDKBase;
+
+
+													var action = new TaskDebugAdapterAction("actionscript3");
+													action.adapterStart = "launch"; // We want Nova to launch it!
+													action.args = actionArgs;
+													action.command = "/usr/bin/java";
+													action.cwd = nova.workspace.path;
+
+
+													action.debugArgs = debugArgs;
+													action.debugRequest = "attach";
+													action.socketHost = connectIP;
+													action.socketPort = connectPort;
+													// action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
+
+													console.log("Action: --------------");
+													consoleLogObject(action);
+													console.log("Action ARGS: --------------");
+													consoleLogObject(actionArgs);
+													console.log("Debug ARGS: --------------");
+													consoleLogObject(debugArgs)
+
+													return action;
+												});
+											} else {
+												return Promise.reject(new Error("SOmething went wrong with the launchypoo"));
+											}
+									});
+								});
+							}).catch((error) => {
+								return Promise.reject(error);
+								// return Promise.reject(new Error("Tried getting the app started!"));
+							});
+							console.log("I'm outta here... SHOULDNT SHOW UP!!! ");
+						}
+					}
+				} else { // Regular old run on a device... How nice...
 					if(projectOS=="ios") {
 						/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
 						launchCommand = "xcrun";
@@ -1855,13 +2084,11 @@ console.info("what about in the next then()?? debugPackageId:: " + debugPackageI
 							"process",
 							"launch",
 							"--console",
-							"--device",
-							deviceId,
+							"--device",	deviceId,
 							debugPackageId
 						];
 					} else if(projectOS=="android") {
 						// Need to use Android's ADB to launch, thanks Google!
-						const androidSDKBase = determineAndroidSDKBase();
 						launchCommand = androidSDKBase + "/platform-tools/adb";
 						launchArgs = [
 							"shell",
@@ -1872,8 +2099,7 @@ console.info("what about in the next then()?? debugPackageId:: " + debugPackageI
 							"android.intent.category.LAUNCHER",
 							"1"
 						];
-					// }
-
+					}
 					return new TaskProcessAction(launchCommand, {
 						shell: true,
 						args: launchArgs,
@@ -1882,36 +2108,30 @@ console.info("what about in the next then()?? debugPackageId:: " + debugPackageI
 				}
 			}).catch(error => {
 				cancelNotification("-runOnDevice");
-				console.error("Launch on device error: ");
-				consoleLogObject(error);
+				if(nova.inDevMode()) {
+					console.error("Launch on device error: ");
+					consoleLogObject(error);
+				}
+				var message = "";
 				if(error.status) {
-					var result = resolveStatusCodeFromADT(error.status);
-					var message = result.message;
-					if(error.status==14 && error.stderr.indexOf("INSTALL_FAILED_NO_MATCHING_ABIS")!=-1) {
-						message += "\n\nThis can happen if you built for armv7, but the device only supports armv8!";
+					var result = resolveStatusCodeFromADT(error.status, error.stderr);
+					message = result.message;
+					if(error.stderr.match(/adb server version \(([0-9]*)\) doesn't match this client \(([0-9]*)\); killing/)) {
+						message += "\n\nThe version of ADB does not match with the installed device. For SWF-Debug to work, these need to match up. You may need to update your Android SDK with:\n`sdk/cmdline-tools/latest/bin/sdkmanager --update`";
 					}
 					nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\n" + message + "\n\nADT Error: " + error.stderr);
 				} else {
-					nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\nError: VVV" + error);
+					message = (error.message) ? error.message : error;
+					nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\nError: " + error);
 				}
-				return Promise.reject(new Error("Issue Installing Package for Device Run"));
+				return Promise.reject(new Error("RETURNING Issue Installing Package for Device Run"));
 			});
 		}).catch(error => {
-			consoleLogObject(error);
-			console.error("GET DEV ERORR: ",error);
-			console.error("GET DEV ERORR: ",error.stack);
-/*
-			// Should ask if we want to try reconnecting and scanning, or just use simulator
-			nova.workspace.showWarningMessage("No connected " + projectOS + " devices found, and there was an error on launching... — launching in simulator instead.");
-
-			// Fake it as a simulator!
-			taskConfig["as3.task.launchMethod"] = "simulator";
-			if(debugMode) {
-				return this.debugRun(projectType, projectOS, taskConfig);
-			} else {
-				return this.run(projectType, projectOS, taskConfig);
+			if(nova.inDevMode()) {
+				consoleLogObject(error);
+				console.error("GET DEV ERORR: ",error);
+				console.error("GET DEV ERORR: ",error.stack);
 			}
-*/
 			return null;
 		});
 } catch(error) { console.error(error.message); console.error(error.stack); return null; }
@@ -1927,9 +2147,9 @@ console.info("what about in the next then()?? debugPackageId:: " + debugPackageI
 		let command = "";
 		let args = [];
 
-console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
-consoleLogObject(taskConfig);
-console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
+// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
+// consoleLogObject(taskConfig);
+// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
 
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
@@ -2542,8 +2762,6 @@ console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 		let config = context.config;
 		let action = context.action;
 
-		this.oops = 0;
-
 		// We're going to convert our "config" to an array so that we can pass them to our run/build/clean
 		// and package so that even if we launch them manually without Nova's Build/Run and we can
 		// manually package them.
@@ -2604,6 +2822,11 @@ console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 			}
 		})
 		// consoleLogObject(taskConfig);
+
+		// Unless Tasks were made by importing from Flash Builder, they didn't include this.
+		if(!taskConfig["as3.target"]) {
+			taskConfig["as3.target"] = data.os;
+		}
 
 		if(action==Task.Build) {
 			if(data.type=="library") {

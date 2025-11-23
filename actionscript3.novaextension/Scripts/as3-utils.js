@@ -145,8 +145,9 @@ exports.resolveStatusCodeFromADL = function(status) {
  * https://help.adobe.com/en_US/air/build/WSBE9908A0-8E3A-4329-8ABD-12F2A19AB5E9.html
  *
  * @param {int} status - The status that ADT has returned
+ * @param {string} stderr - Output of stderr, if available to see if there's additional information we can use.
  */
-exports.resolveStatusCodeFromADT = function(status) {
+exports.resolveStatusCodeFromADT = function(status, stderr = "") {
 	var title = "";
 	var message = "";
 
@@ -160,6 +161,7 @@ exports.resolveStatusCodeFromADT = function(status) {
 		case 5: {
 			title =   "Unknown error";
 			message = "This error indicates a situation that cannot be explained by common error conditions. Possible root causes include incompatibility between ADT and the Java Runtime Environment, corrupt ADT or JRE installations, and programming errors within ADT.";
+			message += "\n\nTHis usually occurs when using an older AIR SDK (lower than 33.1) and using Java version greater than 8. You may want to use a new SDK.";
 			break;
 		}
 		case 6: {
@@ -206,6 +208,9 @@ exports.resolveStatusCodeFromADT = function(status) {
 		case 14: {
 			title =   "Device error";
 			message = "ADT cannot execute the command because of a device restriction or problem. For example, this exit code is emitted when attempting to uninstall an app that is not actually installed.";
+			if(stderr.indexOf("INSTALL_FAILED_NO_MATCHING_ABIS")!=-1) {
+				message += "\n\nThis can happen if you built for armv7, but the device only supports armv8!";
+			}
 			break;
 		}
 		case 15: {
@@ -410,6 +415,25 @@ exports.resolveStatusCodeFromADT = function(status) {
 		default: {
 			title =   "Unknown Error " + status;
 			message = "Better luck next time!";
+
+			if(stderr.indexOf("because module java.base does not export sun.security.x509 to unnamed module")!=-1) {
+				message = "This error may happen, if you are using Java 11+ on an AIR SDK less than 33.1."
+			}
+
+			// Let's check for some specific message that might help out:
+	// 		if() {
+// Exception in thread "main" java.lang.IllegalAccessError: class com.adobe.air.ipa.MachoSigner (in unnamed module @0x5eb06f3f) cannot access class sun.security.x509.X500Name (in module java.base) because module java.base does not export sun.security.x509 to unnamed module @0x5eb06f3f
+	// at com.adobe.air.ipa.MachoSigner.isDistributionCert(MachoSigner.java:1012)
+	// at com.adobe.air.ipa.IPASigner.isDistributionCert(IPASigner.java:58)
+	// at com.adobe.air.ipa.IPAOutputStream.createNewEntitlementPlist(IPAOutputStream.java:2055)
+	// at com.adobe.air.ipa.IPAOutputStream.finalizeSig(IPAOutputStream.java:1873)
+	// at com.adobe.air.ApplicationPackager.createPackage(ApplicationPackager.java:256)
+	// at com.adobe.air.ipa.IPAPackager.createPackage(IPAPackager.java:297)
+	// at com.adobe.air.ADT.parseArgsAndGo(ADT.java:696)
+	// at com.adobe.air.ADT.run(ADT.java:485)
+	// at com.adobe.air.ADT.main(ADT.java:535)
+//
+	// 		}
 			break;
 		}
 	}

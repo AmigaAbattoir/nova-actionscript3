@@ -54,6 +54,7 @@
 		{ "syntax": "actionscript3" },
 		{ "syntax": "actionscript" },
 		{ "syntax": "as" },
+		{ "syntax": "as3" },
 		{ "syntax": "mxml" }
 	],
 

@@ -1,5 +1,5 @@
 const { consoleLogObject, showNotification, getWorkspaceOrGlobalConfig, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace } = require("./nova-utils.js");
-const { getAIRSDKDefaultPath, getAIRSDKNameFromPath, getAIRSDKPathFromName } = require("./sdk-utils.js");
+const { getAIRSDKDefaultPath, getAIRSDKNameFromPath, getAIRSDKPathFromName, getAIRSDKInfo } = require("./sdk-utils.js");
 
 /**
  * Figures out what the AIR/Flex SDK location is. It checks to see if it's set at the extension
@@ -52,10 +52,20 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 	}
 
 // console.log(" USING SDK AT: " + flexSDKBase);
-
-	// Set context variable to keep track of it later @NOTE Not sure we need this.
-	currentSDKPath = flexSDKBase;
-	nova.workspace.context.set("currentSDKPath", currentSDKPath);
+	let currentSDKPath = nova.workspace.context.get("currentSDKPath");
+	// If using a different flexSDKBase than before, let's update the contexts that we use in Nova to keep track of some SDK info
+	if(flexSDKBase!=currentSDKPath) {
+		currentSDKPath = flexSDKBase;
+		nova.workspace.context.set("currentSDKPath", currentSDKPath);
+		let airSDKInfo = getAIRSDKInfo(flexSDKBase);
+		currentAIRSDKVersion = airSDKInfo.version;
+		nova.workspace.context.set("currentAIRSDKVersion",currentAIRSDKVersion);
+		currentAIRAppVersions = airSDKInfo.appVersions;
+		nova.workspace.context.set("currentAIRAppVersions",JSON.stringify(currentAIRAppVersions));
+		currentAIRExtensionNamespaces = airSDKInfo.extensionNamespaces;
+		nova.workspace.context.set("currentAIRExtensionNamespaces",JSON.stringify(currentAIRExtensionNamespaces));
+		currentSDKPath = airSDKInfo.path;
+	}
 
 	// console.log("Setting as3.sdk.installed[0]:      " + getWorkspaceOrGlobalConfig("as3.sdk.installed")[0]);
 	// console.log("Setting as3.compiler.sdk: " + getWorkspaceOrGlobalConfig("as3.compiler.sdk"));
@@ -71,7 +81,7 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
  */
 exports.determineAndroidSDKBase = function() {
 		// Get the Android SDK and call ADB since it give more details about devices attached
-	let androidSDKBase = nova.workspace.config.get("as3.sdk.android");
+	let androidSDKBase = getWorkspaceOrGlobalConfig("as3.sdk.android");
 	if(!androidSDKBase) {
 		androidSDKBase = "~/Library/Android/sdk/";
 	}
@@ -235,6 +245,10 @@ exports.getConfigsForBuildAndPacking = function(taskConfig = {}, appendWorkspace
 	const packageName = exportName.replace(".swf",".air");
 	const doTimestamp = nova.workspace.config.get("as3.packaging.timestamp");
 	const timestampURL = nova.workspace.config.get("as3.packaging.timestampUrl");
+	var certificate = nova.workspace.config.get("as3.packaging.certificate");
+	if(taskConfig["as3.packaging.certificate"]) {
+		certificate = taskConfig["as3.packaging.certificate"];
+	}
 
 	const configData = {
 		"config": "airmobile",
@@ -261,6 +275,7 @@ exports.getConfigsForBuildAndPacking = function(taskConfig = {}, appendWorkspace
 		"packageName": packageName,
 		"doTimestamp": doTimestamp,
 		"timestampURL": timestampURL,
+		"certificate": certificate
 	};
 
 	if(nova.inDevMode()) {

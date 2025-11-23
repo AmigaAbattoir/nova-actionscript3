@@ -52,7 +52,7 @@ exports.cancelNotification = function(requestIdAddition) {
  * return back an object containing status, stdout and stderr.
  */
 exports.getProcessResults = function(command, args = [], cwd = "", env = {}, debugOutput = false) {
-//try{
+// try{
 	var proc = new Promise((resolve, reject) => {
 		var stdout = "";
 		var stderr = "";
@@ -87,7 +87,7 @@ exports.getProcessResults = function(command, args = [], cwd = "", env = {}, deb
 		});
 		process.start();
 	});
-// } catch(error) { console.error("ERROR: ",error); }
+// } catch(error) { console.error("getProcessResults() ERROR: ",error); }
 	return proc;
 }
 

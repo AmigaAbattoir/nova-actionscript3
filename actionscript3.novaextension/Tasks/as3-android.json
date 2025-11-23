@@ -250,6 +250,7 @@
 						"type": "enum",
 						"radio": false,
 						"default": "armv7",
+						"description": "What type of architecture to package for. *NOTE:* armv8 requires AIR 33.1.1.533 or greater.",
 						"values": [
 							["armv7"],
 							["armv8"],
