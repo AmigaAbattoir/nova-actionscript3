@@ -833,7 +833,12 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 						args.push("-listen");
 						args.push("7936");
 					}
-
+					// WIFI DEBUG??
+					// if(debugWifi) {
+						// args.push("-connect");
+						// var ip = "192.168.123.2";
+						// args.push(ip+":7936");
+					// }
 					packageName = packageName.replace(/\.air$/, ".apk");
 				} else {
 					var targetType = taskConfig["as3.deployment.target"];
@@ -866,7 +871,20 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 			}else if(taskConfig["as3.target"]=="ios") {
 				args.push("-target");
 				if(forRunOrDebug) {
-					args.push("ipa-test");
+					if(debugMode) {
+						args.push("ipa-debug-interpreter");
+
+						args.push("-listen");
+						args.push("7936");
+						// WIFI DEBUG??
+						// if(debugWifi) {
+							// args.push("-connect");
+							// var ip = "192.168.123.2";
+							// args.push(ip+":7936");
+						// }
+					} else {
+						args.push("ipa-test");
+					}
 				} else {
 					if(targetType==null) {
 						targetType = "ipa-test";
@@ -1819,7 +1837,7 @@ try {
 				console.info("  #### BUT! We still need to figure out the .... ####");
 				console.info("  #### tempOutputFolder: ",tempOutputFolder);
 				console.info("  #### debugPackageID: (look at code below...)");
-				console.info("  #### package filename: (look in package(), could we move some of that logic into the getConfigsForBuildAndPacking()??");
+				console.info("  #### packageFileName: (look in package(), could we move some of that logic into the getConfigsForBuildAndPacking()??");
 			}
 
 			return this.copyAssetsOf(destDir, tempOutputFolder, true).then(() => {
@@ -1876,18 +1894,10 @@ try {
 				console.info("Packaging...");
 				// Return the results of packaging to next then
 				return this.package(projectType, taskConfig, destDirRelative, certificateLocation, password, true, debugMode).then((results) => ({ results }));
-				/** @DEBUG QUICKER
-				return Promise.resolve({ success: true, packageName: "/var/folders/p_/sjwgjr310zd4zpj5bgx458p00000gn/T/com.abattoirsoftware.actionscript3/f7302921-497b-4102-b046-71e156176d35/SnakeInTheGrassMobile.apk"});
-				*/
 			}).then(({ results }) => {
 				console.info("Installing...");
 				console.log("RESULTS: ")
 				consoleLogObject(results)
-				/** @DEBUG QUICKER
-				if(results==undefined) {
-					results = { success: true, packageName: "/private/var/folders/p_/sjwgjr310zd4zpj5bgx458p00000gn/T/com.abattoirsoftware.actionscript3/f7302921-497b-4102-b046-71e156176d35/SnakeInTheGrassMobile.apk"};
-				}
-				*/
 
 				// Install
 				if(results.success==false) {
@@ -1913,14 +1923,10 @@ try {
 				console.log("ARRRRRRG:");
 				consoleLogObject(args)
 
-				/** @DEBUG QUICKER
-				debugPackageId = "air.com.abattoirsoftware.SnakeInTheGrass.DEBUG"; return;
-				*/
 				return getProcessResults(command, args, "", {}, true).then(() => ({ debugPackageId }));
 			}).then(() => {
 				console.info("How's the debug package iD? ");
 				consoleLogObject(debugPackageId);
-				// debugPackageId = "air.com.abattoirsoftware.SnakeInTheGrass.DEBUG";
 				console.log("DEBUG MODE: ")
 				console.log(debugMode);
 				showNotification("🏃 Trying to run test build...","Trying to run","", "-runOnDevice");
@@ -1954,29 +1960,92 @@ try {
 					}
 
 					if(projectOS=="ios") {
-						connectIP = "192.168.123.129";
-						// actionArgs.push("--connect", connectIP + ":" + connectPort);
-						debugArgs.applicationID = debugPackageId;
-						// Override for testing...
-						debugArgs.connect = false;   // over WIFI should be false
-						debugArgs.platform = "ios";
+						/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
+						launchCommand = "/usr/bin/xcrun";
+						launchArgs = [
+							"devicectl",
+							"device",
+							"process",
+							"launch",
+							"--device",	deviceId,
+							debugPackageId
+						];
+
+						// Launch the app, don't wait for it aand attach debugger!!
+						return getProcessResults(launchCommand, launchArgs, "", {}, true).then((result) => {
+							console.log("LAUNCHING ON IOS DEVICE BY USB!");
+							consoleLogObject(result);
+							if(result.status==0) {
+								console.log("HOLD ON! for a sec and a half....");
+								// Wait for runtime to connect?
+								return new Promise(r => setTimeout(r, 100)).then(() => {
+
+								debugArgs.connect = true;// true; // For Android true, over WIFI should be false
+								debugArgs.platform = "android";
+								//debugArgs.platformSdk = androidSDKBase;
+								console.log("readying to returning ACTION....");
+
+								debugArgs.connect = true; // For Android true
+								debugArgs.platform = "ios";
+								// debugArgs.platformSdk = androidSDKBase;
 
 
-					var action = new TaskDebugAdapterAction("actionscript3");
-					action.adapterStart = "launch"; // We want Nova to launch it!
-					action.args = actionArgs;
-					action.command = "/usr/bin/java";
-					action.cwd = nova.workspace.path;
-					action.debugArgs = debugArgs;
+								var action = new TaskDebugAdapterAction("actionscript3");
+								action.adapterStart = "launch"; // We want Nova to launch it!
+								action.args = actionArgs;
+								action.command = "/usr/bin/java";
+								action.cwd = nova.workspace.path;
 
-					action.debugRequest = "attach";
-						action.socketHost = connectIP;
-						action.socketPort = connectPort;
-						// action.socketHost = connectIP;
-						// action.socketPort = connectPort;
-						//action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
 
-						return action;
+								action.debugArgs = debugArgs;
+								action.debugRequest = "attach";
+								// action.socketHost = connectIP;
+								// action.socketPort = connectPort;
+								// action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
+
+								console.log("Action: --------------");
+								consoleLogObject(action);
+								console.log("Action ARGS: --------------");
+								consoleLogObject(actionArgs);
+								console.log("Debug ARGS: --------------");
+								consoleLogObject(debugArgs)
+
+								return action;
+							});
+						} else {
+							return Promise.reject(new Error("SOmething went wrong with the launchypoo"));
+						}
+					});
+
+								/*
+								// launch, then attach?!
+								// This should work for USB Debugging, either iOS or Android!
+
+								// connectIP = "192.168.123.129";
+								// actionArgs.push("--connect", connectIP + ":" + connectPort);
+								debugArgs.applicationID = debugPackageId;
+								// Override for testing...
+								debugArgs.connect = true;   // over WIFI should be false
+								debugArgs.platform = "ios";
+
+
+								var action = new TaskDebugAdapterAction("actionscript3");
+								action.adapterStart = "launch"; // We want Nova to launch it!
+								action.args = actionArgs;
+								action.command = "/usr/bin/java";
+								action.cwd = nova.workspace.path;
+								action.debugArgs = debugArgs;
+
+								action.debugRequest = "attach";
+								// action.socketHost = connectIP;
+								// action.socketPort = connectPort;
+								// action.socketHost = connectIP;
+								// action.socketPort = connectPort;
+								//action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
+
+								return action;
+							});
+*/
 					} else if(projectOS=="android") {
 						// MODE 1 - USE SWF-DEBUG ONLY....
 						if(false) {
@@ -2049,8 +2118,8 @@ try {
 
 													action.debugArgs = debugArgs;
 													action.debugRequest = "attach";
-													action.socketHost = connectIP;
-													action.socketPort = connectPort;
+													// action.socketHost = connectIP;
+													// action.socketPort = connectPort;
 													// action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
 
 													console.log("Action: --------------");
