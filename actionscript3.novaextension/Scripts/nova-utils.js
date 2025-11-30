@@ -219,6 +219,47 @@ exports.rangeToLspRange = function(document, range) {
 }
 
 /**
+ * Tries to get the current device's IP. First searches with `networksetup` to find all the
+ * connections, then goes through them to find the first one that reports back an IP. Should work
+ * on desktop or laptop.
+ */
+exports.getIPAddress = function() {
+	// Get the list of network devices on the machine, in order of preferences
+	return exports.getProcessResults("/usr/sbin/networksetup", ["-listnetworkserviceorder"], "", {}, true).then((order) => {
+		// If there's no devices...
+		if(!order) {
+			return null;
+		}
+
+		// Go through the output and find the devices
+		var matches = [...order.stdout.matchAll(/Device:\s+(en\d+)/g)];
+		// Map to interfaces
+		var interfaces = matches.map(m => m[1]);
+
+		var index = 0;
+		// Helper function to go through and check ipconfig for the actual IP address.
+		function tryNext() {
+			if(index>=interfaces.length) {
+				return Promise.resolve(null);
+			}
+
+			var iface = interfaces[index++];
+			return exports.getProcessResults("usr/sbin/ipconfig", ["getifaddr",iface], "", {}, true).then((result) => {
+				var ip = result.stdout;
+				// If we have an IP address, then return that!
+				if(ip && ip.trim().length>0) {
+					return { interface: iface, ip: ip.trim() };
+				}
+			}).catch(() => {
+				return tryNext();
+			})
+		};
+
+		return tryNext();
+	});
+}
+
+/**
  * Opens a file and dumps it into a string.
  * @param {string} filename - The name of the file to open, relative to the workspace
  */
