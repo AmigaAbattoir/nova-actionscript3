@@ -352,7 +352,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						}
 
 						determineCertificatePassword(certificateLocation).then((results) => {
-							pasword = results.password;
+							var password = results.password;
 /*
 console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 console.log("&&&& PACKAGE BUILDER TASKCONFIG &&&&&&&&&&&&&&&&&&&&&&&&")
