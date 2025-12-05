@@ -147,6 +147,21 @@ function determineCertificatePassword(certificateLocation) {
 	});
 }
 
+function figurePackageName(packageName) {
+	if(taskConfig["as3.export.basename"] && taskConfig["as3.export.basename"].trim()!="") {
+		packageName = taskConfig["as3.export.basename"];
+		if(packageName.endsWith(".air")==false) {
+			packageName += ".air";
+		}
+	}
+
+	if(taskConfig["as3.packaging.type"]=="intermediate") {
+		packageName = packageName.replace(/\.air$/, ".airi");
+	}
+
+	return packageName;
+}
+
 /**
  * The Task Assistant that handles all the things for Task.
  */
@@ -738,7 +753,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 
 		// Check for iOS Provisioning Profile
 		var provisioningProfile;
-		// If we are packaing for iOS, we want to make sure that the provisioning profile is set before attempting to build
+		// If we are packaging for iOS, we want to make sure that the provisioning profile is set before attempting to build
 		if(taskConfig["as3.target"]=="ios") {
 			provisioningProfile = taskConfig["as3.packaging.provisioningFile"];
 			if(provisioningProfile==undefined || provisioningProfile==null) {
@@ -824,21 +839,30 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 				}
 
 				var targetType = taskConfig["as3.deployment.target"];
+				var connectionType = taskConfig["as3.task.deviceType"];
+				var address;
+				if(connectionType=="network") {
+					address = getIPAddress();
+					if(!address) {
+						nova.workspace.showErrorMessage("There were issues getting this machine's IP address, please change to using USB for `Which type of device` to use for launching.");
+						return Promise.reject({success: false});
+					}
+				}
+
 				args.push("-target");
 				if(forRunOrDebug) {
 					targetType = "apk-debug";
 					args.push(targetType);
 
 					if(debugMode) {
-						args.push("-listen");
-						args.push("7936");
+						if(connectionType=="usb") {
+							args.push("-listen");
+							args.push("7936");
+						} else {
+							args.push("-connect");
+							args.push(address.ip+":7936");
+						}
 					}
-					// WIFI DEBUG??
-					// if(debugWifi) {
-						// args.push("-connect");
-						// var ip = "192.168.123.2";
-						// args.push(ip+":7936");
-					// }
 					packageName = packageName.replace(/\.air$/, ".apk");
 				} else {
 					var targetType = taskConfig["as3.deployment.target"];
@@ -874,14 +898,13 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 					if(debugMode) {
 						args.push("ipa-debug-interpreter");
 
-						args.push("-listen");
-						args.push("7936");
-						// WIFI DEBUG??
-						// if(debugWifi) {
-							// args.push("-connect");
-							// var ip = "192.168.123.2";
-							// args.push(ip+":7936");
-						// }
+						if(connectionType=="usb") {
+							args.push("-listen");
+							args.push("7936");
+						} else {
+							args.push("-connect");
+							args.push(address.ip+":7936");
+						}
 					} else {
 						args.push("ipa-test");
 					}
@@ -1572,7 +1595,12 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 		} else {
 			// If launching on device is selected, let this function figure it out!
 			if(taskConfig["as3.task.launchMethod"]=="device") {
-				return this.launchOnDevice(projectType, projectOS, taskConfig, true);
+				if(taskConfig["as3.task.deviceType"]=="network") {
+					console.info("Not implemented yet... shouldn't be too long");
+				} else {
+					// return this.runOnDeviceViaUSB(projectType, projectOS, taskConfig, true);
+				}
+				return this.runOnDeviceViaUSB(projectType, projectOS, taskConfig, true);
 			}
 
 			var profileType = this.getProfileType(taskConfig, projectType, appXMLLocation);
@@ -1743,13 +1771,136 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	}
 
 	/**
+	 * Hanldes the actual call to launch the debugger
+	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
+	 * @param {string} flexSDKBase - The location of the SDK base
+	 * @param {string} anes - The location of the extracted ANEs that the app used
+	 * @param {boolean} connect - If it should be connected via USB
+	 * @param {string} debugRequest - How the debugger should be connected
+	 */
+	launchSWFDebug(projectOS, flexSDKBase, anes, connect = true, debugRequest = "attach") {
+		var connectIP = "127.0.0.1";
+		var connectPort = 7936;
+
+		var base = nova.path.join(nova.extension.path, "debugger");
+
+		var actionArgs = [];
+		// Pass the Flex SDK
+		actionArgs.push("-Dflexlib=" + flexSDKBase+"/frameworks");
+		if(isWorkspace()) { // For workspaces, pass the folder
+			actionArgs.push("-Dworkspace=" + nova.workspace.path);
+		}
+		//uncomment to debug the SWF debugger JAR
+		// actionArgs.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
+		actionArgs.push("-cp");
+		actionArgs.push("" + base + "/bin/*:" + base + "/bundled-debugger/*");
+		actionArgs.push("com.as3mxml.vscode.SWFDebug");
+		// actionArgs.push("--connect", connectIP + ":" + connectPort);
+
+		var debugArgs = {};
+		debugArgs.request = "attach";
+		debugArgs.port = connectPort;
+		if(anes) {
+			debugArgs.exdir = anes
+		}
+
+		debugArgs.connect = connect;
+		debugArgs.platform = projectOS;
+
+		var action = new TaskDebugAdapterAction("actionscript3");
+		action.adapterStart = "launch"; // We want Nova to launch it!
+		action.args = actionArgs;
+		action.command = "/usr/bin/java";
+		action.cwd = nova.workspace.path;
+
+		action.debugArgs = debugArgs;
+		action.debugRequest = debugRequest;
+
+		return action;
+	}
+
+	/**
+	 * Handles deciding how to launch the app and then the debugger.
+	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
+	 * @param {string} flexSDKBase - The location of the SDK base
+	 * @param {string} deviceId - The ID used to launch on the device
+	 * @param {string} debugPackageId - The Package ID of the the app to launch
+	 * @param {string} anes - The location of the extracted ANEs that the app used
+	 */
+	launchDebugViaUSB(projectOS, flexSDKBase, deviceId, debugPackageId, anes) {
+		const androidSDKBase = determineAndroidSDKBase();
+		let launchCommand, launchArgs;
+
+		if(projectOS=="ios") {
+			/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
+			launchCommand = "/usr/bin/xcrun";
+			launchArgs = [
+				"devicectl",
+				"device",
+				"process",
+				"launch",
+				"--device",	deviceId,
+				debugPackageId
+			];
+
+			// Launch the app, don't wait for it and attach debugger!!
+			return getProcessResults(launchCommand, launchArgs, "", {}, true).then((result) => {
+				// console.log("LAUNCHING ON IOS DEVICE BY USB!");
+				// consoleLogObject(result);
+				if(result.status==0) {
+					// console.log("HOLD ON! for a bit....");
+					// Wait for runtime to connect?
+					return new Promise(r => setTimeout(r, 100)).then(() => {
+						return this.launchSWFDebug(projectOS, flexSDKBase, anes, true, "attach");
+					});
+				} else {
+					return Promise.reject(new Error("SOmething went wrong with the launchypoo"));
+				}
+			});
+		} else if(projectOS=="android") {
+			var adb = androidSDKBase + "/platform-tools/adb";
+			// var adb = flexSDKBase + "/lib/android/bin/adb";
+			// Setup port forwarding on Android...
+			return getProcessResults(adb, [ "forward", "tcp:7936", "tcp:7936"] , "", {}, true).then(() => {
+				console.log(" I should have forwarded the port, now I should enable debugger mode!");
+				// Now, enable AIR debugger mode on device...
+				return getProcessResults(adb, [ "shell", "setprop", "debug."+debugPackageId, "1"], "", {}, true).then(() => {
+					// Now we can launch the app!
+					return getProcessResults(adb,  [
+							"shell", "am", "start",
+							"-n", debugPackageId + "/.AIRAppEntry",
+							"--ez", "debuggable", "true",
+							"--ez", "remoteDebug", "true",
+							"--ez", "port", "7936"
+						], "", {}, true).then((result) => {
+							console.log("Launched ANDROID.");
+							console.log("RESULTS FROM LAUNCH...");
+							consoleLogObject(result);
+							if(result.status==0) {
+								console.log("HOLD ON! for a sec and a half....");
+								// Wait for runtime to connect?
+								return new Promise(r => setTimeout(r, 1000)).then(() => {
+									return this.launchSWFDebug(projectOS, flexSDKBase, anes, true, "attach");
+								});
+							} else {
+								return Promise.reject(new Error("SOmething went wrong with the launchypoo"));
+							}
+					});
+				});
+			}).catch((error) => {
+				return Promise.reject(error);
+			});
+		}
+	}
+
+	/**
 	 * Handles launching on the device, selecting it, packaging, installing then launching.
 	 * @param {string} projectType - Which type of project, "air|airmobile|flex"
 	 * @param {string} projectOS - Which type of OS the project uses, "null|ios|android"
 	 * @param {Object} taskConfig - The Task's configs
 	 * @param {boolean} debugMode - `true` if we want to do this as a debug, otherwise `false`
 	 */
-	launchOnDevice(projectType, projectOS, taskConfig, debugMode = false) {
+	runOnDeviceViaUSB(projectType, projectOS, taskConfig, debugMode = false) {
 		console.log("------------------------- LAUNCH ON DEVICE CALLED _--------------------");
 		let command = "";
 		let args = [];
@@ -1765,10 +1916,25 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 		// Only needed for AIR:
 		let appXMLLocation = nova.path.join(mainSrcDir, appXMLName);
 		let anes = configValues.anes;
+		//
+		let packageName = configValues.packageName;
+		if(taskConfig["as3.export.basename"] && taskConfig["as3.export.basename"].trim()!="") {
+			packageName = taskConfig["as3.export.basename"];
+			if(packageName.endsWith(".air")==false) {
+				packageName += ".air";
+			}
+		}
+		if(projectOS=="ios") {
+			packageName = packageName.replace(/\.air$/, ".ipa");
+		} else if(projectOS=="android") {
+			packageName = packageName.replace(/\.air$/, ".apk");
+		}
 
 		// Later in thens...
 		var deviceHandle = null;
 		var debugPackageId = "";
+
+		// Used if packaging and getting the results
 		var packageFileName = null;
 
 		// Quick checks before even checking devices.
@@ -1790,6 +1956,19 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 		}
 
 		var deviceId = taskConfig["as3.task.deviceID"];
+
+		var needToCopyAssets = true;
+		var needToPackage = true;
+		var needToInstall = true;
+
+		var tempOutputFolder;
+		// Let's make sure we have a temp folder to dump stuff to
+		var tempDirBase = determineTempPath();
+		if(tempDirBase==null) {
+			displayTempPathError(tempDirBase);
+			return Promise.reject(new Error("Issues with temp path"));
+		}
+
 try {
 		console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
 		console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
@@ -1799,8 +1978,6 @@ try {
 			}
 
 			taskConfig = result.taskConfig;
-			var devices = result.devices;
-
 			// If we resolved to the simulator, jump to that...
 			if(taskConfig["as3.task.launchMethod"]=="simulator") {
 				if(debugMode) {
@@ -1811,68 +1988,81 @@ try {
 			}
 
 			// Otherwise, let's try the device
+			var devices = result.devices;
 			deviceId = taskConfig["as3.task.deviceID"];
 			let deviceInfo = devices.find(d => d.uuid==deviceId);
 			if(deviceInfo) {
 				deviceHandle = deviceInfo.transportID; // Needed for iOS stuff
 			}
 
-			// Let's make sure we have a temp folder to dump stuff to
-			var tempDirBase = determineTempPath();
-			if(tempDirBase==null) {
-				displayTempPathError(tempDirBase);
-				return Promise.reject(new Error("Issues with temp path"));
-			}
-
-			// @NOTE Should check if there is an output folder first, if not, build
-			// @NOTE Should check if any files were modfided since last packaging, then we can skip building the package
-
 			// Copy the build to a temporary folder as we need to modify the app.xml a bit
-			var tempOutputFolder = nova.path.join(tempDirBase, destDirRelative); // Change to temp dir + destDir
+			tempOutputFolder = nova.path.join(tempDirBase, destDirRelative); // Change to temp dir + destDir
 			ensureFolderIsAvailable(tempOutputFolder);
 
-			// Do we really need to repackage??? Maybe we can skip if nothing's been modified since!
-			if(this.checkIfModifiedAfterBuild(tempOutputFolder, exportName)==false) {
-				console.info("  #### HEY YOU CAN SKIP COPYING AND PACKAGING, JUST GET TO INSTALLING!! #### ");
-				console.info("  #### BUT! We still need to figure out the .... ####");
-				console.info("  #### tempOutputFolder: ",tempOutputFolder);
-				console.info("  #### debugPackageID: (look at code below...)");
-				console.info("  #### packageFileName: (look in package(), could we move some of that logic into the getConfigsForBuildAndPacking()??");
-			}
+			// This isn't working right... compares wrong folder
+			// needToCopyAssets = this.checkIfModifiedAfterBuild(tempOutputFolder, exportName);
+			// Check if anything changed after the last packaging
+			// needToPackage = this.checkIfModifiedAfterBuild(tempOutputFolder, "../" + packageName);
+			needToCopyAssets = false;
+			needToPackage = false;
+			needToInstall = false;
+			return;
+		}).then(() => {
+			if(needToCopyAssets) {
+				return this.copyAssetsOf(destDir, tempOutputFolder, true).then(() => {
 
-			return this.copyAssetsOf(destDir, tempOutputFolder, true).then(() => {
-				// Now, that we copied the files, modify the app.xml so both a real release and the debug can be installed, and our debug certificate doesn't interfere.
+					// Now, that we copied the files, modify the app.xml so both a real release and the debug can be installed, and our debug certificate doesn't interfere.
+					let appXMLLocation = nova.path.join(tempOutputFolder, appXMLName);
+					let appXML = getStringOfFile(appXMLLocation);
+					if(appXML==null) {
+						return Promise.reject(new Error("Failed modifying APP XML for debug packaing at: " + appXMLLocation));
+					}
+
+					try {
+						// On Android, let's replace the app.xml <id> so we can use our debug certificate
+						if(projectOS=="android") {
+							appXML = appXML.replace("</id>",".DEBUG</id>");
+						}
+						debugPackageId = appXML.match(/<id>([^<]*)<\/id>/i)[1];
+						// If "No AIR Flare" is not turned on or set, we need to adjust the package id that we will use!
+						if(projectOS=="android") {
+							var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
+							if(noAndroidAirFlair==undefined || noAndroidAirFlair==false) {
+								debugPackageId = "air." + debugPackageId; // The package will have AIR flair
+							}
+						}
+						// Replace the app.xml <name> for the debug version for both iOS and Android
+						appXML = appXML.replace("</name>"," Debug</name>");
+						var appXMLFile = nova.fs.open(appXMLLocation, "w");
+						appXMLFile.write(appXML);
+						appXMLFile.close();
+					} catch(error) {
+						console.log("*** ERROR: APP XML file! error: ",error);
+						consoleLogObject(error);
+						return Promise.reject(new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's contents that it is valid."));
+					}
+					return;
+				});
+			} else {
+				// Since this should be modified now, let's get the debugPackageId:
 				let appXMLLocation = nova.path.join(tempOutputFolder, appXMLName);
 				let appXML = getStringOfFile(appXMLLocation);
 				if(appXML==null) {
 					return Promise.reject(new Error("Failed modifying APP XML for debug packaing at: " + appXMLLocation));
 				}
 
-				try {
-					// On Android, let's replace the app.xml <id> so we can use our debug certificate
-					if(projectOS=="android") {
-						appXML = appXML.replace("</id>",".DEBUG</id>");
+				debugPackageId = appXML.match(/<id>([^<]*)<\/id>/i)[1];
+				// If "No AIR Flare" is not turned on or set, we need to adjust the package id that we will use!
+				if(projectOS=="android") {
+					var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
+					if(noAndroidAirFlair==undefined || noAndroidAirFlair==false) {
+						debugPackageId = "air." + debugPackageId; // The package will have AIR flair
 					}
-					debugPackageId = appXML.match(/<id>([^<]*)<\/id>/i)[1];
-					// If "No AIR Flare" is not turned on or set, we need to adjust the package id that we will use!
-					if(projectOS=="android") {
-						var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
-						if(noAndroidAirFlair==undefined || noAndroidAirFlair==false) {
-							debugPackageId = "air." + debugPackageId; // The package will have AIR flair
-						}
-					}
-					// Replace the app.xml <name> for the debug version for both iOS and Android
-					appXML = appXML.replace("</name>"," Debug</name>");
-					var appXMLFile = nova.fs.open(appXMLLocation, "w");
-					appXMLFile.write(appXML);
-					appXMLFile.close();
-				} catch(error) {
-					console.log("*** ERROR: APP XML file! error: ",error);
-					consoleLogObject(error);
-					return Promise.reject(new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's contents that it is valid."));
 				}
 				return;
-			}).then(() => {
+			}
+		}).then(() => {
+			if(needToPackage) {
 				showNotification("Packaging Debug build...","📦 Trying to package","Please wait...", "-runOnDevice");
 				if(projectOS=="android") {
 					return Promise.resolve({
@@ -1890,11 +2080,20 @@ try {
 						};
 					});
 				}
-			}).then(({ certificateLocation, password }) => {
+			} else {
+				return { certificateLocation: "", password: "" };
+			}
+		}).then(({ certificateLocation, password }) => {
+			if(needToPackage) {
 				console.info("Packaging...");
 				// Return the results of packaging to next then
 				return this.package(projectType, taskConfig, destDirRelative, certificateLocation, password, true, debugMode).then((results) => ({ results }));
-			}).then(({ results }) => {
+			} else {
+				return { results: { success: true, packageName: tempDirBase + "/" + packageName } };
+			}
+		}).then(({ results }) => {
+			if(needToInstall) {
+
 				console.info("Installing...");
 				console.log("RESULTS: ")
 				consoleLogObject(results)
@@ -1922,260 +2121,54 @@ try {
 
 				console.log("ARRRRRRG:");
 				consoleLogObject(args)
-
 				return getProcessResults(command, args, "", {}, true).then(() => ({ debugPackageId }));
-			}).then(() => {
-				console.info("How's the debug package iD? ");
-				consoleLogObject(debugPackageId);
-				console.log("DEBUG MODE: ")
-				console.log(debugMode);
-				showNotification("🏃 Trying to run test build...","Trying to run","", "-runOnDevice");
+			} else {
+				return;
+			}
+		}).then(() => {
+			console.info("How's the debug package iD? ");
+			consoleLogObject(debugPackageId);
+			console.log("DEBUG MODE: ")
+			console.log(debugMode);
+			showNotification("🏃 Trying to run test build...","Trying to run","", "-runOnDevice");
 
+			if(debugMode) {
+				return this.launchDebugViaUSB(projectOS, flexSDKBase, deviceId, debugPackageId, anes);
+			} else { // Regular old run on a device... How nice...
 				let launchCommand, launchArgs;
 				const androidSDKBase = determineAndroidSDKBase();
-				if(debugMode) {
-					var connectIP = "127.0.0.1";
-					var connectPort = 7936;
-
-					var base = nova.path.join(nova.extension.path, "debugger");
-
-					var actionArgs = [];
-					// Pass the Flex SDK
-					actionArgs.push("-Dflexlib=" + flexSDKBase+"/frameworks");
-					if(isWorkspace()) { // For workspaces, pass the folder
-						actionArgs.push("-Dworkspace=" + nova.workspace.path);
-					}
-					//uncomment to debug the SWF debugger JAR
-					// actionArgs.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
-					actionArgs.push("-cp");
-					actionArgs.push("" + base + "/bin/*:" + base + "/bundled-debugger/*");
-					actionArgs.push("com.as3mxml.vscode.SWFDebug");
-					// actionArgs.push("--connect", connectIP + ":" + connectPort);
-
-					var debugArgs = {};
-					debugArgs.request = "attach";
-					debugArgs.port = connectPort;
-					if(anes) {
-						debugArgs.exdir = anes
-					}
-
-					if(projectOS=="ios") {
-						/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
-						launchCommand = "/usr/bin/xcrun";
-						launchArgs = [
-							"devicectl",
-							"device",
-							"process",
-							"launch",
-							"--device",	deviceId,
-							debugPackageId
-						];
-
-						// Launch the app, don't wait for it aand attach debugger!!
-						return getProcessResults(launchCommand, launchArgs, "", {}, true).then((result) => {
-							console.log("LAUNCHING ON IOS DEVICE BY USB!");
-							consoleLogObject(result);
-							if(result.status==0) {
-								console.log("HOLD ON! for a sec and a half....");
-								// Wait for runtime to connect?
-								return new Promise(r => setTimeout(r, 100)).then(() => {
-
-								debugArgs.connect = true;// true; // For Android true, over WIFI should be false
-								debugArgs.platform = "android";
-								//debugArgs.platformSdk = androidSDKBase;
-								console.log("readying to returning ACTION....");
-
-								debugArgs.connect = true; // For Android true
-								debugArgs.platform = "ios";
-								// debugArgs.platformSdk = androidSDKBase;
-
-
-								var action = new TaskDebugAdapterAction("actionscript3");
-								action.adapterStart = "launch"; // We want Nova to launch it!
-								action.args = actionArgs;
-								action.command = "/usr/bin/java";
-								action.cwd = nova.workspace.path;
-
-
-								action.debugArgs = debugArgs;
-								action.debugRequest = "attach";
-								// action.socketHost = connectIP;
-								// action.socketPort = connectPort;
-								// action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
-
-								console.log("Action: --------------");
-								consoleLogObject(action);
-								console.log("Action ARGS: --------------");
-								consoleLogObject(actionArgs);
-								console.log("Debug ARGS: --------------");
-								consoleLogObject(debugArgs)
-
-								return action;
-							});
-						} else {
-							return Promise.reject(new Error("SOmething went wrong with the launchypoo"));
-						}
-					});
-
-								/*
-								// launch, then attach?!
-								// This should work for USB Debugging, either iOS or Android!
-
-								// connectIP = "192.168.123.129";
-								// actionArgs.push("--connect", connectIP + ":" + connectPort);
-								debugArgs.applicationID = debugPackageId;
-								// Override for testing...
-								debugArgs.connect = true;   // over WIFI should be false
-								debugArgs.platform = "ios";
-
-
-								var action = new TaskDebugAdapterAction("actionscript3");
-								action.adapterStart = "launch"; // We want Nova to launch it!
-								action.args = actionArgs;
-								action.command = "/usr/bin/java";
-								action.cwd = nova.workspace.path;
-								action.debugArgs = debugArgs;
-
-								action.debugRequest = "attach";
-								// action.socketHost = connectIP;
-								// action.socketPort = connectPort;
-								// action.socketHost = connectIP;
-								// action.socketPort = connectPort;
-								//action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
-
-								return action;
-							});
-*/
-					} else if(projectOS=="android") {
-						// MODE 1 - USE SWF-DEBUG ONLY....
-						if(false) {
-							// To install with SWF Debug
-							debugArgs.bundle = packageFileName;
-							// To Launch with SWF Debug
-							debugArgs.applicationID = debugPackageId;
-							debugArgs.connect = true;// true; // For Android true, over WIFI should be false
-							debugArgs.platform = "android";
-
-							var action = new TaskDebugAdapterAction("actionscript3");
-							action.adapterStart = "launch"; // We want Nova to launch it!
-							action.args = actionArgs;
-							action.command = "/usr/bin/java";
-							action.cwd = nova.workspace.path;
-							action.debugArgs = debugArgs;
-
-							action.debugRequest = "attach";
-							// action.socketHost = connectIP;
-							// action.socketPort = connectPort;
-							// action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
-
-							console.log("Action: --------------");
-							consoleLogObject(action);
-							console.log("Action ARGS: --------------");
-							consoleLogObject(actionArgs);
-							console.log("Debug ARGS: --------------");
-							consoleLogObject(debugArgs)
-
-							return action;
-						} else {
-							var adb = androidSDKBase + "/platform-tools/adb";
-							// var adb = flexSDKBase + "/lib/android/bin/adb";
-							// Setup port forwarding on Android...
-							return getProcessResults(adb, [ "forward", "tcp:7936", "tcp:7936"] , "", {}, true).then(() => {
-								console.log(" I should have forwarded the port, now I should enable debugger mode!");
-								// Now, enable AIR debugger mode on device...
-								return getProcessResults(adb, [ "shell", "setprop", "debug."+debugPackageId, "1"], "", {}, true).then(() => {
-									// Now we can launch the app!
-									return getProcessResults(adb,  [
-											"shell", "am", "start",
-											"-n", debugPackageId + "/.AIRAppEntry",
-											"--ez", "debuggable", "true",
-											"--ez", "remoteDebug", "true",
-											"--ez", "port", "7936"
-										], "", {}, true).then((result) => {
-											console.log("Launched ANDROID.");
-											console.log("RESULTS FROM LAUNCH...");
-											consoleLogObject(result);
-											if(result.status==0) {
-												console.log("HOLD ON! for a sec and a half....");
-												// Wait for runtime to connect?
-												return new Promise(r => setTimeout(r, 1000)).then(() => {
-													debugArgs.connect = true;// true; // For Android true, over WIFI should be false
-													debugArgs.platform = "android";
-													//debugArgs.platformSdk = androidSDKBase;
-													console.log("readying to returning ACTION....");
-
-													debugArgs.connect = true; // For Android true
-													debugArgs.platform = "android";
-													// debugArgs.platformSdk = androidSDKBase;
-
-
-													var action = new TaskDebugAdapterAction("actionscript3");
-													action.adapterStart = "launch"; // We want Nova to launch it!
-													action.args = actionArgs;
-													action.command = "/usr/bin/java";
-													action.cwd = nova.workspace.path;
-
-
-													action.debugArgs = debugArgs;
-													action.debugRequest = "attach";
-													// action.socketHost = connectIP;
-													// action.socketPort = connectPort;
-													// action.transport = "socket"; // NO!!! Use stdio for talking with the adapter!!!!
-
-													console.log("Action: --------------");
-													consoleLogObject(action);
-													console.log("Action ARGS: --------------");
-													consoleLogObject(actionArgs);
-													console.log("Debug ARGS: --------------");
-													consoleLogObject(debugArgs)
-
-													return action;
-												});
-											} else {
-												return Promise.reject(new Error("SOmething went wrong with the launchypoo"));
-											}
-									});
-								});
-							}).catch((error) => {
-								return Promise.reject(error);
-								// return Promise.reject(new Error("Tried getting the app started!"));
-							});
-							console.log("I'm outta here... SHOULDNT SHOW UP!!! ");
-						}
-					}
-				} else { // Regular old run on a device... How nice...
-					if(projectOS=="ios") {
-						/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
-						launchCommand = "xcrun";
-						launchArgs = [
-							"devicectl",
-							"device",
-							"process",
-							"launch",
-							"--console",
-							"--device",	deviceId,
-							debugPackageId
-						];
-					} else if(projectOS=="android") {
-						// Need to use Android's ADB to launch, thanks Google!
-						launchCommand = androidSDKBase + "/platform-tools/adb";
-						launchArgs = [
-							"shell",
-							"monkey",
-							"-p",
-							debugPackageId,
-							"-c",
-							"android.intent.category.LAUNCHER",
-							"1"
-						];
-					}
-					return new TaskProcessAction(launchCommand, {
-						shell: true,
-						args: launchArgs,
-						env: {}
-					});
+				if(projectOS=="ios") {
+					/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
+					launchCommand = "xcrun";
+					launchArgs = [
+						"devicectl",
+						"device",
+						"process",
+						"launch",
+						"--console",
+						"--device",	deviceId,
+						debugPackageId
+					];
+				} else if(projectOS=="android") {
+					// Need to use Android's ADB to launch, thanks Google!
+					launchCommand = androidSDKBase + "/platform-tools/adb";
+					launchArgs = [
+						"shell",
+						"monkey",
+						"-p",
+						debugPackageId,
+						"-c",
+						"android.intent.category.LAUNCHER",
+						"1"
+					];
 				}
-			}).catch(error => {
+				return new TaskProcessAction(launchCommand, {
+					shell: true,
+					args: launchArgs,
+					env: {}
+				});
+			}
+		}).catch(error => {
 				cancelNotification("-runOnDevice");
 				if(nova.inDevMode()) {
 					console.error("Launch on device error: ");
@@ -2195,14 +2188,14 @@ try {
 				}
 				return Promise.reject(new Error("RETURNING Issue Installing Package for Device Run"));
 			});
-		}).catch(error => {
-			if(nova.inDevMode()) {
-				consoleLogObject(error);
-				console.error("GET DEV ERORR: ",error);
-				console.error("GET DEV ERORR: ",error.stack);
-			}
-			return null;
-		});
+		// }).catch(error => {
+		// 	if(nova.inDevMode()) {
+		// 		consoleLogObject(error);
+		// 		console.error("GET DEV ERORR: ",error);
+		// 		console.error("GET DEV ERORR: ",error.stack);
+		// 	}
+		// 	return null;
+		// });
 } catch(error) { console.error(error.message); console.error(error.stack); return null; }
 	}
 
@@ -2293,7 +2286,12 @@ try {
 			command = flexSDKBase + "/bin/adl";
 
 			if(taskConfig["as3.task.launchMethod"]=="device") {
-				return this.launchOnDevice(projectType, projectOS, taskConfig, false);
+				if(taskConfig["as3.task.deviceType"]=="network") {
+					console.info("Not implemented yet... shouldn't be too long");
+				} else {
+					// return this.runOnDeviceViaUSB(projectType, projectOS, taskConfig, false);
+				}
+				return this.runOnDeviceViaUSB(projectType, projectOS, taskConfig, false);
 			} else {
 				if(projectType=="airmobile") {
 					var screenSize = this.getFormattedScreenSize(taskConfig["as3.task.deviceToSimulate"]);
@@ -2871,6 +2869,7 @@ try {
 			"as3.task.deviceToSimulate",
 			"as3.task.profile",
 			"as3.task.launchOnDevice",
+			"as3.task.deviceType",
 
 			// For Library Builds
 			"as3.lib.classEntries",
