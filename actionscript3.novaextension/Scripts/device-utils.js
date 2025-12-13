@@ -3,10 +3,10 @@ const { getProcessResults, consoleLogObject } = require("./nova-utils.js");
 
 /**
  * Gets Android devices connected to the computer
- * @returns {Promise} - With the resolve being an Array of devices
+ * @returns {Promise<Array>} - With the resolve being an Array of devices
  */
 exports.getAndroidDevices = function() {
-	console.log("getAndroidDevices() : ");
+	// console.log("getAndroidDevices() : ");
 	return new Promise((resolve, reject) => {
 		let devices = [];
 
@@ -36,7 +36,9 @@ exports.getAndroidDevices = function() {
 			*/
 			resolve(devices);
 		}).catch((error) => {
-			console.error("getAndroidDevices: Error fetching Android devices", error);
+			if(nova.inDevMode()) {
+				console.error("getAndroidDevices: Error fetching Android devices", error);
+			}
 			reject([]); // Reject the promise with the error
 		});
 	});
@@ -44,7 +46,7 @@ exports.getAndroidDevices = function() {
 
 /**
  * Gets iOS devices connected to the computer
- * @returns {Promise} - With the resolve being an Array of devices
+ * @returns {Promise<Array>} - With the resolve being an Array of devices
  */
 exports.getIOSDevices = function() {
 	return new Promise((resolve, reject) => {
@@ -85,7 +87,9 @@ exports.getIOSDevices = function() {
 				reject([]);
 			}
 		}).catch((error) => {
-			console.error("getIOSDevices: Error fetching iOS devices",error);
+			if(nova.inDevMode()) {
+				console.error("getIOSDevices: Error fetching iOS devices",error);
+			}
 			reject([]);
 		});
 	});
@@ -94,7 +98,7 @@ exports.getIOSDevices = function() {
 /**
  * Gets a list of devices based on which type of device
  * @param {string} os - (ios|android) The type of device to get
- * @returns {Array} - An array
+ * @returns {Promise<Array>} - An array
  */
 exports.getSelectedDevices = function(os) {
 	return new Promise((resolve, reject) => {
@@ -102,6 +106,93 @@ exports.getSelectedDevices = function(os) {
 			resolve(exports.getIOSDevices());
 		} else if(os=="android") {
 			resolve(exports.getAndroidDevices());
+		}
+	});
+}
+
+/**
+ * Checks if an application is installed on a particular device for Android (if connected via
+ * USB cable).
+ * @param {string} deviceId - The ID of the device to check
+ * @param {string} packageId - The ID of the application package
+ * @returns {Promise<boolean>} - `true` if installed, otherwise `false`
+ */
+exports.checkIfInstalledOnAndroidDevice = function(deviceId, packageId) {
+	return new Promise((resolve, reject) => {
+		const androidSDKBase = determineAndroidSDKBase();
+		getProcessResults(androidSDKBase + "/platform-tools/adb", ["shell", "pm", "path", packageId]).then((result) => {
+			if(nova.inDevMode()) {
+				console.info("Looking for " + packageId + " on device " + deviceId);
+				consoleLogObject(result);
+			}
+
+			// Only if the item is installed does this string of text show up in the output
+			if(result.stdout.indexOf("package:/data//app/")!=-1) {
+				resolve(true);
+			}
+			resolve(false);
+		}).catch((error) => {
+			if(nova.inDevMode()) {
+				console.error("checkIfInstalledOnAndroidDevice: Error checking for app installed '" + packageId + "' on Android device" + deviceId);
+				consoleLogObject(error);
+			}
+			resolve(false);
+		});
+	});
+}
+
+/**
+ * Checks if an application is installed on a particular device for iOS. As a note, this will also
+ * work over wifi if on the same network.
+ * @param {string} deviceId - The ID of the device to check
+ * @param {string} packageId - The ID of the application package
+ * @returns {Promise<boolean>} - `true` if installed, otherwise `false`
+ */
+exports.checkIfInstalledOnIOSDevice = function(deviceId, packageId) {
+	return new Promise((resolve, reject) => {
+		getProcessResults(
+			"/usr/bin/xcrun", [
+				"devicectl",
+				"device",
+				"info",
+				"apps",
+				"--device", deviceId,
+				"--bundle-id", packageId,
+			]
+		).then((result) => {
+			if(nova.inDevMode()) {
+				console.info("Looking for " + packageId + " on device " + deviceId);
+				consoleLogObject(result);
+			}
+
+			// If the packageId shows up in the output, then it should be installed
+			if(result.stdout.indexOf(packageId)!=-1) {
+				resolve(true);
+			}
+			resolve(false);
+		}).catch((error) => {
+			if(nova.inDevMode()) {
+				console.error("checkIfInstalledOnIOSDevice: Error checking for app installed '" + packageId + "' on iOS device" + deviceId);
+				consoleLogObject(error);
+			}
+			resolve(false);
+		});
+	});
+}
+
+/**
+ * Check if the application is installed on a device
+ * @param {string} os - (ios|android) The type of device to get
+ * @param {string} deviceId - The ID of the device to check
+ * @param {string} packageId - The ID of the application package
+ * @returns {Promise<boolean>} - `true` if installed, otherwise `false`
+ */
+exports.checkIfInstalledOnDevice = function(os, deviceId, packageId) {
+	return new Promise((resolve, reject) => {
+		if(os=="ios") {
+			resolve(exports.checkIfInstalledOnIOSDevice(deviceId, packageId));
+		} else if(os=="android") {
+			resolve(exports.checkIfInstalledOnAndroidDevice(deviceId, packageId));
 		}
 	});
 }

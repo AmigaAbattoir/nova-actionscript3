@@ -4,7 +4,7 @@
 
 This extension brings **ActionScript 3 and MXML** support to **Panic Nova**.
 
-🆕 Version 0.11: Introduced SDK list management and per-Task SDK selection.
+🆕 Version 0.12: Introduced debug on iOS and Android devices
 
 The goal was to be able to use all of my old Adobe Flash Builder projects and convert them to Nova's workflow. I wanted to be able to build and run projects in Nova without additional setup, just by importing the Flash Builder settings when opening the project. (It's pretty close to it!)
 
@@ -13,6 +13,8 @@ The goal was to be able to use all of my old Adobe Flash Builder projects and co
 ## ✨ Features
 
 - 🐛 **Debugging** - _Via SWF Debug_
+
+  - Starting in v0.12, this includes debugging on iOS and Android devices.
 
 - 🖍️ **Syntax Highlighting**
 
@@ -61,7 +63,6 @@ The goal was to be able to use all of my old Adobe Flash Builder projects and co
 ## ☑️ Todo
 
 - **MXML** - Nova shows the MXML fine on first load, however, after saving it sometime flags a lot of issues.
-- **Launching AIR projects on actual devices** - Android and iOS
 - **Locale** - Currently set to use en_US
 - **Themes** - Importing Flash Builder projects should store the right value, but currently not honored during builds.
 - **Library** - Automatically managing library builds
@@ -99,6 +100,8 @@ If developing Android apps, then you will need:
 For iOS apps, you will need to have:
 
 - **XCode 15+** - This is also used to launch a test run on your iOS device if you choose to.
+
+- **XCode Command Line Tools** - This is also needed for running on an iOS device. If you didn't install it, you should be able to hit up the terminal and enter `xcode-select --install`.
 
 These are only needed if you plan on running Flash Player projects:
 
