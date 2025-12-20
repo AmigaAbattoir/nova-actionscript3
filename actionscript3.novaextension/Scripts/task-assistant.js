@@ -1,10 +1,11 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette } = require("./nova-utils.js");
+const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette, doesFileExist } = require("./nova-utils.js");
 const { determineFlexSDKBase, determineAndroidSDKBase, getAppXMLNameAndExport, getConfigsForBuildAndPacking } = require("./config-utils.js");
 const { determineProjectUUID, determineTempPath, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
 const { installSDKPrompt, getAIRSDKInfo, isAIRSDKInstalled } = require("./sdk-utils.js");
-const { getSelectedDevices } = require("./device-utils.js");
+const { getSelectedDevices, checkIfInstalledOnDevice } = require("./device-utils.js");
+const { md5HashBinaryFile } = require("/md5.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
@@ -23,6 +24,9 @@ function shouldIgnoreFileName(fileName) {
 	return false;
 }
 
+/**
+ * Helps to display if there is a UUID error.
+ */
 function displayProjectUUIDError() {
 	var uuidMessage = "Project UUID Missing\n\nPlease use the Import Flash Builder option in the menu,";
 	if(nova.version[0]<10) {
@@ -32,18 +36,30 @@ function displayProjectUUIDError() {
 	nova.workspace.showErrorMessage(uuidMessage);
 }
 
+/**
+ * Used to notify the user if there is a problem with the ANE temporary path
+ * @param {string} path - The full path to where the ANE temporary path should be.
+ */
 function displayANEsTempPathError(path) {
 	var message = "ANE Temp Path Errror\n\nThere was a problem extracting ANEs to it's temporary path of:\n" + path + ".\n\n";
 	message += "If you try to build again and this error comes up, please check if that path is a valid one. You can also get this path from the menu `Check ANE temp dir`.";
 	nova.workspace.showErrorMessage(message);
 }
 
+/**
+ * Used to notify the user if there is a problem with the temporary path
+ * @param {string} path - The full path to where the temporary path should be.
+ */
 function displayTempPathError(path) {
 	var message = "Temp Path Errror\n\nThere was a problem extracting copying file to it's temporary path of:\n" + path + ".\n\n";
 	message += "If you try to build again and this error comes up, please check if that path is a valid one.";
 	nova.workspace.showErrorMessage(message);
 }
 
+/**
+ * Parse through the App XML to see if there are the appropriate files needed for an application icon
+ * @param {Array<object>} taskConfig - The taskConfigs array
+ */
 function checkMacBuildForIcons(taskConfig) {
 	const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 	let mainSrcDir = configValues.mainSrcDir;
@@ -63,6 +79,10 @@ function checkMacBuildForIcons(taskConfig) {
 	}
 }
 
+/**
+ * Helper to show device type in correct uppercase (iOS/Android) format
+ * @param {string} type - The lowercase version (ios|android) of the device type
+ */
 function displayDeviceType(type) {
 	switch(type) {
 		case "ios": {
@@ -77,6 +97,10 @@ function displayDeviceType(type) {
 	return type;
 }
 
+/**
+ * Figures out the password for the certificate when building. Prompts if needed and asks how to store it.
+ * @param {Promise<object>} certificateLocation - An object containing `saveType` () and the `password`
+ */
 function determineCertificatePassword(certificateLocation) {
 	return new Promise((resolve, reject) => {
 		var certificateName = certificateLocation.split("/").pop();
@@ -147,21 +171,6 @@ function determineCertificatePassword(certificateLocation) {
 	});
 }
 
-function figurePackageName(packageName) {
-	if(taskConfig["as3.export.basename"] && taskConfig["as3.export.basename"].trim()!="") {
-		packageName = taskConfig["as3.export.basename"];
-		if(packageName.endsWith(".air")==false) {
-			packageName += ".air";
-		}
-	}
-
-	if(taskConfig["as3.packaging.type"]=="intermediate") {
-		packageName = packageName.replace(/\.air$/, ".airi");
-	}
-
-	return packageName;
-}
-
 /**
  * The Task Assistant that handles all the things for Task.
  */
@@ -190,6 +199,72 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		"extensionValues": { }
 	};
 
+	// ---- Launch Metadata related ----
+	/**
+	 * Loads the metadata file that keeps track of launching on devices
+	 * @returns {object} - Object with the metadata used for tracking installs/launches on devices.
+	 */
+	loadLaunchMetadata() {
+		const path = nova.workspace.path + "/.nova/ActionScript3Launcher.json";
+
+		if(nova.fs.stat(path)) {
+			try {
+				let file = nova.fs.open(path);
+				let json = file.read();
+				file.close();
+				return JSON.parse(json);
+			} catch (error) {
+				console.log("No ActionScript3Launcher.json for project found.");
+			}
+		}
+
+		return { devices: {} };
+	}
+
+	/**
+	 * Updates the launch metadata file
+	 * @param {object} launcherMetadata - Object with the metadata used for tracking installs/launches on devices.
+	 * @param {boolean} debugMode - `true` if the package was a debug version otherwise `false` for a regular run
+	 * @param {string} deviceId - The device's ID which had the package installed
+	 * @param {string} packageHash - the MD5 of the package that was installed
+	 * @param {number} installTime - The timestamp of when the install was performed
+	 * @param {string} packageId - The packageId of what was installed/launched
+	 */
+	updateLauncherMetadata(launcherMetadata, debugMode, deviceId, packageHash, installTime, packageId) {
+		if(!launcherMetadata.devices) {
+			launcherMetadata.devices = {};
+		}
+
+		if(!launcherMetadata.devices[deviceId]) {
+			launcherMetadata.devices[deviceId] = {};
+		}
+
+		if(!launcherMetadata.devices[deviceId][debugMode ? "debug" : "run"]) {
+			launcherMetadata.devices[deviceId][debugMode ? "debug" : "run"] = {};
+		}
+
+		launcherMetadata.devices[deviceId][debugMode ? "debug" : "run"] = {
+			md5: packageHash,
+			installTime: installTime,
+			packageId: packageId
+		};
+
+		this.saveLaunchMetadata(launcherMetadata);
+
+		return launcherMetadata;
+	}
+
+	/**
+	 * Saves the metadata file
+	 * @param {object} launcherMetadata - Object with the metadata used for tracking installs/launches on devices.
+	 */
+	saveLaunchMetadata(launcherMetadata) {
+		var launcherFile = nova.fs.open(nova.workspace.path + "/.nova/ActionScript3Launcher.json", "w");
+		launcherFile.write(JSON.stringify(launcherMetadata, null, 2));
+		launcherFile.close();
+	}
+
+	// ---- Task ----
 	/**
 	 * Clean the build directory. Basically, delete the dir then make it again.
 	 * @param {string} outputPath - Where the build folder is located.
@@ -577,80 +652,69 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	}
 
 	/**
-	 * Checks if any of the sourse files have been modified since they were copied to the output folder
-	 * @NOTE Was devised to try and only build if files changed, but I don't think we can work that into Nova
-	 * @param {string} destDir - The source files
-	 * @param {string} exportName - The exported SWF that will be the reference of the time when it was built
+	 * Checks if any files in the `folderToCheck` were modified after the `builtFile` was made.
+	 * @param {string} builtFile - The path to a file to check against
+	 * @param {string[]} foldersToCheck - Full path to folders to check if they were modified after the `builtFile`
 	 */
-	checkIfModifiedAfterBuild(destDir, exportName) {
-		console.log("OUTPUT FILE is [[[[" + destDir + "/" + exportName + "]]]]]");
-		console.log("STAT: " + nova.fs.stat(destDir + "/" + exportName));
+	checkIfModifiedAfterFileDate(builtFile, foldersToCheck) {
+		var buildFileStat = nova.fs.stat(builtFile);
+		if(nova.inDevMode()) {
+			console.log("OUTPUT FILE is [[[[" + builtFile + "]]]]]");
+			console.log("STAT: " + buildFileStat);
+			consoleLogObject(buildFileStat);
+		}
 
 		/** @TODO Have to go through all the source folders and check */
-		if(nova.fs.stat(destDir + "/" + exportName)!=undefined) {
-			console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST BUILD....");
-
+		if(buildFileStat!=undefined) {
+			console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST FILE TIME OF " + builtFile);
 			fileNamesToExclude = [ ".DS_Store", ".git", ".svn" ];
 			fileExtensionsToExclude = [];
-			// consoleLogObject(fileNamesToExclude);
-			// consoleLogObject(fileExtensionsToExclude);
 
-			function anyFileModifiedAfter(referenceFilePath, folderPath) {
-				const referenceFile = nova.fs.stat(referenceFilePath);
-				if (!referenceFile) {
-					console.error("Reference file not found:", referenceFilePath);
-					return false;
-				}
-
-				const referenceTime = referenceFile.mtime.getTime();
-
+			function anyFileModifiedAfter(referenceFileTime, folderPath) {
 				// Helper to recursively check files in a folder
 				function checkFolderRecursive(path) {
 					const entries = nova.fs.listdir(path);
 
 					for (const entry of entries) {
-						const fullPath = nova.path.join(path, entry);
-						const stat = nova.fs.stat(fullPath);
+						if(!shouldIgnoreFileName(entry)) {
+							const fullPath = nova.path.join(path, entry);
+							const stat = nova.fs.stat(fullPath);
+							if(stat) {
+								if(nova.inDevMode()) {
+									console.log("  ><><>< CHECKING " + entry);
+								}
 
-						if (!stat) continue;
-
-						if(shouldIgnoreFileName(entry)) {
-							// console.log("  ><><>< IGNORING " + entry);
-							continue;
-						}
-						// console.log("  ><><>< CHECKING " + entry);
-
-						if (stat.isDirectory()) {
-							if (checkFolderRecursive(fullPath)) {
-								return true;
+								if (stat.isDirectory()) {
+									console.log("  ><><>< Going into folder: " + entry);
+									if (checkFolderRecursive(fullPath)) {
+										return true;
+									}
+								} else {
+									if (stat.mtime.getTime() > referenceFileTime) {
+										console.log(` ><>!!!! Modified file found: ${fullPath}`);
+										return true;
+									}
+								}
 							}
 						} else {
-							if (stat.mtime.getTime() > referenceTime) {
-								// console.log(`Modified file found: ${fullPath}`);
-								return true;
-							}
+							console.log("  ><><>< IGNORING " + entry);
+							continue;
 						}
 					}
 					return false;
 				}
-
 				return checkFolderRecursive(folderPath);
 			}
 
 			// Setup files to ignore when checking:
-			const wasModified = anyFileModifiedAfter(
-				nova.path.join(destDir + "/" + exportName),
-				nova.path.join(nova.workspace.path, "src")
-			);
-
-			if (wasModified) {
-				console.log(" !#! TRUE, At least one file was modified after the timestamp.");
-				return true;
-			} else {
-				console.log(" !#! FALSE, No files have changed since the last build.");
-				return false;
-				return new TaskProcessAction("/usr/bin/true");
+			for(var folder of foldersToCheck) {
+				if(anyFileModifiedAfter(buildFileStat.mtime.getTime(), folder)) {
+					console.log(" !#! TRUE, At least one file was modified after the timestamp.");
+					return true;
+				}
 			}
+			console.log(" !#! FALSE, No files have changed since the last build.");
+			return false;
 		} else {
 			console.log(" !#! TRUE, Hey, there's no output, so there is a difference");
 			return true;
@@ -1276,6 +1340,16 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 			// console.log("Copy DIR: [[" + copyDirs + "]]")
 			// consoleLogObject("Copy DIR: " + copyDirs)
 
+/** @NOTE, checks the source files if things have changed... Might need this at some point
+if(doesFileExist(destDir + "/" + exportName)) {
+	console.log("Hey! The output file already exists?! Did anything sources get modified?");
+	if(this.checkIfModifiedAfterFileDate(destDir + "/" + exportName, copyDirs)) {
+		console.log("Yep, stuff changed... should copy!");
+	} else {
+		console.log("Dude, what a waste! I don't need to copy this!!!");
+	}
+}
+*/
 			if(copyDirs!=null) {
 				const copyPromises = copyDirs.map(copyDirRaw => {
 					let copyDir = copyDirRaw;
@@ -1844,7 +1918,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 			];
 
 			// Launch the app, don't wait for it and attach debugger!!
-			return getProcessResults(launchCommand, launchArgs, "", {}, true).then((result) => {
+			return getProcessResults(launchCommand, launchArgs).then((result) => {
 				// console.log("LAUNCHING ON IOS DEVICE BY USB!");
 				// consoleLogObject(result);
 				if(result.status==0) {
@@ -1861,10 +1935,9 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 			var adb = androidSDKBase + "/platform-tools/adb";
 			// var adb = flexSDKBase + "/lib/android/bin/adb";
 			// Setup port forwarding on Android...
-			return getProcessResults(adb, [ "forward", "tcp:7936", "tcp:7936"] , "", {}, true).then(() => {
-				console.log(" I should have forwarded the port, now I should enable debugger mode!");
+			return getProcessResults(adb, [ "forward", "tcp:7936", "tcp:7936"]).then(() => {
 				// Now, enable AIR debugger mode on device...
-				return getProcessResults(adb, [ "shell", "setprop", "debug."+debugPackageId, "1"], "", {}, true).then(() => {
+				return getProcessResults(adb, [ "shell", "setprop", "debug."+debugPackageId, "1"]).then(() => {
 					// Now we can launch the app!
 					return getProcessResults(adb,  [
 							"shell", "am", "start",
@@ -1873,17 +1946,16 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 							"--ez", "remoteDebug", "true",
 							"--ez", "port", "7936"
 						], "", {}, true).then((result) => {
-							console.log("Launched ANDROID.");
-							console.log("RESULTS FROM LAUNCH...");
-							consoleLogObject(result);
+							// console.log("Launched ANDROID.");
+							// console.log("RESULTS FROM LAUNCH...");
+							// consoleLogObject(result);
 							if(result.status==0) {
-								console.log("HOLD ON! for a sec and a half....");
 								// Wait for runtime to connect?
 								return new Promise(r => setTimeout(r, 1000)).then(() => {
 									return this.launchSWFDebug(projectOS, flexSDKBase, anes, true, "attach");
 								});
 							} else {
-								return Promise.reject(new Error("SOmething went wrong with the launchypoo"));
+								return Promise.reject(new Error("Something went wrong with the launching on Android"));
 							}
 					});
 				});
@@ -1969,9 +2041,9 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 			return Promise.reject(new Error("Issues with temp path"));
 		}
 
-try {
-		console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
-		console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+		var launcherMetadata = this.loadLaunchMetadata();
+		var packageHash;
+
 		return this.resolveDeviceSelection(projectOS, taskConfig).then((result) => {
 			if(!result) {
 				return null;
@@ -1997,20 +2069,23 @@ try {
 
 			// Copy the build to a temporary folder as we need to modify the app.xml a bit
 			tempOutputFolder = nova.path.join(tempDirBase, destDirRelative); // Change to temp dir + destDir
-			ensureFolderIsAvailable(tempOutputFolder);
+			if(ensureFolderIsAvailable(tempOutputFolder)==false) {
+				displayTempPathError(tempDirBase);
+				return Promise.reject(new Error("Issues with temp path output file"));
+			}
 
-			// This isn't working right... compares wrong folder
-			// needToCopyAssets = this.checkIfModifiedAfterBuild(tempOutputFolder, exportName);
-			// Check if anything changed after the last packaging
-			// needToPackage = this.checkIfModifiedAfterBuild(tempOutputFolder, "../" + packageName);
-			needToCopyAssets = false;
-			needToPackage = false;
-			needToInstall = false;
+			// At this point, the package could have been built previously. If nothing has changed in the
+			// export folder since the package was made then we really don't need to copy the files to package them
+			if(doesFileExist(tempOutputFolder + "/../" + packageName)) {
+				if(this.checkIfModifiedAfterFileDate(tempOutputFolder + "/../" + packageName,[tempOutputFolder])==false) {
+					needToCopyAssets = false;
+				}
+			}
+
 			return;
-		}).then(() => {
+		}).then(() => { // If we need to copy the files for packaging, do so, otherwise, check the existing files to get the package name
 			if(needToCopyAssets) {
 				return this.copyAssetsOf(destDir, tempOutputFolder, true).then(() => {
-
 					// Now, that we copied the files, modify the app.xml so both a real release and the debug can be installed, and our debug certificate doesn't interfere.
 					let appXMLLocation = nova.path.join(tempOutputFolder, appXMLName);
 					let appXML = getStringOfFile(appXMLLocation);
@@ -2044,7 +2119,7 @@ try {
 					return;
 				});
 			} else {
-				// Since this should be modified now, let's get the debugPackageId:
+				// Since this should have been modified on a previous build, let's get the debugPackageId:
 				let appXMLLocation = nova.path.join(tempOutputFolder, appXMLName);
 				let appXML = getStringOfFile(appXMLLocation);
 				if(appXML==null) {
@@ -2052,16 +2127,33 @@ try {
 				}
 
 				debugPackageId = appXML.match(/<id>([^<]*)<\/id>/i)[1];
-				// If "No AIR Flare" is not turned on or set, we need to adjust the package id that we will use!
+				// If "No AIR Flair" is not turned on or set, we need to adjust the package id that we will use!
 				if(projectOS=="android") {
 					var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
 					if(noAndroidAirFlair==undefined || noAndroidAirFlair==false) {
 						debugPackageId = "air." + debugPackageId; // The package will have AIR flair
 					}
 				}
-				return;
+
+				// Now, check if there is a package already made, if so, compare with the last hash that was installed on the device.
+				if(nova.fs.stat(tempOutputFolder + "/../" + packageName)) {
+					md5HashBinaryFile(tempOutputFolder + "/../" + packageName).then((hash) => {
+						try {
+							if(hash==launcherMetadata.devices[deviceId][debugMode ? "debug" : "run"]["md5"]) {
+								needToPackage = false;
+							}
+						} catch(error) {
+							if(nova.inDevMode()) {
+								consoleLogObject(error);
+							}
+						}
+						return;
+					});
+				} else {
+					return;
+				}
 			}
-		}).then(() => {
+		}).then(() => { // If we need to package, we need the certificate and password
 			if(needToPackage) {
 				showNotification("Packaging Debug build...","📦 Trying to package","Please wait...", "-runOnDevice");
 				if(projectOS=="android") {
@@ -2083,22 +2175,20 @@ try {
 			} else {
 				return { certificateLocation: "", password: "" };
 			}
-		}).then(({ certificateLocation, password }) => {
+		}).then(({ certificateLocation, password }) => { // If we need to package, do so, otherwise check if it's already installed on the device
 			if(needToPackage) {
-				console.info("Packaging...");
-				// Return the results of packaging to next then
 				return this.package(projectType, taskConfig, destDirRelative, certificateLocation, password, true, debugMode).then((results) => ({ results }));
 			} else {
-				return { results: { success: true, packageName: tempDirBase + "/" + packageName } };
+				return checkIfInstalledOnDevice(projectOS, deviceId, debugPackageId).then((installed) => {
+					if(installed) {
+						needToInstall = false;
+					}
+					return { results: { success: true, packageName: tempDirBase + "/" + packageName } };
+				})
 			}
-		}).then(({ results }) => {
+		}).then(({ results }) => { // If we need to install, do so, otherwise let's just move on!
 			if(needToInstall) {
-
-				console.info("Installing...");
-				console.log("RESULTS: ")
-				consoleLogObject(results)
-
-				// Install
+				// Check if the install worked
 				if(results.success==false) {
 					return Promise.reject(new Error("Problem building package to install on device."));
 				}
@@ -2119,84 +2209,74 @@ try {
 					"-platform", projectOS
 				];
 
-				console.log("ARRRRRRG:");
-				consoleLogObject(args)
 				return getProcessResults(command, args, "", {}, true).then(() => ({ debugPackageId }));
 			} else {
-				return;
+				return debugPackageId;
 			}
 		}).then(() => {
-			console.info("How's the debug package iD? ");
-			consoleLogObject(debugPackageId);
-			console.log("DEBUG MODE: ")
-			console.log(debugMode);
-			showNotification("🏃 Trying to run test build...","Trying to run","", "-runOnDevice");
+			md5HashBinaryFile(tempOutputFolder + "/../" + packageName).then((hash) => {
+				packageHash = hash;
+				this.updateLauncherMetadata(launcherMetadata, debugMode, deviceId, packageHash, Date.now(), debugPackageId);
 
-			if(debugMode) {
-				return this.launchDebugViaUSB(projectOS, flexSDKBase, deviceId, debugPackageId, anes);
-			} else { // Regular old run on a device... How nice...
-				let launchCommand, launchArgs;
-				const androidSDKBase = determineAndroidSDKBase();
-				if(projectOS=="ios") {
-					/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
-					launchCommand = "xcrun";
-					launchArgs = [
-						"devicectl",
-						"device",
-						"process",
-						"launch",
-						"--console",
-						"--device",	deviceId,
-						debugPackageId
-					];
-				} else if(projectOS=="android") {
-					// Need to use Android's ADB to launch, thanks Google!
-					launchCommand = androidSDKBase + "/platform-tools/adb";
-					launchArgs = [
-						"shell",
-						"monkey",
-						"-p",
-						debugPackageId,
-						"-c",
-						"android.intent.category.LAUNCHER",
-						"1"
-					];
-				}
-				return new TaskProcessAction(launchCommand, {
-					shell: true,
-					args: launchArgs,
-					env: {}
-				});
-			}
-		}).catch(error => {
-				cancelNotification("-runOnDevice");
-				if(nova.inDevMode()) {
-					console.error("Launch on device error: ");
-					consoleLogObject(error);
-				}
-				var message = "";
-				if(error.status) {
-					var result = resolveStatusCodeFromADT(error.status, error.stderr);
-					message = result.message;
-					if(error.stderr.match(/adb server version \(([0-9]*)\) doesn't match this client \(([0-9]*)\); killing/)) {
-						message += "\n\nThe version of ADB does not match with the installed device. For SWF-Debug to work, these need to match up. You may need to update your Android SDK with:\n`sdk/cmdline-tools/latest/bin/sdkmanager --update`";
+				showNotification("🏃 Trying to run test build...","Trying to run","", "-runOnDevice");
+				// FINALLY!!! We can really launch this thing!!
+				if(debugMode) {
+					return this.launchDebugViaUSB(projectOS, flexSDKBase, deviceId, debugPackageId, anes);
+				} else { // Regular old run on a device... How nice...
+					let launchCommand, launchArgs;
+					const androidSDKBase = determineAndroidSDKBase();
+					if(projectOS=="ios") {
+						/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
+						launchCommand = "xcrun";
+						launchArgs = [
+							"devicectl",
+							"device",
+							"process",
+							"launch",
+							"--console",
+							"--device",	deviceId,
+							debugPackageId
+						];
+					} else if(projectOS=="android") {
+						launchCommand = androidSDKBase + "/platform-tools/adb";
+						launchArgs = [
+							"shell",
+							"monkey",
+							"-p",
+							debugPackageId,
+							"-c",
+							"android.intent.category.LAUNCHER",
+							"1"
+						];
 					}
-					nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\n" + message + "\n\nADT Error: " + error.stderr);
-				} else {
-					message = (error.message) ? error.message : error;
-					nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\nError: " + error);
+					return new TaskProcessAction(launchCommand, {
+						shell: true,
+						args: launchArgs,
+						env: {}
+					});
 				}
-				return Promise.reject(new Error("RETURNING Issue Installing Package for Device Run"));
 			});
-		// }).catch(error => {
-		// 	if(nova.inDevMode()) {
-		// 		consoleLogObject(error);
-		// 		console.error("GET DEV ERORR: ",error);
-		// 		console.error("GET DEV ERORR: ",error.stack);
-		// 	}
-		// 	return null;
-		// });
-} catch(error) { console.error(error.message); console.error(error.stack); return null; }
+		}).catch(error => {
+			cancelNotification("-runOnDevice");
+			if(nova.inDevMode()) {
+				console.error("Launch on device error: ");
+				consoleLogObject(error);
+				consoleLogObject(error.stack);
+			}
+			var message = "";
+			if(error.status) {
+				var result = resolveStatusCodeFromADT(error.status, error.stderr);
+				message = result.message;
+				if(error.stderr.match(/adb server version \(([0-9]*)\) doesn't match this client \(([0-9]*)\); killing/)) {
+					message += "\n\nThe version of ADB does not match with the installed device. For SWF-Debug to work, these need to match up. You may need to update your Android SDK with:\n`sdk/cmdline-tools/latest/bin/sdkmanager --update`";
+				}
+				nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\n" + message + "\n\nADT Error: " + error.stderr);
+			} else {
+				message = (error.message) ? error.message : error;
+				nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\nError: " + error);
+			}
+			return Promise.reject(new Error("RETURNING Issue Installing Package for Device Run"));
+		});
 	}
 
 	/**
@@ -2904,6 +2984,29 @@ try {
 				return this.build(data.type, taskConfig);
 			}
 		} else if(action==Task.Run) {
+			/**
+			 * @TODO We could check here to see if there were changes in the source and force a build
+			 * similar to how FB had that option
+			if(config.get["<<Check files before running key>>"]) {
+				// Need to get configsForBuild here...
+				if(this.checkIfModifiedAfterFileDate(destDir + "/" + exportName,[ mainSrcDir, <lib dirs>, <ane dir> ])==false) { // May need to modify this to include the files to ignore
+					console.warn("  Source dir is unchanged...")
+				} else {
+					console.warn("  Source dir has been changed so it really needs building!!");
+					this.build(data.type, taskConfig).then((result) => {
+						// Fill in the blanks
+						if(config.get("as3.run.withDebugger")) {
+							return this.debugRun(data.type, data.os, taskConfig);
+						} else {
+							return this.run(data.type, data.os, taskConfig)
+						}
+					}).catch(error) {
+						return null;
+					})
+				}
+			}
+			*/
+
 			if(config.get("as3.run.withDebugger")) {
 				return this.debugRun(data.type, data.os, taskConfig);
 			} else {
