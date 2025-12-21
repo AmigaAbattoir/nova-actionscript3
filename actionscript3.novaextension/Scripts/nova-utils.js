@@ -515,6 +515,119 @@ exports.makeOrClearFolder = function(folder) {
 }
 
 /**
+ * Checks if a file was modified after the other (target) file.
+ *
+ * @param {string} target - Path to the file that you want to see if
+ * @param {string} other - Path to the other file
+ * @returns {boolean} - `true` if the target file was modified after the other file or if the other
+ * file does not exist. `false` if the other file is newer than the target file or the target file
+ * does not exist.
+ */
+exports.checkIfFileWasModifiedAfterOther = function(target, other) {
+	var targetStat = nova.fs.stat(target);
+	var otherStat = nova.fs.stat(other);
+
+	if(targetStat!=undefined) {
+		if(otherStat==undefined || targetStat.mtime.getTime()>otherStat.mtime.getTime()) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Checks to see if this is a file that should be ignored
+ * @param {string} fileName - The filename to check with the list of file that need to be excluded
+ */
+exports.shouldIgnoreFileName = function(fileName, fileNamesToExclude, fileExtensionsToExclude) {
+	if(fileNamesToExclude.includes(fileName)) {
+		return true;
+	}
+	if(fileExtensionsToExclude.some(ext => fileName.endsWith(ext))) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Checks if any files in the `folderToCheck` were modified after the `builtFile` was made.
+ * @param {string} builtFile - The path to a file to check against
+ * @param {string[]} foldersToCheck - Full path to folders to check if they were modified after the
+ * `builtFile`
+ * @param {Array} fileExtensionsToExclude - A list of extension to exclude from the check
+ * @param {Array} fileNamesToExclude - A list of file names to exclude. Defaults exclude Mac's
+ * `.DS_Store`, and revision folders `.git` and `.svn`.
+ */
+exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileExtensionsToExclude = [], fileNamesToExclude = [ ".DS_Store", ".git", ".svn" ]) {
+	var buildFileStat = nova.fs.stat(builtFile);
+	if(nova.inDevMode()) {
+		console.log("OUTPUT FILE is [[[[" + builtFile + "]]]]] STAT: " + buildFileStat);
+		exports.consoleLogObject(buildFileStat);
+		console.log("fileExtensionsToExclude: ");
+		exports.consoleLogObject(fileExtensionsToExclude);
+		console.log("fileNamesToExclude: ");
+		exports.consoleLogObject(fileExtensionsToExclude);
+	}
+
+	if(buildFileStat!=undefined) {
+		console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST FILE TIME OF " + buildFileStat.mtime.getTime());
+		function anyFileModifiedAfter(referenceFileTime, folderPath) {
+			// Helper to recursively check files in a folder
+			function checkFolderRecursive(path) {
+				const entries = nova.fs.listdir(path);
+
+				for (const entry of entries) {
+					if(!exports.shouldIgnoreFileName(entry, fileNamesToExclude, fileExtensionsToExclude)) {
+						const fullPath = nova.path.join(path, entry);
+						const stat = nova.fs.stat(fullPath);
+						if(stat) {
+							if(nova.inDevMode()) {
+								console.log("  ><><>< CHECKING " + entry);
+							}
+
+							if (stat.isDirectory()) {
+								console.log("  ><><>< Going into folder: " + entry);
+								if (checkFolderRecursive(fullPath)) {
+									return true;
+								}
+							} else {
+								if (stat.mtime.getTime() > referenceFileTime) {
+									console.log(` ><>!!!! Modified file found: ${fullPath} at` + stat.mtime.getTime());
+									return true;
+								}
+							}
+						}
+					} else {
+						console.log("  ><><>< IGNORING " + entry);
+						continue;
+					}
+				}
+				return false;
+			}
+			return checkFolderRecursive(folderPath);
+		}
+
+		// Setup files to ignore when checking:
+		for(var folder of foldersToCheck) {
+			if(anyFileModifiedAfter(buildFileStat.mtime.getTime(), folder)) {
+				console.log(" !#! TRUE, At least one file was modified after the timestamp.");
+				return true;
+			}
+		}
+		console.log(" !#! FALSE, No files have changed since the last build.");
+		return false;
+	} else {
+		console.log(" !#! TRUE, Hey, there's no output, so there is a difference");
+		return true;
+	}
+	console.log(" !#! Don't think we will get to here....");
+	return false;
+}
+
+
+
+/**
  * Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
  * @param {string} folderPath - The folder path to look through
  * @param {string} relativePath - The relative path name from this directory

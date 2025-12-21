@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette, doesFileExist, getIPAddress } = require("./nova-utils.js");
+const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette, doesFileExist, getIPAddress, doesFolderExist, checkIfFileWasModifiedAfterOther, shouldIgnoreFileName, checkIfModifiedAfterFileDate } = require("./nova-utils.js");
 const { determineFlexSDKBase, determineAndroidSDKBase, getAppXMLNameAndExport, getConfigsForBuildAndPacking } = require("./config-utils.js");
 const { determineProjectUUID, determineTempPath, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
@@ -9,20 +9,6 @@ const { md5HashBinaryFile } = require("/md5.js");
 
 var fileExtensionsToExclude = [];
 var fileNamesToExclude = [];
-
-/**
- * Checks to see if this is a file that should be ignored
- * @param {string} fileName - The filename to check with the list of file that need to be excluded
- */
-function shouldIgnoreFileName(fileName) {
-	if(fileNamesToExclude.includes(fileName)) {
-		return true;
-	}
-	if(fileExtensionsToExclude.some(ext => fileName.endsWith(ext))) {
-		return true;
-	}
-	return false;
-}
 
 /**
  * Helps to display if there is a UUID error.
@@ -175,17 +161,6 @@ function determineCertificatePassword(certificateLocation) {
  * The Task Assistant that handles all the things for Task.
  */
 exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
-	/** @TODO Make this an extension preference, like in Flash Builder > File Exclusions */
-	// These files should be ignored when copying assets. The "-app.xml" gets processed,
-	// so we won't want to copy that either.
-	ignoreCopy = [ ".java", ".class", ".properties", ".mxml", ".as", ".fxg",
-		".classpath", "flex-config.xml", "air-config.xml", "services-config.xml", "remoting-config.xml", "proxy-config.xml", "massaging-config.xml", "data-management-config.xml",
-		// Also, ignore these things.
-		".git",".svn",".DS_Store", "-app.xml",
-		// And these:
-		".apk",".abb",".ipa"
-	];
-
 	/**
 	 * This is boilerplate for a task that is made by the extension
 	 * @type {Object}
@@ -649,96 +624,6 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 			consoleLogObject(args);
 		}
 		return new TaskProcessAction(command, { args: args });
-	}
-
-	/**
-	 * Checks if a file was modified after the other (target) file.
-	 *
-	 * @param {string} target - Path to the file that you want to see if
-	 * @param {string} other - Path to the other file
-	 * @returns {boolean} - `true` if the target file was modified after the other file. `false` if the other file is newer than the target file
-	 */
-	checkIfFileWasModifiedAfterOther(target, other) {
-		var targetStat = nova.fs.stat(target);
-		var othertStat = nova.fs.stat(other);
-
-		if(targetStat.mtime.getTime()>otherStat.mtime.getTime()) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Checks if any files in the `folderToCheck` were modified after the `builtFile` was made.
-	 * @param {string} builtFile - The path to a file to check against
-	 * @param {string[]} foldersToCheck - Full path to folders to check if they were modified after the `builtFile`
-	 */
-	checkIfModifiedAfterFileDate(builtFile, foldersToCheck) {
-		var buildFileStat = nova.fs.stat(builtFile);
-		if(nova.inDevMode()) {
-			console.log("OUTPUT FILE is [[[[" + builtFile + "]]]]]");
-			console.log("STAT: " + buildFileStat);
-			consoleLogObject(buildFileStat);
-		}
-
-		/** @TODO Have to go through all the source folders and check */
-		if(buildFileStat!=undefined) {
-			console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST FILE TIME OF " + buildFileStat.mtime.getTime());
-			fileNamesToExclude = [ ".DS_Store", ".git", ".svn" ];
-			fileExtensionsToExclude = [];
-
-			function anyFileModifiedAfter(referenceFileTime, folderPath) {
-				// Helper to recursively check files in a folder
-				function checkFolderRecursive(path) {
-					const entries = nova.fs.listdir(path);
-
-					for (const entry of entries) {
-						if(!shouldIgnoreFileName(entry)) {
-							const fullPath = nova.path.join(path, entry);
-							const stat = nova.fs.stat(fullPath);
-							if(stat) {
-								if(nova.inDevMode()) {
-									console.log("  ><><>< CHECKING " + entry);
-								}
-
-								if (stat.isDirectory()) {
-									console.log("  ><><>< Going into folder: " + entry);
-									if (checkFolderRecursive(fullPath)) {
-										return true;
-									}
-								} else {
-									if (stat.mtime.getTime() > referenceFileTime) {
-										console.log(` ><>!!!! Modified file found: ${fullPath} at` + stat.mtime.getTime());
-										return true;
-									}
-								}
-							}
-						} else {
-							console.log("  ><><>< IGNORING " + entry);
-							continue;
-						}
-					}
-					return false;
-				}
-				return checkFolderRecursive(folderPath);
-			}
-
-			// Setup files to ignore when checking:
-			for(var folder of foldersToCheck) {
-				if(anyFileModifiedAfter(buildFileStat.mtime.getTime(), folder)) {
-					console.log(" !#! TRUE, At least one file was modified after the timestamp.");
-					return true;
-				}
-			}
-			console.log(" !#! FALSE, No files have changed since the last build.");
-			return false;
-		} else {
-			console.log(" !#! TRUE, Hey, there's no output, so there is a difference");
-			return true;
-		}
-		console.log(" !#! Don't think we will get to here....");
-		return false;
 	}
 
 	/**
@@ -1363,7 +1248,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 /** @NOTE, checks the source files if things have changed... Might need this at some point
 if(doesFileExist(destDir + "/" + exportName)) {
 	console.log("Hey! The output file already exists?! Did anything sources get modified?");
-	if(this.checkIfModifiedAfterFileDate(destDir + "/" + exportName, copyDirs)) {
+	if(checkIfModifiedAfterFileDate(destDir + "/" + exportName, copyDirs, fileExtensionsToExclude, fileNamesToExclude, )) {
 		console.log("Yep, stuff changed... should copy!");
 	} else {
 		console.log("Dude, what a waste! I don't need to copy this!!!");
@@ -2000,6 +1885,21 @@ if(doesFileExist(destDir + "/" + exportName)) {
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		let destDir = configValues.destDir;
+		if(doesFolderExist(destDir)==false) {
+
+			console.log(" DEST DIR " + destDir + "  DOES NOT !!! EXISTS?????!!!!!");
+			console.log(" DEST DIR " + destDir + "  DOES NOT !!! EXISTS?????!!!!!");
+			console.log(" DEST DIR " + destDir + "  DOES NOT !!! EXISTS?????!!!!!");
+			console.log(" DEST DIR " + destDir + "  DOES NOT !!! EXISTS?????!!!!!");
+			nova.workspace.showErrorMessage("Project has not been built yet. Either build manually, or enable \"Build before running\" in the Task's Run options");
+			return;
+		} else {
+			console.log(" DEST DIR " + destDir + "  EXISTS!!!!!");
+			console.log(" DEST DIR " + destDir + "  EXISTS!!!!!");
+			console.log(" DEST DIR " + destDir + "  EXISTS!!!!!");
+			console.log(" DEST DIR " + destDir + "  EXISTS!!!!!");
+		}
+
 		let destDirRelative = nova.path.relative(destDir,nova.workspace.path);
 		let appXMLName = configValues.appXMLName;
 		let exportName = configValues.exportName;
@@ -2091,7 +1991,8 @@ try {
 				deviceHandle = deviceInfo.transportID; // Needed for iOS stuff
 			}
 
-			// Copy the build to a temporary folder as we need to modify the app.xml a bit
+			// We'll need to copy the build to a temporary folder as we need to modify the app.xml a bit
+			// Make sure that the temp folder is available!
 			tempOutputFolder = nova.path.join(tempDirBase, destDirRelative); // Change to temp dir + destDir
 			if(ensureFolderIsAvailable(tempOutputFolder)==false) {
 				displayTempPathError(tempDirBase);
@@ -2102,13 +2003,45 @@ try {
 			// export folder since the package was made then we really don't need to copy the files to package them
 			if(doesFileExist(tempOutputFolder + "/../" + packageName)) {
 				// If there's a package, first check if the compiled SWF has changed.
-				if(this.checkIfFileWasModifiedAfterOther(destDir + "/" + exportName, tempOutputFolder + "/../" + packageName)==false) {
+				if(checkIfFileWasModifiedAfterOther(destDir + "/" + exportName, tempOutputFolder + "/../" + packageName)==false) {
 					// Then check if anything changes in either the destDir or the tempOutputFolder after the package was made,  has changed since.
-					if(this.checkIfModifiedAfterFileDate(tempOutputFolder + "/../" + packageName,[destDir, tempOutputFolder])==false) {
+					if(checkIfModifiedAfterFileDate(tempOutputFolder + "/../" + packageName,[destDir, tempOutputFolder], fileExtensionsToExclude, fileNamesToExclude)==false) {
 						needToCopyAssets = false;
 					}
 				}
 			}
+
+			// If we have ANEs, we also have to make sure they are up-to-date and they are in the temp folder too!
+			// Since this is not included in the temp build folder, we'll handle this now...
+			if(anes && anes.length>0) {
+				var aneTempPath = determineAneTempPath();
+				if(aneTempPath==null) {
+					displayANEsTempPathError(aneTempPath);
+					return Promise.reject(new Error("Issues with determining temp ANE path"));
+				}
+
+				if(doesFolderExist(aneTempPath + "-packed/")==false) {
+					// Make folder for packed ANEs when building.
+					if(makeOrClearFolder(aneTempPath+"-packed")==false) {
+						return Promise.reject(new Error("Issues with temp ANE path"));
+					}
+				}
+
+				anes.forEach((ane) => {
+					var tempAnePath = aneTempPath + "-packed/"+ane.split('/').pop();
+					var realAnePath = nova.workspace.path+"/"+ane;
+					// Only copy if the file doesn't exist or the original has been modified after this temp one
+					if(doesFileExist(tempAnePath)==false || checkIfFileWasModifiedAfterOther(realAnePath, tempAnePath)) {
+						var aneDest = ane.substring(ane.lastIndexOf("/"),ane.length);
+						try {
+							nova.fs.copy(nova.workspace.path+"/"+ane,aneTempPath + "-packed/"+ane.split('/').pop());
+						} catch(error) {
+							return Promise.reject(new Error("Error copying ANE to temp ANE path"));
+						}
+					}
+				});
+			}
+
 			return;
 		}).then(() => { // If we need to copy the files for packaging, do so, otherwise, check the existing files to get the package name
 			if(needToCopyAssets) {
@@ -2307,8 +2240,8 @@ try {
 			cancelNotification("-runOnDevice");
 			if(nova.inDevMode()) {
 				console.error("Launch on device error: ");
-				consoleLogObject(error);
-				consoleLogObject(error.stack);
+				console.error(error);
+				console.error(error.stack);
 			}
 			var message = "";
 			if(error.status) {
@@ -2320,11 +2253,11 @@ try {
 				nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\n" + message + "\n\nADT Error: " + error.stderr);
 			} else {
 				message = (error.message) ? error.message : error;
-				nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\nError: " + error);
+				nova.workspace.showErrorMessage("Issue Installing Package for Device Run" + "\n\n" + message + "\n\nError: " + error.stderr);
 			}
 			return Promise.reject(new Error("RETURNING Issue Installing Package for Device Run"));
 		});
-} catch(error) { console.error(error.message); console.error(error.stack); return Promise.reject(new Error("Try/Catch on whole function failed...")); }
+} catch(error) { console.error("runOnDeviceViaUSB() Issue!"); console.error(error.message); console.error(error.stack); return Promise.reject(new Error("Try/Catch on whole function failed...")); }
 	}
 
 	/**
@@ -2488,7 +2421,7 @@ try {
 				const entries = nova.fs.listdir(src);
 				const copyPromises = entries.map(filename => {
 					// Check if it's a file that doesn't need to be included when packaging in general. (We also remove user specifics later)
-					if(forceAll || shouldIgnoreFileName(filename)==false) {
+					if(forceAll || shouldIgnoreFileName(filename,fileNamesToExclude, fileExtensionsToExclude)==false) {
 						const currPath = nova.path.normalize(nova.path.join(src, filename)); // @NOTE Had to add normalize, some files wouldn't copy to temp without it!
 						const stats = nova.fs.stat(currPath);
 						if (!stats) {
@@ -3039,7 +2972,7 @@ try {
 			 * similar to how FB had that option
 			if(config.get["<<Check files before running key>>"]) {
 				// Need to get configsForBuild here...
-				if(this.checkIfModifiedAfterFileDate(destDir + "/" + exportName,[ mainSrcDir, <lib dirs>, <ane dir> ])==false) { // May need to modify this to include the files to ignore
+				if(checkIfModifiedAfterFileDate(destDir + "/" + exportName,[ mainSrcDir, <lib dirs>, <ane dir> ], fileExtensionsToExclude, fileNamesToExclude)==false) { // May need to modify this to include the files to ignore
 					console.warn("  Source dir is unchanged...")
 				} else {
 					console.warn("  Source dir has been changed so it really needs building!!");
