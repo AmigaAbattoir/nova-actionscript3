@@ -6,7 +6,6 @@ const { getProcessResults, consoleLogObject } = require("./nova-utils.js");
  * @returns {Promise<Array>} - With the resolve being an Array of devices
  */
 exports.getAndroidDevices = function() {
-	// console.log("getAndroidDevices() : ");
 	return new Promise((resolve, reject) => {
 		let devices = [];
 
@@ -26,14 +25,14 @@ exports.getAndroidDevices = function() {
 				}
 			});
 			// Debug output
-			if(!devices.length) {
-				console.log("getAndroidDevices No DEVICES!");
-			} else {
-				console.log("getAndroidDevices DEVICES! " + devices.length);
-				devices.forEach((device) => console.log("device: " + device.uuid + " is a " + device.model));
+			if(nova.inDevMode()) {
+				if(!devices.length) {
+					console.log("getAndroidDevices No DEVICES!");
+				} else {
+					console.log("getAndroidDevices DEVICES! " + devices.length);
+					devices.forEach((device) => console.log("device: " + device.uuid + " is a " + device.model));
+				}
 			}
-			/*
-			*/
 			resolve(devices);
 		}).catch((error) => {
 			if(nova.inDevMode()) {
@@ -73,15 +72,15 @@ exports.getIOSDevices = function() {
 						devices.push({ transportID, model, uuid, deviceName });
 					}
 				});
-				// Debug output
-				if(!devices.length) {
-					console.log("getIOSDevices No DEVICES!");
-				} else {
-					console.log("getIOSDevices DEVICES! " + devices.length);
-					devices.forEach((device) => console.log("device: " + device.uuid + " is an " + device.model));
+				if(nova.inDevMode()) {
+					// Debug output
+					if(!devices.length) {
+						console.log("getIOSDevices No DEVICES!");
+					} else {
+						console.log("getIOSDevices DEVICES! " + devices.length);
+						devices.forEach((device) => console.log("device: " + device.uuid + " is an " + device.model));
+					}
 				}
-				/*
-				*/
 				resolve(devices);
 			} else {
 				reject([]);

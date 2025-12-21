@@ -116,11 +116,15 @@ exports.removeSDKPrompt = function() {
 
 					nova.workspace.showActionPanel(message, { buttons: [ "Remove","Cancel" ] },	(result) => {
 						if(result==0) { // Only Remove is pressed
-							console.log("BEFORE::")
-							consoleLogObject(sdkList);
+							if(nova.inDevMode()) {
+								console.log("BEFORE::")
+								consoleLogObject(sdkList);
+							}
 							sdkList.splice(sdk.index, 1);
-							console.log("after::")
-							consoleLogObject(sdkList);
+							if(nova.inDevMode()) {
+								console.log("after::")
+								consoleLogObject(sdkList);
+							}
 
 							nova.config.set("as3.sdk.installed",sdkList);
 
@@ -162,11 +166,15 @@ exports.changeDefaultSDKPrompt = function() {
 						var message = "Are you sure you want to make the default SDK:\n\n" + exports.getAIRSDKNameFromPath(sdk.value) + "?\n\n";
 						nova.workspace.showActionPanel(message, { buttons: [ "Make Default","Cancel" ] },(result) => {
 							if(result==0) {
-								console.log("BEFORE::")
-								consoleLogObject(sdkList);
+								if(nova.inDevMode()) {
+									console.log("BEFORE::")
+									consoleLogObject(sdkList);
+								}
 								sdkList.unshift(sdkList.splice(sdk.index, 1)[0]);
-								console.log("after::")
-								consoleLogObject(sdkList);
+								if(nova.inDevMode()) {
+									console.log("after::")
+									consoleLogObject(sdkList);
+								}
 
 								//nova.config.set("as3.sdk.installed",sdkList);
 

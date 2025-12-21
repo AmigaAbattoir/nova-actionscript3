@@ -571,7 +571,7 @@ exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileE
 	}
 
 	if(buildFileStat!=undefined) {
-		console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST FILE TIME OF " + buildFileStat.mtime.getTime());
+		if(nova.inDevMode()) { console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST FILE TIME OF " + buildFileStat.mtime.getTime()); }
 		function anyFileModifiedAfter(referenceFileTime, folderPath) {
 			// Helper to recursively check files in a folder
 			function checkFolderRecursive(path) {
@@ -587,19 +587,19 @@ exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileE
 							}
 
 							if (stat.isDirectory()) {
-								console.log("  ><><>< Going into folder: " + entry);
+								if(nova.inDevMode()) { console.log("  ><><>< Going into folder: " + entry); }
 								if (checkFolderRecursive(fullPath)) {
 									return true;
 								}
 							} else {
 								if (stat.mtime.getTime() > referenceFileTime) {
-									console.log(` ><>!!!! Modified file found: ${fullPath} at` + stat.mtime.getTime());
+									if(nova.inDevMode()) { console.log(` ><>!!!! Modified file found: ${fullPath} at` + stat.mtime.getTime()); }
 									return true;
 								}
 							}
 						}
 					} else {
-						console.log("  ><><>< IGNORING " + entry);
+						if(nova.inDevMode()) { console.log("  ><><>< IGNORING " + entry); }
 						continue;
 					}
 				}
@@ -611,17 +611,17 @@ exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileE
 		// Setup files to ignore when checking:
 		for(var folder of foldersToCheck) {
 			if(anyFileModifiedAfter(buildFileStat.mtime.getTime(), folder)) {
-				console.log(" !#! TRUE, At least one file was modified after the timestamp.");
+				if(nova.inDevMode()) { console.log(" !#! TRUE, At least one file was modified after the timestamp."); }
 				return true;
 			}
 		}
-		console.log(" !#! FALSE, No files have changed since the last build.");
+		if(nova.inDevMode()) { console.log(" !#! FALSE, No files have changed since the last build."); }
 		return false;
 	} else {
-		console.log(" !#! TRUE, Hey, there's no output, so there is a difference");
+		if(nova.inDevMode()) { console.log(" !#! TRUE, Hey, there's no output, so there is a difference"); }
 		return true;
 	}
-	console.log(" !#! Don't think we will get to here....");
+	if(nova.inDevMode()) { console.log(" !#! Don't think we will get to here...."); }
 	return false;
 }
 

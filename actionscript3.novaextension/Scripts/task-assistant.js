@@ -189,7 +189,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				file.close();
 				return JSON.parse(json);
 			} catch (error) {
-				console.log("No ActionScript3Launcher.json for project found.");
+				if(nova.inDevMode()) {
+					console.info("No ActionScript3Launcher.json for project found.");
+				}
 			}
 		}
 
@@ -381,9 +383,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 
 				if(nova.inDevMode()) {
-					console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+					console.log("-=Package Build taskConfig =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 					consoleLogObject(taskConfig);
-					console.log("-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+					console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 				}
 
 				// We need a project UUID which we use to save the certificate password in a later step, but let's check
@@ -646,7 +648,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}catch(error) {
 				// If there's an error, we'll figure it out later.
 				if (nova.inDevMode()) {
-					console.log("There was an error trying to read the app-xml for which profile to user: " + error);
+					console.error("There was an error trying to read the app-xml for which profile to user: " + error);
 				}
 			}
 		}
@@ -708,8 +710,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 	 * @param {boolean} forRunOrDebug - Default is `false` for packaging a release, otherwise `true` if this is going to be used for run/debug
 	 */
 	package(projectType, taskConfig, releaseFolder, certificateLocation, password, forRunOrDebug = false, debugMode = false) {
-		console.log("RELEASE PATH for package(): " + releaseFolder);
-
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
@@ -850,7 +850,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					if(archType=="armv8") {
 						// If less than 33.1, there's no armv8 support, so we definitely can fail now!
 						if(currentAIRSDKVersion<33.1) {
-							console.log(currentAIRSDKVersion);
 							nova.workspace.showErrorMessage("When exporting for Android armv8, make sure you are using AIR SDK 33.1.1.533 or greater, current version is " + currentAIRSDKVersion);
 							return Promise.reject({success: false});
 						}
@@ -1006,7 +1005,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			env: env
 		});
 
-		// consoleLogObject(process);
 		if (nova.inDevMode()) {
 			console.log(" *** COMMAND [[" + command + "]] ARG: \n");
 			consoleLogObject(args);
@@ -1207,7 +1205,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				} catch(error) {
 					//if(lineCount==0) {
 						nova.workspace.showErrorMessage("Error writing HTML file at " + newHtmlFile + ". Please check it's content that it is valid.");
-						console.log("*** ERROR: Writing HTML file! error: ",error);
+						console.error("*** ERROR: Writing HTML file! error: ",error);
 						consoleLogObject(error);
 						return null;
 					//}
@@ -1237,12 +1235,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			fileNamesToExclude.push(appXMLName);
 			fileExtensionsToExclude = getWorkspaceOrGlobalConfig("as3.fileExclusion.extensions");
 
-			// console.log("Copy DIR: [[" + copyDirs + "]]")
-			// consoleLogObject("Copy DIR: " + copyDirs)
-
 			var copyDirs = sourceDirs.concat(mainSrcDir);
-			// console.log("Copy DIR: [[" + copyDirs + "]]")
-			// consoleLogObject("Copy DIR: " + copyDirs)
 
 /** @NOTE, checks the source files if things have changed... Might need this at some point
 if(doesFileExist(destDir + "/" + exportName)) {
@@ -1345,7 +1338,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 			} catch(error) {
 				//if(lineCount==0) {
 					nova.workspace.showErrorMessage("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid.");
-					console.log("*** ERROR: APP XML file! error: ",error);
+					console.error("*** ERROR: APP XML file! error: ",error);
 					consoleLogObject(error);
 					return null;
 				//}
@@ -1427,12 +1420,12 @@ if(doesFileExist(destDir + "/" + exportName)) {
 								// console.log("Unzip successful?!");
 							},(reject) => {
 								nova.workspace.showErrorMessage("Failed while trying to unzip ANE " + ane + " to temp folder.");
-								console.log("Unzip failed");
+								console.error("Unzip failed");
 								return null;
 							});
 						} catch(error) {
 							nova.workspace.showErrorMessage("Failed to unzip ANE " + ane + " to temp folder.");
-							console.log("*** ERROR: Couldn't unzip ANE for test runs ***",error);
+							console.error("*** ERROR: Couldn't unzip ANE for test runs ***",error);
 							return null;
 						}
 					//}
@@ -1480,14 +1473,14 @@ if(doesFileExist(destDir + "/" + exportName)) {
 		}
 
 		if(packageAfterBuild || returnAsProcess) {
-			if (nova.inDevMode()) {
-				console.log(" #### Okay, ready to do Promise!");
-			}
+			// if (nova.inDevMode()) {
+			// 	console.log(" #### Okay, ready to do Promise!");
+			// }
 			return getProcessResults(command, args, nova.workspace.path);
 		} else {
-			if (nova.inDevMode()) {
-				console.log(" #### Okay, should be built to Nova!");
-			}
+			// if (nova.inDevMode()) {
+			// 	console.log(" #### Okay, should be built to Nova!");
+			// }
 			return new TaskProcessAction(command, { args: args });
 		}
 	}
@@ -1889,7 +1882,6 @@ if(doesFileExist(destDir + "/" + exportName)) {
 	 * @param {boolean} debugMode - `true` if we want to do this as a debug, otherwise `false`
 	 */
 	runOnDeviceViaUSB(projectType, projectOS, taskConfig, debugMode = false) {
-		console.log("------------------------- LAUNCH ON DEVICE CALLED _--------------------");
 		let command = "";
 		let args = [];
 
@@ -2075,7 +2067,7 @@ try {
 						appXMLFile.write(appXML);
 						appXMLFile.close();
 					} catch(error) {
-						console.log("*** ERROR: APP XML file! error: ",error);
+						console.error("*** ERROR: APP XML file! error: ",error);
 						consoleLogObject(error);
 						return Promise.reject(new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's contents that it is valid."));
 					}
