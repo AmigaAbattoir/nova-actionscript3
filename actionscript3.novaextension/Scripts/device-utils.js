@@ -122,18 +122,19 @@ exports.checkIfInstalledOnAndroidDevice = function(deviceId, packageId) {
 		const androidSDKBase = determineAndroidSDKBase();
 		getProcessResults(androidSDKBase + "/platform-tools/adb", ["shell", "pm", "path", packageId]).then((result) => {
 			if(nova.inDevMode()) {
-				console.info("Looking for " + packageId + " on device " + deviceId);
+				console.info("checkIfInstalledOnAndroidDevice(): Looking for " + packageId + " on device " + deviceId);
 				consoleLogObject(result);
 			}
 
 			// Only if the item is installed does this string of text show up in the output
-			if(result.stdout.indexOf("package:/data//app/")!=-1) {
+			if(result.stdout.indexOf("package:/data/app/")!=-1) {
 				resolve(true);
+			} else {
+				resolve(false);
 			}
-			resolve(false);
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				console.error("checkIfInstalledOnAndroidDevice: Error checking for app installed '" + packageId + "' on Android device" + deviceId);
+				console.error("checkIfInstalledOnAndroidDevice(): Error checking for app installed '" + packageId + "' on Android device" + deviceId);
 				consoleLogObject(error);
 			}
 			resolve(false);
@@ -161,18 +162,19 @@ exports.checkIfInstalledOnIOSDevice = function(deviceId, packageId) {
 			]
 		).then((result) => {
 			if(nova.inDevMode()) {
-				console.info("Looking for " + packageId + " on device " + deviceId);
+				console.info("checkIfInstalledOnIOSDevice(): Looking for " + packageId + " on device " + deviceId);
 				consoleLogObject(result);
 			}
 
 			// If the packageId shows up in the output, then it should be installed
 			if(result.stdout.indexOf(packageId)!=-1) {
 				resolve(true);
+			} else {
+				resolve(false);
 			}
-			resolve(false);
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				console.error("checkIfInstalledOnIOSDevice: Error checking for app installed '" + packageId + "' on iOS device" + deviceId);
+				console.error("checkIfInstalledOnIOSDevice(): Error checking for app installed '" + packageId + "' on iOS device" + deviceId);
 				consoleLogObject(error);
 			}
 			resolve(false);

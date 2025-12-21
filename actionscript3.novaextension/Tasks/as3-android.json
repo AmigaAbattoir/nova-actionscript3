@@ -6,14 +6,14 @@
 		"default": false
 	},
 	{
-		"title": "Run Options",
-		"description": "Used when running the project",
+		"title": "Run/Debug Options",
+		"description": "Used when running/debugging the project",
 		"type": "section",
 		"children": [
 			{
 				"key": "as3.task.launchMethod",
 				"title": "Launch method",
-				"description": "When running, how should this be launched? If no device is selected the first connected device will be used to launch. However, if you set this, then this will be the preferred device to launch on.",
+				"description": "Sets which type of device to use when launching. If on desktop is selected, the ADL simulator will be used.",
 				"type": "enum",
 				"link": "http://www.adobe.com/go/fb_device_help",
 				"default": "desktop",
@@ -24,21 +24,30 @@
 			},
 			{
 				"key": "as3.task.deviceToSimulate",
-				"title": "Desktop Device",
-				"description": "When launching \"On desktop\", which device display should we simulate",
+				"title": "Desktop device",
+				"description": "When launch method is set to \"On desktop\", which device display should we simulate",
 				"type": "enum",
 				"radio": false,
 				"resolve": "as3.resolver.androidDevicesSimulator"
 			},
 			{
+				"key": "as3.task.deviceID",
+				"title": "Preferred Device to use",
+				"type": "enum",
+				"resolve": "as3.resolver.androidDevices",
+				"radio": false,
+				"description": "If launch method is set to  \"On device\", this will be the preferred device to use. If it is currently not plugged in then it will only display UUID of the device."
+			},
+			{
 				"key": "as3.task.deviceType",
 				"title": "Which type of device",
-				"description": "When launching \"On device\", which type of device to launch on",
+				"description": "When launch method is set to  \"On device\", which type of device to launch on",
 				"type": "enum",
 				"default": "usb",
+				"link": "http://www.adobe.com/go/fb_network_debugging",
 				"values": [
 					["usb","Debug via USB (recommened)"],
-					["network","Debug via network"]
+					["network","(*not implemented yet) Debug via network"]
 				]
 			},
 			{
@@ -48,16 +57,9 @@
 				"default": true
 			},
 			{
-				"key": "as3.task.deviceID",
-				"title": "Device to use",
-				"type": "enum",
-				"resolve": "as3.resolver.androidDevices",
-				"radio": false,
-				"description": "If launching via device, this will be the device to use. If it is currently not plugged in then it will only display UUID of the device."
-			},
-			{
 				"key": "as3.task.clear",
 				"title": "Clear application data on each launch",
+				"description": "Resets data for the app prior to launching again on a device.",
 				"type": "boolean",
 				"default": false
 			}

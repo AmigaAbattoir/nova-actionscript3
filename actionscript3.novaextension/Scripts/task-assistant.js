@@ -887,7 +887,17 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 		} else {
 			args.push("-package");
 
-			// Only for Android building
+			var targetType = taskConfig["as3.deployment.target"];
+			var connectionType = taskConfig["as3.task.deviceType"];
+			var address;
+			if(connectionType=="network") {
+				address = getIPAddress();
+				if(!address) {
+					nova.workspace.showErrorMessage("There were issues getting this machine's IP address, please change to using USB for `Which type of device` to use for launching.");
+					return Promise.reject({success: false});
+				}
+			}
+
 			if(taskConfig["as3.target"]=="android") {
 				// Check if we want to disable AIR Flair. I know I do!
 				var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
@@ -900,17 +910,6 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 
 				if(noAndroidAirFlair) {
 					env = { AIR_NOANDROIDFLAIR: "true" };
-				}
-
-				var targetType = taskConfig["as3.deployment.target"];
-				var connectionType = taskConfig["as3.task.deviceType"];
-				var address;
-				if(connectionType=="network") {
-					address = getIPAddress();
-					if(!address) {
-						nova.workspace.showErrorMessage("There were issues getting this machine's IP address, please change to using USB for `Which type of device` to use for launching.");
-						return Promise.reject({success: false});
-					}
 				}
 
 				args.push("-target");
@@ -961,7 +960,6 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 				if(forRunOrDebug) {
 					if(debugMode) {
 						args.push("ipa-debug-interpreter");
-
 						if(connectionType=="usb") {
 							args.push("-listen");
 							args.push("7936");
@@ -2032,6 +2030,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 		var needToCopyAssets = true;
 		var needToPackage = true;
 		var needToInstall = true;
+		var needToClearAppData = taskConfig["as3.task.clear"];
 
 		var tempOutputFolder;
 		// Let's make sure we have a temp folder to dump stuff to
@@ -2044,6 +2043,9 @@ if(doesFileExist(destDir + "/" + exportName)) {
 		var launcherMetadata = this.loadLaunchMetadata();
 		var packageHash;
 
+		const androidSDKBase = determineAndroidSDKBase();
+		const adb = androidSDKBase + "/platform-tools/adb";
+try {
 		return this.resolveDeviceSelection(projectOS, taskConfig).then((result) => {
 			if(!result) {
 				return null;
@@ -2186,6 +2188,27 @@ if(doesFileExist(destDir + "/" + exportName)) {
 					return { results: { success: true, packageName: tempDirBase + "/" + packageName } };
 				})
 			}
+		}).then(({ results }) => { // If we need to clear app data, do it now. Android can just clear data, iOS needs to uninstall :-(
+			if(needToClearAppData) {
+				if(projectOS=="android") { // Since we can just zap the data with Android,
+					return getProcessResults(adb, ["shell","pm","clear",debugPackageId]).then(() => ({ results }));
+				}
+				if(projectOS=="ios") {
+					// For a simulator, I think we can do simctl uninstall/install
+					return getProcessResults("xcrun", [
+							"devicectl",
+							"device",
+							"uninstall",
+							"app",
+							"--device",	deviceId,
+							debugPackageId
+					]).then(() => {
+						needToInstall = true;
+						return { results };
+					});
+				}
+			}
+			return { results };
 		}).then(({ results }) => { // If we need to install, do so, otherwise let's just move on!
 			if(needToInstall) {
 				// Check if the install worked
@@ -2211,10 +2234,10 @@ if(doesFileExist(destDir + "/" + exportName)) {
 
 				return getProcessResults(command, args, "", {}, true).then(() => ({ debugPackageId }));
 			} else {
-				return debugPackageId;
+				return { debugPackageId };
 			}
 		}).then(() => {
-			md5HashBinaryFile(tempOutputFolder + "/../" + packageName).then((hash) => {
+			return md5HashBinaryFile(tempOutputFolder + "/../" + packageName).then((hash) => {
 				packageHash = hash;
 				this.updateLauncherMetadata(launcherMetadata, debugMode, deviceId, packageHash, Date.now(), debugPackageId);
 
@@ -2224,7 +2247,6 @@ if(doesFileExist(destDir + "/" + exportName)) {
 					return this.launchDebugViaUSB(projectOS, flexSDKBase, deviceId, debugPackageId, anes);
 				} else { // Regular old run on a device... How nice...
 					let launchCommand, launchArgs;
-					const androidSDKBase = determineAndroidSDKBase();
 					if(projectOS=="ios") {
 						/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
 						launchCommand = "xcrun";
@@ -2238,7 +2260,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 							debugPackageId
 						];
 					} else if(projectOS=="android") {
-						launchCommand = androidSDKBase + "/platform-tools/adb";
+						launchCommand = adb;
 						launchArgs = [
 							"shell",
 							"monkey",
@@ -2277,6 +2299,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 			}
 			return Promise.reject(new Error("RETURNING Issue Installing Package for Device Run"));
 		});
+} catch(error) { console.error(error.message); console.error(error.stack); return Promise.reject(new Error("Try/Catch on whole function failed...")); }
 	}
 
 	/**
@@ -2922,6 +2945,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 			"as3.task.applicationFile",
 			"as3.task.launchMethod",
 			"as3.task.output",
+			"as3.task.clear",
 
 			// Needed for packaging!
 			"as3.deployment.arch",
