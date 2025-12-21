@@ -370,6 +370,10 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 				// Figure out the certificate to use when signing.
 				var certificateLocation = nova.workspace.config.get("as3.packaging.certificate");
+				if(taskConfig["as3.packaging.certificate"]) {
+					certificateLocation = taskConfig["as3.packaging.certificate"];
+				}
+
 				// If there is no certificate for this, then we can't package!!
 				if(certificateLocation==null) {
 					nova.workspace.showErrorMessage("Your project and/or Tasks do not contain a Certificate which you need in order to package an export release.");
@@ -409,7 +413,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 						checkMacBuildForIcons(taskConfig);
 					}
 
-					showNotification("Export Release Build started","Attempting to package " + taskFileName.replace(".json","") + "...","Please wait", "-packaging");
+					var packagingMessage = "Exporting package of " + taskFileName.replace(".json","") + " for \"" + nova.workspace.config.get("workspace.name") + "\"";
+					packagingMessage += "\n\nNote: Any changes you make to code or assets while this packaging is running will not be included.";
+					showNotification("📦 Export Package...",packagingMessage,"Please wait", "-packaging");
 					this.build(projectType, taskConfig, true).then((resolve) => {
 						// Check if the Task has a custom certificate set for it!
 						if(taskConfig["as3.packaging.certificate"] && taskConfig["as3.packaging.certificate"]!="") {
@@ -418,13 +424,6 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 						determineCertificatePassword(certificateLocation).then((results) => {
 							var password = results.password;
-/*
-console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-console.log("&&&& PACKAGE BUILDER TASKCONFIG &&&&&&&&&&&&&&&&&&&&&&&&")
-consoleLogObject(taskConfig);
-console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-*/
 							this.package(projectType, taskConfig, releasePath, certificateLocation, password);
 						},(reject) => {
 							// console.log("passwordGet.then((reject): ");
@@ -1316,7 +1315,19 @@ if(doesFileExist(destDir + "/" + exportName)) {
 				}
 
 				if(appVersion!=currentAIRSDKVersion) {
-					nova.workspace.showErrorMessage("Your app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". " + additionalNote + "Please correct this so that you can build it.");
+					if(packageAfterBuild) {
+						// Have to delay it, otherwise it get's eaten by the delay coming in...
+						setTimeout(() => { cancelNotification("-packaging"); },100);
+					}
+
+					nova.workspace.showActionPanel("Your app descriptor is looking for SDK Version " + appVersion +" but the current AIR SDK is version " + currentAIRSDKVersion + ". " + additionalNote + "Please correct this so that you can build it.",
+						{ buttons: [ "Okay", "Open App Descriptor"] },
+						(result) => {
+							if(result==1) {
+								nova.workspace.openFile(appXMLLocation);
+							}
+						}
+					);
 					return null;
 				}
 			} else {
@@ -2107,7 +2118,7 @@ try {
 			}
 		}).then(() => { // If we need to package, we need the certificate and password
 			if(needToPackage) {
-				showNotification("📦 Packaging...","Trying to package " + marquee,"Please wait...", "-runOnDevice");
+				showNotification("📦 Packaging...","Packaging " + marquee,"Please wait...", "-runOnDevice");
 				if(projectOS=="android") {
 					return Promise.resolve({
 						certificateLocation: nova.extension.path + "/Defaults/android-debug.p12",
@@ -2172,7 +2183,7 @@ try {
 					installDeviceId = deviceHandle.toString();
 				}
 
-				showNotification("📲  Installing...","Trying to install " + marquee,"Please wait...", "-runOnDevice");
+				showNotification("📲  Installing...","Installing " + marquee,"Please wait...", "-runOnDevice");
 				packageFileName = results.packageName;
 				command = flexSDKBase + "/bin/adt";
 				args = [
@@ -2191,7 +2202,7 @@ try {
 				packageHash = hash;
 				this.updateLauncherMetadata(launcherMetadata, debugMode, deviceId, packageHash, Date.now(), debugPackageId);
 
-				showNotification("🏃 Running...", "Trying to run " + marquee,"", "-runOnDevice");
+				showNotification("🏃 Running...", "Running " + marquee,"", "-runOnDevice");
 				// FINALLY!!! We can really launch this thing!!
 				if(debugMode) {
 					return this.launchDebugViaUSB(projectOS, flexSDKBase, deviceId, debugPackageId, anes);

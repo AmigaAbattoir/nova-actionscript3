@@ -358,8 +358,19 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 												appXML = appXML.replace("<id></id>","<id>" + className + "</id>")
 												appXML = appXML.replace("<filename></filename>","<filename>" + className + "</filename>")
 												appXML = appXML.replace("<name></name>","<name>" + className + "</name>")
-												appXML = appXML.replace("<versionNumber>1.0.0</versionNumber>","<versionNumber>0.0.0</versionNumber>")
+												appXML = appXML.replace("<versionNumber>1.0.0</versionNumber>","<versionNumber>0.0.1</versionNumber>")
 												appXML = appXML.replace("<content></content>","<content>[This value will be overwritten by Nova in the output app.xml]</content>")
+
+												// Uncomment Android and iOS stuff
+												if(projectType==NP_TYPE_FlexMobile || projectType==NP_TYPE_ActionScriptMobile) {
+													appXML = appXML.replace("<!--<android> -->","<android>");
+													appXML = appXML.replace("<!-- </android> -->","</android>");
+													appXML = appXML.replace("<!--	<manifestAdditions>","    <manifestAdditions>");
+													appXML = appXML.replace("</manifestAdditions> -->","</manifestAdditions>");
+
+													appXML = appXML.replace("<!-- <iPhone> -->","<iPhone>");
+													appXML = appXML.replace("<!-- </iPhone> -->","</iPhone>");
+												}
 
 												var newAppXMLFile = nova.fs.open(projectFolder + "/src/" + className + "-app.xml", "w");
 												newAppXMLFile.write(appXML);

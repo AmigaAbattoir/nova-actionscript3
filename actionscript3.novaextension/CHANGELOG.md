@@ -13,10 +13,12 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 ### Changed
 
 - Internal changes - Rewrote how Task configs are passed to build and run
+- If trying to build with wrong version of SDK in app descriptor, it will have an option to open the file
 
 ### Fixed
 
 - Checking ANE temp path failed version check (was set high for debugging)
+- When creating new mobile project, app descriptor uncomments the Android and iOS options so that you can run/build properly
 
 ## [0.11.3] - 2025-10-23
 
