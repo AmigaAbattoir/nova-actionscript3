@@ -14,7 +14,7 @@ The goal was to be able to use all of my old Adobe Flash Builder projects and co
 
 - 🐛 **Debugging** - _Via SWF Debug_
 
-  - Starting in v0.12, this includes debugging on iOS and Android devices.
+  - Starting in v0.12, this includes debugging on iOS and Android devices connected by USB.
 
 - 🖍️ **Syntax Highlighting**
 
