@@ -59,7 +59,7 @@
 				"default": "standard",
 				"values": [
 					["standard","Standard (packaging takes several minutes, application performance is similar to a release build)"],
-					["fast","(*not implemented yet) Fast (packaging takes several seconds, application runs significantly slower than a release build)"]
+					["fast","Fast (packaging takes several seconds, application runs significantly slower than a release build)"]
 				]
 			},
 			{

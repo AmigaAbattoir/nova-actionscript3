@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette, doesFileExist } = require("./nova-utils.js");
+const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette, doesFileExist, getIPAddress } = require("./nova-utils.js");
 const { determineFlexSDKBase, determineAndroidSDKBase, getAppXMLNameAndExport, getConfigsForBuildAndPacking } = require("./config-utils.js");
 const { determineProjectUUID, determineTempPath, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
@@ -476,7 +476,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	 * @param {Array} resourceDestPathEntries - The resources that should be copied into this library
 	 * @param {Array} resourceSourcePathEntries - The resource's source files locations. There should be the same amount of `resourceDestPathEntries` and `resourceSourcePathEntries`!
 	 * @param {Array} namespaceManifestEntryManifests - The locations of the manifest XMLs
-	 * @param {Array} namespaceManifestEntryNamespaces - The namespaced used for these manifest XMLs. There needs to be the same amount of `namespaceManifestEntryManifests` and `namespaceManifestEntryNamespaces`!
+	 * @param {Array} namespaceManifestEntryNamespaces - The namespace used for these manifest XMLs. There needs to be the same amount of `namespaceManifestEntryManifests` and `namespaceManifestEntryNamespaces`!
 	 */
 	buildLibrary(taskConfig) { //},classEntries, resourceDestPathEntries, resourceSourcePathEntries, namespaceManifestEntryManifests, namespaceManifestEntryNamespaces) {
 		const configValues = getConfigsForBuildAndPacking(taskConfig, false);
@@ -652,6 +652,24 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	}
 
 	/**
+	 * Checks if a file was modified after the other (target) file.
+	 *
+	 * @param {string} target - Path to the file that you want to see if
+	 * @param {string} other - Path to the other file
+	 * @returns {boolean} - `true` if the target file was modified after the other file. `false` if the other file is newer than the target file
+	 */
+	checkIfFileWasModifiedAfterOther(target, other) {
+		var targetStat = nova.fs.stat(target);
+		var othertStat = nova.fs.stat(other);
+
+		if(targetStat.mtime.getTime()>otherStat.mtime.getTime()) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Checks if any files in the `folderToCheck` were modified after the `builtFile` was made.
 	 * @param {string} builtFile - The path to a file to check against
 	 * @param {string[]} foldersToCheck - Full path to folders to check if they were modified after the `builtFile`
@@ -666,7 +684,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 
 		/** @TODO Have to go through all the source folders and check */
 		if(buildFileStat!=undefined) {
-			console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST FILE TIME OF " + builtFile);
+			console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST FILE TIME OF " + buildFileStat.mtime.getTime());
 			fileNamesToExclude = [ ".DS_Store", ".git", ".svn" ];
 			fileExtensionsToExclude = [];
 
@@ -691,7 +709,7 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 									}
 								} else {
 									if (stat.mtime.getTime() > referenceFileTime) {
-										console.log(` ><>!!!! Modified file found: ${fullPath}`);
+										console.log(` ><>!!!! Modified file found: ${fullPath} at` + stat.mtime.getTime());
 										return true;
 									}
 								}
@@ -957,9 +975,15 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 				args.push(archType);
 			}else if(taskConfig["as3.target"]=="ios") {
 				args.push("-target");
+
 				if(forRunOrDebug) {
+					if(taskConfig["as3.task.packagingMethod"]=="fast") {
+						args.push(debugMode ? "ipa-debug-interpreter" : "ipa-test-interpreter");
+					} else {
+						args.push(debugMode ? "ipa-debug" : "ipa-test");
+					}
+
 					if(debugMode) {
-						args.push("ipa-debug-interpreter");
 						if(connectionType=="usb") {
 							args.push("-listen");
 							args.push("7936");
@@ -967,8 +991,6 @@ console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 							args.push("-connect");
 							args.push(address.ip+":7936");
 						}
-					} else {
-						args.push("ipa-test");
 					}
 				} else {
 					if(targetType==null) {
@@ -2079,11 +2101,14 @@ try {
 			// At this point, the package could have been built previously. If nothing has changed in the
 			// export folder since the package was made then we really don't need to copy the files to package them
 			if(doesFileExist(tempOutputFolder + "/../" + packageName)) {
-				if(this.checkIfModifiedAfterFileDate(tempOutputFolder + "/../" + packageName,[tempOutputFolder])==false) {
-					needToCopyAssets = false;
+				// If there's a package, first check if the compiled SWF has changed.
+				if(this.checkIfFileWasModifiedAfterOther(destDir + "/" + exportName, tempOutputFolder + "/../" + packageName)==false) {
+					// Then check if anything changes in either the destDir or the tempOutputFolder after the package was made,  has changed since.
+					if(this.checkIfModifiedAfterFileDate(tempOutputFolder + "/../" + packageName,[destDir, tempOutputFolder])==false) {
+						needToCopyAssets = false;
+					}
 				}
 			}
-
 			return;
 		}).then(() => { // If we need to copy the files for packaging, do so, otherwise, check the existing files to get the package name
 			if(needToCopyAssets) {
@@ -2195,7 +2220,7 @@ try {
 				}
 				if(projectOS=="ios") {
 					// For a simulator, I think we can do simctl uninstall/install
-					return getProcessResults("xcrun", [
+					return getProcessResults("/usr/bin/xcrun", [
 							"devicectl",
 							"device",
 							"uninstall",
@@ -2249,7 +2274,7 @@ try {
 					let launchCommand, launchArgs;
 					if(projectOS=="ios") {
 						/** @NOTE, do we add an option to use ios-deploy for really old Xcode? */
-						launchCommand = "xcrun";
+						launchCommand = "/usr/bin/xcrun";
 						launchArgs = [
 							"devicectl",
 							"device",
@@ -2946,6 +2971,7 @@ try {
 			"as3.task.launchMethod",
 			"as3.task.output",
 			"as3.task.clear",
+			"as3.task.packagingMethod",
 
 			// Needed for packaging!
 			"as3.deployment.arch",
