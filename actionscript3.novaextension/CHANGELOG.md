@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 ### Added
 
-- Launch on device via USB for Android and iOS in place
+- Launch on device via USB for Android and iOS
 - Added more package option for iOS
 
 ### Changed
