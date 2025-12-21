@@ -1886,18 +1886,8 @@ if(doesFileExist(destDir + "/" + exportName)) {
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		let destDir = configValues.destDir;
 		if(doesFolderExist(destDir)==false) {
-
-			console.log(" DEST DIR " + destDir + "  DOES NOT !!! EXISTS?????!!!!!");
-			console.log(" DEST DIR " + destDir + "  DOES NOT !!! EXISTS?????!!!!!");
-			console.log(" DEST DIR " + destDir + "  DOES NOT !!! EXISTS?????!!!!!");
-			console.log(" DEST DIR " + destDir + "  DOES NOT !!! EXISTS?????!!!!!");
 			nova.workspace.showErrorMessage("Project has not been built yet. Either build manually, or enable \"Build before running\" in the Task's Run options");
 			return;
-		} else {
-			console.log(" DEST DIR " + destDir + "  EXISTS!!!!!");
-			console.log(" DEST DIR " + destDir + "  EXISTS!!!!!");
-			console.log(" DEST DIR " + destDir + "  EXISTS!!!!!");
-			console.log(" DEST DIR " + destDir + "  EXISTS!!!!!");
 		}
 
 		let destDirRelative = nova.path.relative(destDir,nova.workspace.path);
@@ -1964,6 +1954,8 @@ if(doesFileExist(destDir + "/" + exportName)) {
 
 		var launcherMetadata = this.loadLaunchMetadata();
 		var packageHash;
+
+		var marquee = "\"" + nova.workspace.config.get("workspace.name") + "\" for " + (debugMode ? "debugging" : "running") + " on a " + (projectOS=="ios" ? "Apple iOS" : "Google Android") + " device."
 
 		const androidSDKBase = determineAndroidSDKBase();
 		const adb = androidSDKBase + "/platform-tools/adb";
@@ -2115,7 +2107,7 @@ try {
 			}
 		}).then(() => { // If we need to package, we need the certificate and password
 			if(needToPackage) {
-				showNotification("Packaging Debug build...","📦 Trying to package","Please wait...", "-runOnDevice");
+				showNotification("📦 Packaging...","Trying to package " + marquee,"Please wait...", "-runOnDevice");
 				if(projectOS=="android") {
 					return Promise.resolve({
 						certificateLocation: nova.extension.path + "/Defaults/android-debug.p12",
@@ -2180,7 +2172,7 @@ try {
 					installDeviceId = deviceHandle.toString();
 				}
 
-				showNotification("📲  Installing test build...","Trying to install","Please wait...", "-runOnDevice");
+				showNotification("📲  Installing...","Trying to install " + marquee,"Please wait...", "-runOnDevice");
 				packageFileName = results.packageName;
 				command = flexSDKBase + "/bin/adt";
 				args = [
@@ -2199,7 +2191,7 @@ try {
 				packageHash = hash;
 				this.updateLauncherMetadata(launcherMetadata, debugMode, deviceId, packageHash, Date.now(), debugPackageId);
 
-				showNotification("🏃 Trying to run test build...","Trying to run","", "-runOnDevice");
+				showNotification("🏃 Running...", "Trying to run " + marquee,"", "-runOnDevice");
 				// FINALLY!!! We can really launch this thing!!
 				if(debugMode) {
 					return this.launchDebugViaUSB(projectOS, flexSDKBase, deviceId, debugPackageId, anes);
