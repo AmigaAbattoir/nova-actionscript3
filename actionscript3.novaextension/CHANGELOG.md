@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [0.12.1] - 2025-12-21
+
+### Fixed
+
+- Fixed changelog release date
+
 ## [0.12.0] - 2025-12-21
 
 ### Added
