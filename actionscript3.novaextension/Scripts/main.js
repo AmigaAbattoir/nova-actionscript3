@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant } = require("./task-assistant.js");
 const { determineProjectUUID, determineAneTempPath } = require("./as3-utils.js");
-const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, consoleLogObject, resolveCustomizableJson, doesFolderExist, doesFolderExistAndIsAccessible, getProcessResults, getCurrentDateAsSortableString, quickChoicePalette } = require("./nova-utils.js");
+const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, consoleLogObject, getUserCustomizableJson, doesFolderExist, doesFolderExistAndIsAccessible, getProcessResults, getCurrentDateAsSortableString, quickChoicePalette } = require("./nova-utils.js");
 const { determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
@@ -103,7 +103,7 @@ exports.activate = function() {
 
 	nova.commands.register("as3.resolver.iosDevicesSimulator", (workspace) => {
 		return new Promise((resolve, reject) => {
-			var values = resolveCustomizableJson("ios-devices.json");
+			var values = getUserCustomizableJson("ios-devices.json");
 			resolve(values);
 		});
 	});
@@ -123,7 +123,7 @@ exports.activate = function() {
 
 	nova.commands.register("as3.resolver.androidDevicesSimulator", (workspace) => {
 		return new Promise((resolve, reject) => {
-			var values = resolveCustomizableJson("android-devices.json");
+			var values = getUserCustomizableJson("android-devices.json");
 			resolve(values);
 		});
 	});

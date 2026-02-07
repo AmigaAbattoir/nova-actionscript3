@@ -9,6 +9,7 @@
 /**
  * Quick, easy way to show a notification. If you need it to persist, then add a button
  * to show. This does not resolve any buttons, just there to keep in place!
+ *
  * @param {string} title - The title of the notification
  * @param {string} body - The text to display in the notification
  * @param {string} closeButtonName - Optional button, if there, it will keep the box open until
@@ -17,38 +18,37 @@
  * notification.
  */
 exports.showNotification = function(title, body, closeButtonName = "", requestIdAddition = "") {
-	//if (nova.inDevMode()) {
-		// If there's another one, let's cancel it or it might not show up!
-		if(requestIdAddition!="") {
-			exports.cancelNotification(requestIdAddition);
-		}
+	// If there's another one, let's cancel it or it might not show up!
+	if(requestIdAddition!="") {
+		exports.cancelNotification(requestIdAddition);
+	}
+	let request = new NotificationRequest(nova.extension.identifier+requestIdAddition);
 
-		let request = new NotificationRequest("as3mxml-nova-message"+requestIdAddition);
-
-		request.title = nova.localize(title);
-		request.body = nova.localize(body);
-		if(closeButtonName) {
-			request.actions = [ closeButtonName ];
-		}
-		nova.notifications.add(request);
-	//}
+	request.title = nova.localize(title);
+	request.body = nova.localize(body);
+	if(closeButtonName) {
+		request.actions = [ closeButtonName ];
+	}
+	nova.notifications.add(request);
 }
 
 /**
- * Removes a notification.
+ * Removes a notification (which would have been launched with `showNotification()`.
+ *
  * @param {string} requestIdAddition - The ID of the notification to remove
  */
 exports.cancelNotification = function(requestIdAddition) {
-	nova.notifications.cancel("as3mxml-nova-message"+requestIdAddition);
+	nova.notifications.cancel(nova.extension.identifier+requestIdAddition);
 }
 
 /**
  * Runs a process so that we get get the Promise when it's done.
+ *
  * @param {string} command - The command to use
  * @param {Array} args - An array with the arguments for the command (optional)
  * @param {string} cwd - The working directory (defaults to current, extension's directory)
  * @param {Object} env - Additional envs to set for the process (optional)
- * @retruns {Promise} - If the status is 0, then it `resolves` otherwise `rejects`. Both will
+ * @returns {Promise} - If the status is 0, then it `resolves` otherwise `rejects`. Both will
  * return back an object containing status, stdout and stderr.
  */
 exports.getProcessResults = function(command, args = [], cwd = "", env = {}, debugOutput = false) {
@@ -78,10 +78,14 @@ exports.getProcessResults = function(command, args = [], cwd = "", env = {}, deb
 				exports.consoleLogObject(results);
 			}
 			if(status===0) {
-				console.log("getProcessResults() Going to resolve...");
+				if(debugOutput) {
+					console.log("getProcessResults() Going to resolve...");
+				}
 				resolve(results);
 			} else {
-				console.log("getProcessResults() Going to reject...");
+				if(debugOutput) {
+					console.log("getProcessResults() Going to reject...");
+				}
 				reject(results);
 			}
 		});
@@ -110,7 +114,8 @@ exports.isWorkspace = function() {
 }
 
 /**
- * Returns a config, first checking for the extension, then if there is a Workspace value
+ * Returns a config, first checking for the extension, then if there is a Workspace value.
+ *
  * @param {String} configName - The key of the configuration to get
  */
 exports.getWorkspaceOrGlobalConfig = function(configName) {
@@ -137,7 +142,8 @@ exports.saveAllFiles = function() {
 }
 
 /**
- * Helper to log out an object by trying to stringify it
+ * Helper to log out an object by trying to stringify it.
+ *
  * @param {Object} object - What you want to try to console.log()
  */
 exports.consoleLogObject = function(object) {
@@ -145,7 +151,7 @@ exports.consoleLogObject = function(object) {
 }
 
 /**
- * Resolved symbolic links to their real location
+ * Resolved symbolic links to their real location.
  *
  * @param {string} folder - The location that is a symbolic link
  * @returns {Promise} The resolved path, or a reject error.
@@ -188,7 +194,8 @@ exports.resolveSymLink = function(folder) {
 }
 
 /**
- * (NOT USED) Convert's a document's selected range to
+ * (NOT USED) Convert's a document's selected range
+ *
  * @param {TextDocument} document - The text document that's open
  * @param {Range} range - The selected range?
  */
@@ -260,7 +267,8 @@ exports.getIPAddress = function() {
 }
 
 /**
- * Opens a file and dumps it into a string.
+ * Opens a file from the current workspace and dumps it into a string.
+ *
  * @param {string} filename - The name of the file to open, relative to the workspace
  */
 exports.getStringOfWorkspaceFile = function(filename, logAsError = true) {
@@ -269,6 +277,7 @@ exports.getStringOfWorkspaceFile = function(filename, logAsError = true) {
 
 /**
  * Opens a file and dumps it into a string.
+ *
  * @param {string} filename - The name of the file to open, must be complete path!
  */
 exports.getStringOfFile = function(filename, logAsError = true) {
@@ -287,7 +296,7 @@ exports.getStringOfFile = function(filename, logAsError = true) {
 		}
 	} catch(error) {
 		if(logAsError) {
-			console.log("*** ERROR: Could not open file " + filename + " for reading. " + error + " ***");
+			console.log("*** nova-util ERROR: Could not open file " + filename + " for reading. " + error + " ***");
 		}
 		return null;
 	}
@@ -295,9 +304,10 @@ exports.getStringOfFile = function(filename, logAsError = true) {
 }
 
 /**
- * Writes a file with JSON from a data passed as the values
+ * Writes a file of text.
+ *
  * @param {string} filename - The name of the file to write, must be complete path!
- * @param {Object} values - An object of data to save as a JSON file
+ * @param {string} contents - A string to write to the file
  */
 exports.writeStringToFile = function(filename, contents) {
 	try {
@@ -305,15 +315,16 @@ exports.writeStringToFile = function(filename, contents) {
 		file.write(contents);
 		file.close();
 	} catch(error) {
-		console.erro("*** ERROR: Problem with " + filename + " for writing. " + error + " ***");
+		console.error("*** ERROR: Problem with " + filename + " for writing. " + error + " ***");
 		return null;
 	}
 }
 
 /**
- * Writes a file with JSON from a data passed as the values
+ * Writes a text file of JSON based on the Object that is passed.
+ *
  * @param {string} filename - The name of the file to write, must be complete path!
- * @param {Object} values - An object of data to save as a JSON file
+ * @param {Object} values - An object of data (that gets `JSON.stringified`) to save
  */
 exports.writeJsonToFile = function(filename, values) {
 	try {
@@ -329,26 +340,16 @@ exports.writeJsonToFile = function(filename, values) {
 /**
  * This will allow get a file of JSON and return it. If it does not exist in the user's extension
  * storage, it will copy a default one from the extension.
- * Eventually, the user can modify that JSON for custom values in a dropdown
+ * @TODO Eventually, the user can modify and then save that JSON for custom values in a dropdown
  *
- * @param {string} filename - The name of the file to load.
- * It will be reside in the root of `nova.extension.globalStoragePath`, or in a `tempdir` if developing and the app is not installed!
- * This will also need to have a file in your extension under the folder `Defaults` in order to get the default file.
+ * @param {string} filename - The name of the file to load. No path, extension figures it out!
+ * It will be reside in the root of `nova.extension.globalStoragePath`, or in a `tempdir` if developing
+ * and the extension is not installed! This will also need to have a file in your extension under the
+ * folder `Defaults` in order to get the uncustomized default file.
  */
-exports.resolveCustomizableJson = function(filename) {
+exports.getUserCustomizableJson = function(filename) {
 	var values;
-
-	var userFilePath = nova.path.join(nova.extension.globalStoragePath, "/" + filename)
-	if(nova.inDevMode()) {
-		if(exports.doesFolderExist(nova.extension.globalStoragePath)==false) {
-			/* @NOTE If not installed, but developing, this "globalStoragePath" does NOT always exist!!!
-			 * It only exists if installed, so for testing, we're going to use this!
-			 */
-			userFilePath = nova.path.join(nova.fs.tempdir,"/" + filename);
-			console.log(" *** NOTE: Using tmp/ instead of globalStoragePath since this hasn't been `installed` yet!");
-			// nova.fs.reveal(userFilePath); // Take a look an see if it's there!
-		}
-		}
+	var userFilePath = exports.determineUserCustomizableJsonLocation(filename);
 
 	// If the user version of this file doesn't exist, then let's copy from the extension!
 	if(exports.doesFileExist(userFilePath)==false) {
@@ -361,6 +362,31 @@ exports.resolveCustomizableJson = function(filename) {
 	}
 
 	return values;
+}
+
+/**
+ * This will get the correct path allow get a file of JSON and return it. If it does not exist in the user's extension
+ * storage, it will copy a default one from the extension.
+ * Eventually, the user can modify that JSON for custom values in a dropdown
+ *
+ * @param {string} filename - The name of the file to load. No path, extension figures it out!
+ * It will be reside in the root of `nova.extension.globalStoragePath`, or in a `tempdir` if developing
+ * and the extension is not installed! This will also need to have a file in your extension under the
+ * folder `Defaults` in order to get the uncustomized default file.
+ */
+exports.determineUserCustomizableJsonLocation = function(filename) {
+	var userFilePath = nova.path.join(nova.extension.globalStoragePath, "/" + filename);
+
+	if(nova.inDevMode()) {
+		if(exports.doesFolderExist(nova.extension.globalStoragePath)==false) {
+			/* @NOTE If not installed, but developing, this "globalStoragePath" does NOT always exist!!!
+			* It only exists if installed, so for testing, we're going to use this!
+			*/
+			userFilePath = nova.path.join(nova.fs.tempdir,"/" + filename);
+			console.log(" *** NOTE: Using tmp/ instead of globalStoragePath since this hasn't been `installed` yet!");
+			// nova.fs.reveal(userFilePath); // Take a look an see if it's there!
+		}
+	}
 }
 
 /**
@@ -467,6 +493,11 @@ exports.doesFolderExistAndIsAccessible = function(folderName) {
 	return false;
 }
 
+/**
+ * Ensures that we expand any path starting with ~/
+ *
+ * @param {string} filename - The file/path
+ */
 exports.ensureExpandedUserPath = function(filename) {
 	// console.log("ensureExpandedUserPath() [[" + filename + "]]")
 	if(filename!=null) {
@@ -496,6 +527,11 @@ exports.ensureFolderIsAvailable = function(folder) {
 	return true;
 }
 
+/**
+ * Used to ensure a folder is empty, or if it exists, then remove it and then create it
+ *
+ * @param {string} folder - The name of the folder to empty, must be complete path!
+ */
 exports.makeOrClearFolder = function(folder) {
 	try {
 		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
@@ -538,6 +574,7 @@ exports.checkIfFileWasModifiedAfterOther = function(target, other) {
 
 /**
  * Checks to see if this is a file that should be ignored
+ *
  * @param {string} fileName - The filename to check with the list of file that need to be excluded
  */
 exports.shouldIgnoreFileName = function(fileName, fileNamesToExclude, fileExtensionsToExclude) {
@@ -552,6 +589,7 @@ exports.shouldIgnoreFileName = function(fileName, fileNamesToExclude, fileExtens
 
 /**
  * Checks if any files in the `folderToCheck` were modified after the `builtFile` was made.
+ *
  * @param {string} builtFile - The path to a file to check against
  * @param {string[]} foldersToCheck - Full path to folders to check if they were modified after the
  * `builtFile`
@@ -629,6 +667,7 @@ exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileE
 
 /**
  * Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
+ *
  * @param {string} folderPath - The folder path to look through
  * @param {string} relativePath - The relative path name from this directory
  * @returns {Array} - Files names with path
@@ -656,6 +695,7 @@ exports.listFilesRecursively = function(folderPath, relativePath = "") {
 
 /**
  * Finds the actual executable file in a Mac App
+ *
  * @param {string} appLocation - Location of the Application.app "folder"
  * @returns {string|null} - The location of the first executable in the .app, otherwise null
  */
@@ -681,6 +721,7 @@ exports.getExec = function(appLocation) {
 
 /**
  * Shows a Choice Palette, with the option of an "All" at the top.
+ *
  * @param {Array} items - The items to show in the list
  * @param {String} placeholder - The initial item or placeholder
  * @param {boolean} addAll - Optional: Include an "All" item at the top
@@ -719,6 +760,7 @@ exports.quickChoicePalette = function(items, placeholder, addAll = false) {
 
 /**
  * Asks several text prompts and then resolves with all the answers
+ *
  * @param {Array<CollectInputPrompt>} prompts - An Array of CollectInputPrompt to be asked.
  * @returns {Array<String>} - An array containing the text values that were entered
  */
