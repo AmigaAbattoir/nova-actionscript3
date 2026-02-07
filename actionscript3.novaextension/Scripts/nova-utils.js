@@ -4,46 +4,16 @@
  * Some commonly used functions I use in Panic Nova extensions
  *
  * @author Christopher Pollati
+ * @version 1.0
+ * @since 2026-02-07
  */
 
-/**
- * Quick, easy way to show a notification. If you need it to persist, then add a button
- * to show. This does not resolve any buttons, just there to keep in place!
- *
- * @param {string} title - The title of the notification
- * @param {string} body - The text to display in the notification
- * @param {string} closeButtonName - Optional button, if there, it will keep the box open until
- * clicked
- * @param {string} requestIdAddition - If this is given, you can later use this ID to remove the
- * notification.
- */
-exports.showNotification = function(title, body, closeButtonName = "", requestIdAddition = "") {
-	// If there's another one, let's cancel it or it might not show up!
-	if(requestIdAddition!="") {
-		exports.cancelNotification(requestIdAddition);
-	}
-	let request = new NotificationRequest(nova.extension.identifier+requestIdAddition);
-
-	request.title = nova.localize(title);
-	request.body = nova.localize(body);
-	if(closeButtonName) {
-		request.actions = [ closeButtonName ];
-	}
-	nova.notifications.add(request);
-}
-
-/**
- * Removes a notification (which would have been launched with `showNotification()`.
- *
- * @param {string} requestIdAddition - The ID of the notification to remove
- */
-exports.cancelNotification = function(requestIdAddition) {
-	nova.notifications.cancel(nova.extension.identifier+requestIdAddition);
-}
+/* ---- Processes ---- */
 
 /**
  * Runs a process so that we get get the Promise when it's done.
  *
+ * @note For tricky situations, uncomment the try to get more detail
  * @param {string} command - The command to use
  * @param {Array} args - An array with the arguments for the command (optional)
  * @param {string} cwd - The working directory (defaults to current, extension's directory)
@@ -53,6 +23,8 @@ exports.cancelNotification = function(requestIdAddition) {
  */
 exports.getProcessResults = function(command, args = [], cwd = "", env = {}, debugOutput = false) {
 // try{
+	debugOutput = true;
+
 	var proc = new Promise((resolve, reject) => {
 		var stdout = "";
 		var stderr = "";
@@ -62,38 +34,63 @@ exports.getProcessResults = function(command, args = [], cwd = "", env = {}, deb
 		process.onStderr(line => stderr += line);
 		process.onDidExit(status => {
 			if(debugOutput) {
-				console.log("getProcessResults() status: " + status);
-				console.log("                    stdout: " + stdout);
-				console.log("                    stderr: " + stderr);
-				console.log("                    command: " + command);
-				console.log("                    args: ");
-				exports.consoleLogObject(args);
-				console.log("                    cwd: " + cwd);
-				console.log("                    env: ");
-				exports.consoleLogObject(env);
+				exports.consoleNoteAndObject("nova-utils.getProcessResults() status: ",status);
+				exports.consoleNoteAndObject("nova-utils.getProcessResults() stdout: ",stdout);
+				exports.consoleNoteAndObject("nova-utils.getProcessResults() stderr: ",stderr);
+				exports.consoleNoteAndObject("nova-utils.getProcessResults() command: ",command);
+				exports.consoleNoteAndObject("nova-utils.getProcessResults() args: ",args);
+				exports.consoleNoteAndObject("nova-utils.getProcessResults() cwd: ",cwd);
+				exports.consoleNoteAndObject("nova-utils.getProcessResults() env: ",env);
 			}
 			let results = { status: status, stdout: stdout, stderr: stderr };
 			if(debugOutput) {
-				console.log("getProcessResults() results: ");
-				exports.consoleLogObject(results);
+				exports.consoleNoteAndObject("nova-utils.getProcessResults() results: ",results);
 			}
 			if(status===0) {
 				if(debugOutput) {
-					console.log("getProcessResults() Going to resolve...");
+					console.log("nova-utils.getProcessResults() Going to resolve...");
 				}
 				resolve(results);
 			} else {
 				if(debugOutput) {
-					console.log("getProcessResults() Going to reject...");
+					console.warn("nova-utils.getProcessResults() Going to reject...");
 				}
 				reject(results);
 			}
 		});
 		process.start();
 	});
-// } catch(error) { console.error("getProcessResults() ERROR: ",error); }
+// } catch(error) { console.error("getProcessResults() *** ERROR: ***",error); }
 	return proc;
 }
+
+/**
+ * Finds the actual executable file in a Mac App
+ *
+ * @param {string} appLocation - Location of the Application.app "folder"
+ * @returns {string|null} - The location of the first executable in the .app, otherwise null
+ */
+exports.getExec = function(appLocation) {
+	const exePath = nova.path.join(appLocation,"/Contents/MacOS"); // Path to the MacOS folder
+	let execFiles
+	try {
+		execFiles = nova.fs.listdir(exePath); // List all files in the folder
+		if (!execFiles) {
+			console.error(`nova-utils.getExec() *** ERROR: No files found in ${exePath} ***`);
+			return null;
+		}
+		for (const exec of execFiles) {
+			const execCheck = nova.path.join(exePath,exec);
+			if (nova.fs.access(execCheck, nova.fs.F_OK | nova.fs.X_OK)) {
+				return execCheck; // Return the first executable file found
+			}
+		}
+	} catch(error) {
+		return null;
+	}
+}
+
+/* ---- Workspace ---- */
 
 /**
  * Tell if the current file is being used in a workspace setting or as a independent editor window
@@ -120,15 +117,15 @@ exports.isWorkspace = function() {
  */
 exports.getWorkspaceOrGlobalConfig = function(configName) {
 	var config = nova.config.get(configName);
-	//console.log("*** getWorkspaceOrGlobalConfig() Config " + configName + " is [" + config + "]");
+	//console.log("getWorkspaceOrGlobalConfig() Config " + configName + " is [" + config + "]");
 	if(exports.isWorkspace()) {
 		workspaceConfig = nova.workspace.config.get(configName)
-	//console.log("*** getWorkspaceOrGlobalConfig() Workspace Config " + configName + " is [" + workspaceConfig + "]");
+		//console.log("getWorkspaceOrGlobalConfig() Workspace Config " + configName + " is [" + workspaceConfig + "]");
 		if(workspaceConfig) {
 			config = workspaceConfig;
 		}
 	}
-	//console.log("*** getWorkspaceOrGlobalConfig() RETURNING [" + config + "]");
+	//console.log("getWorkspaceOrGlobalConfig() RETURNING [" + config + "]");
 	return config;
 }
 
@@ -141,6 +138,22 @@ exports.saveAllFiles = function() {
 	});
 }
 
+/* ---- Dev Helper ---- */
+
+/**
+ * Helper to log out a note and an object by trying to stringify it.
+ *
+ * @param {string} note - Some text to include before logging object
+ * @param {Object} object - What you want to try to console.log()
+ */
+exports.consoleNoteAndObject = function(note,object,isError = false) {
+	if(isError) {
+		console.error(`${note}\n${JSON.stringify(object,null,4)}`);
+	} else {
+		console.log(`${note}\n${JSON.stringify(object,null,4)}`);
+	}
+}
+
 /**
  * Helper to log out an object by trying to stringify it.
  *
@@ -149,6 +162,8 @@ exports.saveAllFiles = function() {
 exports.consoleLogObject = function(object) {
 	console.log(JSON.stringify(object,null,4));
 }
+
+/* ---- Filesystem ---- */
 
 /**
  * Resolved symbolic links to their real location.
@@ -194,79 +209,6 @@ exports.resolveSymLink = function(folder) {
 }
 
 /**
- * (NOT USED) Convert's a document's selected range
- *
- * @param {TextDocument} document - The text document that's open
- * @param {Range} range - The selected range?
- */
-exports.rangeToLspRange = function(document, range) {
-	const fullContents = document.getTextInRange(new Range(0, document.length));
-
-	let chars = 0;
-	let startLspRange;
-
-	const lines = fullContents.split(document.eol);
-
-	for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-		const lineLength = lines[lineIndex].length + document.eol.length;
-		if (!startLspRange && chars + lineLength >= range.start) {
-			const character = range.start - chars;
-			startLspRange = { line: lineIndex, character };
-		}
-		if (startLspRange && chars + lineLength >= range.end) {
-			const character = range.end - chars;
-			return {
-				start: startLspRange,
-				end: { line: lineIndex, character },
-			};
-		}
-		chars += lineLength;
-	}
-	return null;
-}
-
-/**
- * Tries to get the current device's IP. First searches with `networksetup` to find all the
- * connections, then goes through them to find the first one that reports back an IP. Should work
- * on desktop or laptop.
- */
-exports.getIPAddress = function() {
-	// Get the list of network devices on the machine, in order of preferences
-	return exports.getProcessResults("/usr/sbin/networksetup", ["-listnetworkserviceorder"], "", {}, true).then((order) => {
-		// If there's no devices...
-		if(!order) {
-			return null;
-		}
-
-		// Go through the output and find the devices
-		var matches = [...order.stdout.matchAll(/Device:\s+(en\d+)/g)];
-		// Map to interfaces
-		var interfaces = matches.map(m => m[1]);
-
-		var index = 0;
-		// Helper function to go through and check ipconfig for the actual IP address.
-		function tryNext() {
-			if(index>=interfaces.length) {
-				return Promise.resolve(null);
-			}
-
-			var iface = interfaces[index++];
-			return exports.getProcessResults("usr/sbin/ipconfig", ["getifaddr",iface], "", {}, true).then((result) => {
-				var ip = result.stdout;
-				// If we have an IP address, then return that!
-				if(ip && ip.trim().length>0) {
-					return { interface: iface, ip: ip.trim() };
-				}
-			}).catch(() => {
-				return tryNext();
-			})
-		};
-
-		return tryNext();
-	});
-}
-
-/**
  * Opens a file from the current workspace and dumps it into a string.
  *
  * @param {string} filename - The name of the file to open, relative to the workspace
@@ -296,7 +238,7 @@ exports.getStringOfFile = function(filename, logAsError = true) {
 		}
 	} catch(error) {
 		if(logAsError) {
-			console.log("*** nova-util ERROR: Could not open file " + filename + " for reading. " + error + " ***");
+			console.error(`nova-utils.getStringOfFile() *** ERROR: Could not open file ${filename} for reading. " + error + " ***`);
 		}
 		return null;
 	}
@@ -315,7 +257,7 @@ exports.writeStringToFile = function(filename, contents) {
 		file.write(contents);
 		file.close();
 	} catch(error) {
-		console.error("*** ERROR: Problem with " + filename + " for writing. " + error + " ***");
+		console.error(`nova-utils.writeStringToFile() *** ERROR: Problem with ${filename} for writing. " + error + " ***`);
 		return null;
 	}
 }
@@ -332,78 +274,9 @@ exports.writeJsonToFile = function(filename, values) {
 		file.write(JSON.stringify(values,null,2));
 		file.close();
 	} catch(error) {
-		console.error("*** ERROR: Problem with " + filename + " for writing JSON. " + error + " ***");
+		console.error(`nova-utils.writeJsonToFile() *** ERROR: Problem with ${filename} for writing JSON. " + error + " ***`);
 		return null;
 	}
-}
-
-/**
- * This will allow get a file of JSON and return it. If it does not exist in the user's extension
- * storage, it will copy a default one from the extension.
- * @TODO Eventually, the user can modify and then save that JSON for custom values in a dropdown
- *
- * @param {string} filename - The name of the file to load. No path, extension figures it out!
- * It will be reside in the root of `nova.extension.globalStoragePath`, or in a `tempdir` if developing
- * and the extension is not installed! This will also need to have a file in your extension under the
- * folder `Defaults` in order to get the uncustomized default file.
- */
-exports.getUserCustomizableJson = function(filename) {
-	var values;
-	var userFilePath = exports.determineUserCustomizableJsonLocation(filename);
-
-	// If the user version of this file doesn't exist, then let's copy from the extension!
-	if(exports.doesFileExist(userFilePath)==false) {
-		var extDefault = exports.getStringOfFile(nova.path.join(nova.extension.path, "/Defaults/" + filename));
-		exports.writeStringToFile(userFilePath,extDefault);
-		values = JSON.parse(extDefault);
-	} else {
-		var options = exports.getStringOfFile(userFilePath);
-		values = JSON.parse(options);
-	}
-
-	return values;
-}
-
-/**
- * This will get the correct path allow get a file of JSON and return it. If it does not exist in the user's extension
- * storage, it will copy a default one from the extension.
- * Eventually, the user can modify that JSON for custom values in a dropdown
- *
- * @param {string} filename - The name of the file to load. No path, extension figures it out!
- * It will be reside in the root of `nova.extension.globalStoragePath`, or in a `tempdir` if developing
- * and the extension is not installed! This will also need to have a file in your extension under the
- * folder `Defaults` in order to get the uncustomized default file.
- */
-exports.determineUserCustomizableJsonLocation = function(filename) {
-	var userFilePath = nova.path.join(nova.extension.globalStoragePath, "/" + filename);
-
-	if(nova.inDevMode()) {
-		if(exports.doesFolderExist(nova.extension.globalStoragePath)==false) {
-			/* @NOTE If not installed, but developing, this "globalStoragePath" does NOT always exist!!!
-			* It only exists if installed, so for testing, we're going to use this!
-			*/
-			userFilePath = nova.path.join(nova.fs.tempdir,"/" + filename);
-			console.log(" *** NOTE: Using tmp/ instead of globalStoragePath since this hasn't been `installed` yet!");
-			// nova.fs.reveal(userFilePath); // Take a look an see if it's there!
-		}
-	}
-}
-
-/**
- * Returns a string as a sortable timestamp.
- * @returns {String} - The current timestamp in YYYYMMDDD_HHmmss
- */
-exports.getCurrentDateAsSortableString = function() {
-	const now = new Date();
-
-	const year = now.getFullYear();
-	const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-	const day = String(now.getDate()).padStart(2, '0');
-	const hours = String(now.getHours()).padStart(2, '0');
-	const minutes = String(now.getMinutes()).padStart(2, '0');
-	const seconds = String(now.getSeconds()).padStart(2, '0');
-
-	return `${year}${month}${day}_${hours}${minutes}${seconds}`;
 }
 
 /**
@@ -422,7 +295,7 @@ exports.doesFileExist = function(filename) {
 			}
 		}
 	} catch(err) {
-		console.err(err);
+		console.error(`nova-utils.doesFileExist() *** ERROR *** ${err}`);
 	}
 	return false;
 }
@@ -443,7 +316,7 @@ exports.doesFolderExist = function(filename) {
 			}
 		}
 	} catch(err) {
-		console.error(err)
+		console.error(`nova-utils.doesFolderExist() *** ERROR *** ${err}`)
 	}
 	return false;
 }
@@ -463,7 +336,7 @@ exports.haveAccessTo = function(filename) {
 			}
 		}
 	} catch(err) {
-		console.error(err)
+		console.error(`nova-utils.haveAccessTo() *** ERROR *** ${err}`)
 	}
 	return false;
 }
@@ -488,7 +361,7 @@ exports.doesFolderExistAndIsAccessible = function(folderName) {
 			}
 		}
 	} catch(err) {
-		console.error(err)
+		console.error(`nova-utils.doesFolderExistAndIsAccessible() *** ERROR *** ${err}`)
 	}
 	return false;
 }
@@ -499,7 +372,7 @@ exports.doesFolderExistAndIsAccessible = function(folderName) {
  * @param {string} filename - The file/path
  */
 exports.ensureExpandedUserPath = function(filename) {
-	// console.log("ensureExpandedUserPath() [[" + filename + "]]")
+	// console.log(`ensureExpandedUserPath() [[${filename}]]`)
 	if(filename!=null) {
 		if(filename.charAt(0)=="~") {
 			filename = nova.path.expanduser(filename);
@@ -521,7 +394,7 @@ exports.ensureFolderIsAvailable = function(folder) {
 	}
 	// Double check, do we have the folder?
 	if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
-		console.error(" *** ERROR: Failed to make folder at " + folder + "! ***");
+		console.error(`nova-utils.ensureFolderIsAvailable() *** ERROR: Failed to make folder at ${folder}! ***`);
 		return false;
 	}
 	return true;
@@ -600,16 +473,13 @@ exports.shouldIgnoreFileName = function(fileName, fileNamesToExclude, fileExtens
 exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileExtensionsToExclude = [], fileNamesToExclude = [ ".DS_Store", ".git", ".svn" ]) {
 	var buildFileStat = nova.fs.stat(builtFile);
 	if(nova.inDevMode()) {
-		console.log("OUTPUT FILE is [[[[" + builtFile + "]]]]] STAT: " + buildFileStat);
-		exports.consoleLogObject(buildFileStat);
-		console.log("fileExtensionsToExclude: ");
-		exports.consoleLogObject(fileExtensionsToExclude);
-		console.log("fileNamesToExclude: ");
-		exports.consoleLogObject(fileExtensionsToExclude);
+		exports.consoleNoteAndObject("nova-utils.checkIfModifiedAfterFileDate() Output file is [[[[" + builtFile + "]]]]] buildFileStat: ",buildFileStat);
+		exports.consoleNoteAndObject("nova-utils.checkIfModifiedAfterFileDate() fileExtensionsToExclude: ",fileExtensionsToExclude);
+		exports.consoleNoteAndObject("nova-utils.checkIfModifiedAfterFileDate() fileNamesToExclude: ",fileExtensionsToExclude);
 	}
 
 	if(buildFileStat!=undefined) {
-		if(nova.inDevMode()) { console.log("OUTPUT FILE EXISTS...   CHECK IF ANY FILE HAS CHANGED SINCE LAST FILE TIME OF " + buildFileStat.mtime.getTime()); }
+		if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() Output file exists... Check if any file has changed since last file time of " + buildFileStat.mtime.getTime()); }
 		function anyFileModifiedAfter(referenceFileTime, folderPath) {
 			// Helper to recursively check files in a folder
 			function checkFolderRecursive(path) {
@@ -621,23 +491,23 @@ exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileE
 						const stat = nova.fs.stat(fullPath);
 						if(stat) {
 							if(nova.inDevMode()) {
-								console.log("  ><><>< CHECKING " + entry);
+								console.log("nova-utils.checkIfModifiedAfterFileDate() CHECKING " + entry);
 							}
 
 							if (stat.isDirectory()) {
-								if(nova.inDevMode()) { console.log("  ><><>< Going into folder: " + entry); }
+								if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() Going into folder: " + entry); }
 								if (checkFolderRecursive(fullPath)) {
 									return true;
 								}
 							} else {
 								if (stat.mtime.getTime() > referenceFileTime) {
-									if(nova.inDevMode()) { console.log(` ><>!!!! Modified file found: ${fullPath} at` + stat.mtime.getTime()); }
+									if(nova.inDevMode()) { console.log(`nova-utils.checkIfModifiedAfterFileDate() Modified file found: ${fullPath} at` + stat.mtime.getTime()); }
 									return true;
 								}
 							}
 						}
 					} else {
-						if(nova.inDevMode()) { console.log("  ><><>< IGNORING " + entry); }
+						if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() Ignoring " + entry); }
 						continue;
 					}
 				}
@@ -649,21 +519,19 @@ exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileE
 		// Setup files to ignore when checking:
 		for(var folder of foldersToCheck) {
 			if(anyFileModifiedAfter(buildFileStat.mtime.getTime(), folder)) {
-				if(nova.inDevMode()) { console.log(" !#! TRUE, At least one file was modified after the timestamp."); }
+				if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() !#! TRUE, At least one file was modified after the timestamp."); }
 				return true;
 			}
 		}
-		if(nova.inDevMode()) { console.log(" !#! FALSE, No files have changed since the last build."); }
+		if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() !#! FALSE, No files have changed since the last build."); }
 		return false;
 	} else {
-		if(nova.inDevMode()) { console.log(" !#! TRUE, Hey, there's no output, so there is a difference"); }
+		if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() !#! TRUE, Hey, there's no output, so there is a difference"); }
 		return true;
 	}
-	if(nova.inDevMode()) { console.log(" !#! Don't think we will get to here...."); }
+	if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() !#! Don't think we will get to here...."); }
 	return false;
 }
-
-
 
 /**
  * Loop through each item in the releasePath, and if it's not the app.xml, copy it to the packing
@@ -688,35 +556,162 @@ exports.listFilesRecursively = function(folderPath, relativePath = "") {
 			}
 		});
 	} catch (error) {
-		console.error(`Error reading folder ${folderPath}: ${error}`);
+		console.error(`nova-utils.listFilesRecursively() *** ERROR: Problem reading folder ${folderPath}: ${error} ***`);
 	}
 	return fileList;
 }
 
+/* ---- Customizable JSON ----  */
+
 /**
- * Finds the actual executable file in a Mac App
+ * This will allow get a file of JSON and return it. If it does not exist in the user's extension
+ * storage, it will copy a default one from the extension.
+ * @TODO Eventually, the user can modify and then save that JSON for custom values in a dropdown
  *
- * @param {string} appLocation - Location of the Application.app "folder"
- * @returns {string|null} - The location of the first executable in the .app, otherwise null
+ * @param {string} filename - The name of the file to load. No path, extension figures it out!
+ * It will be reside in the root of `nova.extension.globalStoragePath`, or in a `tempdir` if developing
+ * and the extension is not installed! This will also need to have a file in your extension under the
+ * folder `Defaults` in order to get the uncustomized default file.
  */
-exports.getExec = function(appLocation) {
-	const exePath = nova.path.join(appLocation,"/Contents/MacOS"); // Path to the MacOS folder
-	let execFiles
-	try {
-		execFiles = nova.fs.listdir(exePath); // List all files in the folder
-		if (!execFiles) {
-			console.error("No files found in " + exePath);
+exports.getUserCustomizableJson = function(filename) {
+	var values;
+	var userFilePath = exports.determineUserCustomizableJsonLocation(filename);
+
+	// If the user version of this file doesn't exist, then let's copy from the extension!
+	if(exports.doesFileExist(userFilePath)==false) {
+		var extDefault = exports.getStringOfFile(nova.path.join(nova.extension.path, "/Defaults/" + filename));
+		exports.writeStringToFile(userFilePath,extDefault);
+		values = JSON.parse(extDefault);
+	} else {
+		var options = exports.getStringOfFile(userFilePath);
+		values = JSON.parse(options);
+	}
+
+	return values;
+}
+
+/**
+ * This will get the correct path allow get a file of JSON and return it. If it does not exist in the user's extension
+ * storage, it will copy a default one from the extension.
+ * Eventually, the user can modify that JSON for custom values in a dropdown
+ *
+ * @param {string} filename - The name of the file to load. No path, extension figures it out!
+ * It will be reside in the root of `nova.extension.globalStoragePath`, or in a `tempdir` if developing
+ * and the extension is not installed! This will also need to have a file in your extension under the
+ * folder `Defaults` in order to get the uncustomized default file.
+ */
+exports.determineUserCustomizableJsonLocation = function(filename) {
+	var userFilePath = nova.path.join(nova.extension.globalStoragePath, "/" + filename);
+
+	if(nova.inDevMode()) {
+		if(exports.doesFolderExist(nova.extension.globalStoragePath)==false) {
+			/* @NOTE If not installed, but developing, this "globalStoragePath" does NOT always exist!!!
+			* It only exists if installed, so for testing, we're going to use this!
+			*/
+			userFilePath = nova.path.join(nova.fs.tempdir,"/" + filename);
+			console.log("nova-utils.determineUserCustomizableJsonLocation() *** NOTE: Using tmp/ instead of globalStoragePath since this hasn't been `installed` yet! ***");
+			// nova.fs.reveal(userFilePath); // Take a look an see if it's there!
+		}
+	}
+}
+
+/* ---- Network ---- */
+
+/**
+ * Tries to get the current device's IP. First searches with `networksetup` to find all the
+ * connections, then goes through them to find the first one that reports back an IP. Should work
+ * on desktop or laptop.
+ */
+exports.getIPAddress = function() {
+	// Get the list of network devices on the machine, in order of preferences
+	return exports.getProcessResults("/usr/sbin/networksetup", ["-listnetworkserviceorder"], "", {}, true).then((order) => {
+		// If there's no devices...
+		if(!order) {
 			return null;
 		}
-		for (const exec of execFiles) {
-			const execCheck = nova.path.join(exePath,exec);
-			if (nova.fs.access(execCheck, nova.fs.F_OK | nova.fs.X_OK)) {
-				return execCheck; // Return the first executable file found
+
+		// Go through the output and find the devices
+		var matches = [...order.stdout.matchAll(/Device:\s+(en\d+)/g)];
+		// Map to interfaces
+		var interfaces = matches.map(m => m[1]);
+
+		var index = 0;
+		// Helper function to go through and check ipconfig for the actual IP address.
+		function tryNext() {
+			if(index>=interfaces.length) {
+				return Promise.resolve(null);
 			}
-		}
-	} catch(error) {
-		return null;
+
+			var iface = interfaces[index++];
+			return exports.getProcessResults("usr/sbin/ipconfig", ["getifaddr",iface], "", {}, true).then((result) => {
+				var ip = result.stdout;
+				// If we have an IP address, then return that!
+				if(ip && ip.trim().length>0) {
+					return { interface: iface, ip: ip.trim() };
+				}
+			}).catch(() => {
+				return tryNext();
+			})
+		};
+
+		return tryNext();
+	});
+}
+
+/* ---- Time ---- */
+
+/**
+ * Returns a string as a sortable timestamp.
+ * @returns {String} - The current timestamp in YYYYMMDDD_HHmmss
+ */
+exports.getCurrentDateAsSortableString = function() {
+	const now = new Date();
+
+	const year = now.getFullYear();
+	const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+	const day = String(now.getDate()).padStart(2, '0');
+	const hours = String(now.getHours()).padStart(2, '0');
+	const minutes = String(now.getMinutes()).padStart(2, '0');
+	const seconds = String(now.getSeconds()).padStart(2, '0');
+
+	return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+}
+
+/* ---- UI Helpers ---- */
+
+/**
+ * Quick, easy way to show a notification. If you need it to persist, then add a button
+ * to show. This does not resolve any buttons, just there to keep in place!
+ *
+ * @param {string} title - The title of the notification
+ * @param {string} body - The text to display in the notification
+ * @param {string} closeButtonName - Optional button, if there, it will keep the box open until
+ * clicked
+ * @param {string} requestIdAddition - If this is given, you can later use this ID to remove the
+ * notification.
+ */
+exports.showNotification = function(title, body, closeButtonName = "", requestIdAddition = "") {
+	// If there's another one, let's cancel it or it might not show up!
+	if(requestIdAddition!="") {
+		exports.cancelNotification(requestIdAddition);
 	}
+	let request = new NotificationRequest(nova.extension.identifier+requestIdAddition);
+
+	request.title = nova.localize(title);
+	request.body = nova.localize(body);
+	if(closeButtonName) {
+		request.actions = [ closeButtonName ];
+	}
+	nova.notifications.add(request);
+}
+
+/**
+ * Removes a notification (which would have been launched with `showNotification()`.
+ *
+ * @param {string} requestIdAddition - The ID of the notification to remove
+ */
+exports.cancelNotification = function(requestIdAddition) {
+	nova.notifications.cancel(nova.extension.identifier+requestIdAddition);
 }
 
 /**
@@ -804,3 +799,38 @@ exports.collectInput = function(prompts) {
 		askNext();
 	});
 }
+
+/* ---- Not used ---- */
+
+/**
+ * (NOT USED) Convert's a document's selected range
+ *
+ * @param {TextDocument} document - The text document that's open
+ * @param {Range} range - The selected range?
+ */
+exports.rangeToLspRange = function(document, range) {
+	const fullContents = document.getTextInRange(new Range(0, document.length));
+
+	let chars = 0;
+	let startLspRange;
+
+	const lines = fullContents.split(document.eol);
+
+	for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+		const lineLength = lines[lineIndex].length + document.eol.length;
+		if (!startLspRange && chars + lineLength >= range.start) {
+			const character = range.start - chars;
+			startLspRange = { line: lineIndex, character };
+		}
+		if (startLspRange && chars + lineLength >= range.end) {
+			const character = range.end - chars;
+			return {
+				start: startLspRange,
+				end: { line: lineIndex, character },
+			};
+		}
+		chars += lineLength;
+	}
+	return null;
+}
+
