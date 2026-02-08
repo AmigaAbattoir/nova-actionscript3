@@ -4,8 +4,8 @@
  * Some commonly used functions I use in Panic Nova extensions
  *
  * @author Christopher Pollati
- * @version 1.0
- * @since 2026-02-07
+ * @version 1.0.1
+ * @since 2026-02-08
  */
 
 /* ---- Processes ---- */
@@ -138,7 +138,9 @@ exports.saveAllFiles = function() {
 	});
 }
 
-/* ---- Dev Helper ---- */
+/* ---- Console Helpers ----
+ * Forces Nova to output the structure of Objects by making it JSON and stringify-ing it
+ */
 
 /**
  * Helper to log out a note and an object by trying to stringify it.
@@ -146,13 +148,23 @@ exports.saveAllFiles = function() {
  * @param {string} note - Some text to include before logging object
  * @param {Object} object - What you want to try to console.log()
  */
-exports.consoleNoteAndObject = function(note,object,isError = false) {
-	if(isError) {
-		console.error(`${note}\n${JSON.stringify(object,null,4)}`);
-	} else {
-		console.log(`${note}\n${JSON.stringify(object,null,4)}`);
-	}
-}
+exports.consoleNoteAndObject = function(note,object,isError = false) { console.log(`${note}\n${JSON.stringify(object,null,4)}`); }
+
+/**
+ * Helper to log out a warning and an object by trying to stringify it.
+ *
+ * @param {string} note - Some text to include before logging object
+ * @param {Object} object - What you want to try to console.log()
+ */
+exports.consoleWarnAndObject = function(warning,object,isError = false) { console.warn(`${warning}\n${JSON.stringify(object,null,4)}`); }
+
+/**
+ * Helper to log out a error and an object by trying to stringify it.
+ *
+ * @param {string} note - Some text to include before logging object
+ * @param {Object} object - What you want to try to console.log()
+ */
+exports.consoleErrorAndObject = function(err,object) { console.error(`${err}\n${JSON.stringify(object,null,4)}`); }
 
 /**
  * Helper to log out an object by trying to stringify it.
