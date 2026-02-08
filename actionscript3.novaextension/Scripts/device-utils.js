@@ -1,5 +1,5 @@
 const { determineFlexSDKBase, determineAndroidSDKBase } = require("./config-utils.js");
-const { getProcessResults, consoleLogObject } = require("./nova-utils.js");
+const { getProcessResults, consoleNoteAndObject, consoleErrorAndObject } = require("./nova-utils.js");
 
 /**
  * Gets Android devices connected to the computer
@@ -27,16 +27,16 @@ exports.getAndroidDevices = function() {
 			// Debug output
 			if(nova.inDevMode()) {
 				if(!devices.length) {
-					console.log("getAndroidDevices No DEVICES!");
+					console.log("getAndroidDevices(): No DEVICES!");
 				} else {
-					console.log("getAndroidDevices DEVICES! " + devices.length);
-					devices.forEach((device) => console.log("device: " + device.uuid + " is a " + device.model));
+					console.log(`getAndroidDevices(): DEVICES! ${devices.length}`);
+					devices.forEach((device) => console.log(`device: ${device.uuid} is a ${device.model}`));
 				}
 			}
 			resolve(devices);
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				console.error("getAndroidDevices: Error fetching Android devices", error);
+				consoleErrorAndObject("getAndroidDevices(): *** ERROR: fetching Android devices ***", error);
 			}
 			reject([]); // Reject the promise with the error
 		});
@@ -75,10 +75,10 @@ exports.getIOSDevices = function() {
 				if(nova.inDevMode()) {
 					// Debug output
 					if(!devices.length) {
-						console.log("getIOSDevices No DEVICES!");
+						console.log("getIOSDevices(): No DEVICES!");
 					} else {
-						console.log("getIOSDevices DEVICES! " + devices.length);
-						devices.forEach((device) => console.log("device: " + device.uuid + " is an " + device.model));
+						console.log(`getIOSDevices(): DEVICES! ${devices.length}`);
+						devices.forEach((device) => console.log(`device: ${device.uuid} is an ${device.model}`));
 					}
 				}
 				resolve(devices);
@@ -87,7 +87,7 @@ exports.getIOSDevices = function() {
 			}
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				console.error("getIOSDevices: Error fetching iOS devices",error);
+				consoleErrorAndObject("getIOSDevices(): *** ERROR: fetching iOS devices ***",error);
 			}
 			reject([]);
 		});
@@ -121,8 +121,7 @@ exports.checkIfInstalledOnAndroidDevice = function(deviceId, packageId) {
 		const androidSDKBase = determineAndroidSDKBase();
 		getProcessResults(androidSDKBase + "/platform-tools/adb", ["shell", "pm", "path", packageId]).then((result) => {
 			if(nova.inDevMode()) {
-				console.info("checkIfInstalledOnAndroidDevice(): Looking for " + packageId + " on device " + deviceId);
-				consoleLogObject(result);
+				consoleNoteAndObject(`checkIfInstalledOnAndroidDevice(): Looking for ${packageId} on device ${deviceId}`,result);
 			}
 
 			// Only if the item is installed does this string of text show up in the output
@@ -133,8 +132,7 @@ exports.checkIfInstalledOnAndroidDevice = function(deviceId, packageId) {
 			}
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				console.error("checkIfInstalledOnAndroidDevice(): Error checking for app installed '" + packageId + "' on Android device" + deviceId);
-				consoleLogObject(error);
+				consoleErrorAndObject(`checkIfInstalledOnAndroidDevice(): *** ERROR: During checking for app installed ${packageId} on Android device ${deviceId} ***`,error);
 			}
 			resolve(false);
 		});
@@ -161,8 +159,7 @@ exports.checkIfInstalledOnIOSDevice = function(deviceId, packageId) {
 			]
 		).then((result) => {
 			if(nova.inDevMode()) {
-				console.info("checkIfInstalledOnIOSDevice(): Looking for " + packageId + " on device " + deviceId);
-				consoleLogObject(result);
+				consoleNoteAndObject(`checkIfInstalledOnIOSDevice(): Looking for ${packageId} on device ${deviceId}`,result);
 			}
 
 			// If the packageId shows up in the output, then it should be installed
@@ -173,8 +170,7 @@ exports.checkIfInstalledOnIOSDevice = function(deviceId, packageId) {
 			}
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				console.error("checkIfInstalledOnIOSDevice(): Error checking for app installed '" + packageId + "' on iOS device" + deviceId);
-				consoleLogObject(error);
+				consoleErrorAndObject(`checkIfInstalledOnIOSDevice(): *** ERROR: During checking for app installed ${packageId} on iOS device ${deviceId} ***`,error);
 			}
 			resolve(false);
 		});

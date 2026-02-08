@@ -1,7 +1,7 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { ActionScript3TaskAssistant } = require("./task-assistant.js");
 const { determineProjectUUID, determineAneTempPath } = require("./as3-utils.js");
-const { showNotification, isWorkspace, getWorkspaceOrGlobalConfig, consoleLogObject, getUserCustomizableJson, doesFolderExist, doesFolderExistAndIsAccessible, getProcessResults, getCurrentDateAsSortableString, quickChoicePalette } = require("./nova-utils.js");
+const { consoleNoteAndObject, consoleErrorAndObject, showNotification, isWorkspace, getWorkspaceOrGlobalConfig, getUserCustomizableJson, doesFolderExist, doesFolderExistAndIsAccessible, getProcessResults, getCurrentDateAsSortableString, quickChoicePalette } = require("./nova-utils.js");
 const { determineFlexSDKBase } = require("./config-utils.js");
 const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
@@ -113,7 +113,6 @@ exports.activate = function() {
 			let results = [];
 			getAndroidDevices().then((androidDevices) => {
 				for(device of androidDevices) {
-					consoleLogObject(device);
 					results.push([device.uuid,device.model+": "+device.uuid]);
 				}
 				resolve(results);
@@ -176,9 +175,7 @@ exports.activate = function() {
 
 	langserver = new AS3MXMLLanguageServer();
 
-	//                                 [ Nova stuff...                     ][ Our params to pass]
 	nova.commands.register("as3.clean",(workspace, workspacePath, sourcePath, outputPath) => {
-	//                                 [ Nova stuff ..           ][ Our params]
 		taskprovider.clean(workspacePath, sourcePath, outputPath);
 	});
 
@@ -207,7 +204,7 @@ exports.activate = function() {
 	});
 
 	nova.commands.register("as3.paneltest", () => {
-		if (nova.inDevMode()) { console.log("Called... as3.paneltest"); }
+		if (nova.inDevMode()) { console.log("as3.paneltest() Called..."); }
 
 		/*
 		// Lookie at https://docs.nova.app/api-reference/workspace/#showinputpalettemessage-options-callback
@@ -219,13 +216,13 @@ exports.activate = function() {
 		/*
 		nova.workspace.showActionPanel("Messages here", { buttons: [ "Save","This Time","Cancel"] },
 			(something) => {
-				console.log(" SOMETHNG: " + something);
+				console.log(" SOMETHING: " + something);
 			}
 		);
 
 		nova.workspace.showChoicePalette(["Messages","here","dafsdf"], { buttons: [ "Save","This Time","Cancel"] },
 			(something) => {
-				console.log(" SOMETHNG: " + something);
+				console.log(" SOMETHING: " + something);
 			}
 		);
 
@@ -291,7 +288,7 @@ function regenerateCurrentSDKsInstalledContext() {
  */
 exports.deactivate = function() {
 	// Clean up state before the extension is deactivated
-	if (nova.inDevMode()) { console.log("<<<< AS3MXML Deactivated"); }
+	if (nova.inDevMode()) { console.log("ActionScript3 Extension <<<< Deactivated"); }
 
 	if (langserver) {
 		langserver.deactivate();
@@ -309,9 +306,9 @@ class AS3MXMLLanguageServer {
 	constructor() {
 		const path = nova.extension.path;
 		if (nova.inDevMode()) {
-			console.log("--- AS3MXML Constructor -----------------------------------------------------");
-			console.log(" *** Constructing AS3MXML Extension with PATH: ",path);
-			console.log(" *** Version: " + nova.extension.version);
+			console.log("--- ActionScript3 Extension Constructor -----------------------------------------------------");
+			console.log(` *** Constructing ActionScript3 Extension with PATH: ${path}`);
+			console.log(` *** Version: ${nova.extension.version}`);
 		}
 
 		// @DEBUG, TESTING make sure this is cleared
@@ -323,9 +320,9 @@ class AS3MXMLLanguageServer {
 		if(nova.config.get("as3.sdk.default")!="") {
 			var sdksInstalled = nova.config.get("as3.sdk.installed");
 			var sdkDefault = nova.config.get("as3.sdk.default");
-console.log("installed: ",sdksInstalled);
-console.log("default: ",sdkDefault);
-console.log("default installed: ",nova.config.get("as3.sdk.default"))
+			console.log(`installed: ${sdksInstalled}`);
+			console.log(`default: ${sdkDefault}`);
+			console.log(`default installed: ${nova.config.get("as3.sdk.default")}`);
 			if(sdksInstalled==null || sdksInstalled.length==0 || (sdksInstalled.length==1 && sdksInstalled=="null")) {
 				if(sdkDefault!=null) {
 					sdksInstalled = [];
@@ -340,8 +337,8 @@ console.log("default installed: ",nova.config.get("as3.sdk.default"))
 				}
 			}
 		}
-console.log("PATH:",path);
-console.log("nova.extension.path:",nova.extension.path);
+		console.log(`PATH: ${path}`);
+		console.log(`nova.extension.path: ${nova.extension.path}`);
 		this.start(nova.extension.path)
 	}
 
@@ -354,7 +351,7 @@ console.log("nova.extension.path:",nova.extension.path);
 	 * What to do when deactivating the extension
 	 */
 	deactivate() {
-		if (nova.inDevMode()) { console.log(" *** AS3MXML Deactivated"); }
+		if (nova.inDevMode()) { console.log(" *** ActionScript3 Extension Deactivated"); }
 		this.stop();
 	}
 
@@ -408,7 +405,7 @@ console.log("nova.extension.path:",nova.extension.path);
 		 * which if we need to restart the LSP, would lock up Nova.
 		 */
 		for (const key of watchedConfigs) {
-			// console.log(" =-=-=-= [[ FOR EACH " + key + " of watchedConfigs");
+			// console.log(` =-=-=-= [[ FOR EACH ${key} of watchedConfigs`);
 			let isThrottled = false;
 			nova.config.onDidChange(key, function(newValue, oldValue) {
 				if(!isThrottled) {
@@ -457,7 +454,7 @@ console.log("nova.extension.path:",nova.extension.path);
 		 * which if we need to restart the LSP, would lock up Nova.
 		 */
 		for (const key of watchedWorkspaceConfigs) {
-			// console.log(" =-=-=-= [[ FOR EACH " + key + " of watchedWorkspaceConfigs");
+			// console.log(` =-=-=-= [[ FOR EACH ${key} of watchedWorkspaceConfigs`);
 			let isThrottled = false;
 			nova.workspace.config.onDidChange(key, function(newValue, oldValue) {
 				if(!isThrottled) {
@@ -491,7 +488,7 @@ console.log("nova.extension.path:",nova.extension.path);
 							// console.log("Trying to check if it exists, let's delete")
 							// If the file exists, then remove it since nova.fs.copy with throw an error.
 							if (nova.fs.access(destPath, nova.fs.constants.F_OK)) {
-								// console.log(" Removing existing [" + destPath + "]");
+								// console.log(` Removing existing [${destPath}]");
 								nova.fs.rmdir(destPath);
 							}
 						} catch (error) {
@@ -581,8 +578,8 @@ console.log("nova.extension.path:",nova.extension.path);
 	 */
 	start(path) {
 		if (nova.inDevMode()) {
-			console.log("--- AS3MXML Start(path)-----------------------------------------------------");
-			console.log(" *** path: " + path);
+			console.log("--- ActionScript3 Extension Start(path)-----------------------------------------------------");
+			console.log(` *** path: ${path}`);
 		}
 
 		// If restarting this language client, let's stop it and remove the subscriptions.
@@ -607,16 +604,16 @@ console.log("nova.extension.path:",nova.extension.path);
 		var flexSDKBase = determineFlexSDKBase();
 
 		if (nova.inDevMode()) {
-			console.log(" 	PATH:: [[" + path + "]]");
-			console.log(" 	BASE:: [[" + base + "]]");
-			console.log(" 	FLEX:: [[" + flexSDKBase + "]]");
+			console.log(` 	PATH:: [[${path}]]`);
+			console.log(` 	BASE:: [[${base}]]`);
+			console.log(` 	FLEX:: [[${flexSDKBase}]]`);
 		}
 
 		// Check if the flexSDKBase is valid, if not, warn user and abort!
 		if(doesFolderExistAndIsAccessible(flexSDKBase)==false) {
 			if (nova.inDevMode()) {
 				if(doesFolderExist(flexSDKBase)) {
-					console.error("flexSDKBase exists, but is it accessable??? ",nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK));
+					console.error(`flexSDKBase exists, but is it accessable??? ${nova.fs.access(flexSDKBase, nova.fs.F_OK | nova.fs.X_OK)}`);
 				}
 			}
 			nova.workspace.showErrorMessage("Please configure the Installed SDKs!\n\nIn order to use this extension you will need to have installed an AIR or Flex SDK. The default is in `~/Applications/AIRSDK`, but is not available. Please use the `➕ Install SDK` option to add an SDK!")
@@ -684,7 +681,7 @@ console.log("nova.extension.path:",nova.extension.path);
 			if(nova.inDevMode()) {
 				var argsOut = "";
 				args.forEach(a => argsOut += a + "\n")
-				console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n *** ARGS:: /\\/\\/\\");
+				console.log(` *** ARGS:: \\/\\/\\/\n\n${argsOut}\n *** ARGS:: /\\/\\/\\`);
 			}
 
 			// Launch the server
@@ -721,19 +718,19 @@ console.log("nova.extension.path:",nova.extension.path);
 			};
 
 			if (nova.inDevMode()) {
-				console.log("serverOptions: " + JSON.stringify(serverOptions));
-				console.log("clientOptions: " + JSON.stringify(clientOptions));
+				consoleNoteAndObject("serverOptions: ",serverOptions);
+				consoleNoteAndObject("clientOptions: ",clientOptions);
 			}
 
 			var client = new LanguageClient('actionscript', 'ActionScript & MXML Language Server', serverOptions, clientOptions);
 			try {
 				// Start the client
 				if (nova.inDevMode()) {
-					console.log(" *** Starting AS3MXML server at " + new Date().toLocaleString() + "--------------------");
+					console.log(` *** Starting AS3MXML server at ${new Date().toLocaleString()} --------------------`);
 				}
 
 				client.start();
-				client.onDidStop((error) => { console.error("**** AS3MXML ERROR: " + error + ". It may be still running: ", client.running); });
+				client.onDidStop((error) => { console.error(`ActionScript3 Extension *** ERROR: ${error}. It may be still running: ${client.running}`); });
 
 				// Get the search paths for as3mxml
 				var sdkSearchPath = [];
@@ -827,13 +824,13 @@ console.log("nova.extension.path:",nova.extension.path);
 					};
 
 					if (nova.inDevMode()) {
-						console.log(" >>> Sending notifications of workspace/didChangeConfiguration!! ");
+						console.log("ActionScript3 Extension >>> Sending notifications of workspace/didChangeConfiguration!! ");
 					}
 					client.sendNotification("workspace/didChangeConfiguration", config);
 
 					// Set preferred target (need to change for Royale...)
 					if (nova.inDevMode()) {
-						console.log(" >>> Sending request of workspace/executeCommand!! ");
+						console.log("ActionScript3 Extension >>> Sending request of workspace/executeCommand!! ");
 					}
 					client.sendRequest("workspace/executeCommand", {
 						command: "as3mxml.setRoyalePreferredTarget",
@@ -841,7 +838,7 @@ console.log("nova.extension.path:",nova.extension.path);
 							"SWF"
 						]
 					}).then((result) => {
-						console.log(" <><><><> Sent workspace/executeCommand  as3mxml.setRoyalePreferredTarget..." + JSON.stringify(result));
+						consoleNoteAndObject("ActionScript3 Extension <><><><> Sent workspace/executeCommand  as3mxml.setRoyalePreferredTarget...",result);
 					});
 				}, 175);
 
@@ -954,7 +951,7 @@ console.log("nova.extension.path:",nova.extension.path);
 				}
 			} catch (err) {
 				if (nova.inDevMode()) {
-					console.error(" *** CAUGHT AN ERROR!!!" + err + " .... " + JSON.stringify(err) + " ***");
+					consoleErrorAndObject("ActionScript3 Extension *** ERROR: Caught an error ***",err);
 				}
 			}
 		}
@@ -965,7 +962,7 @@ console.log("nova.extension.path:",nova.extension.path);
 	 */
 	stop() {
 		if (nova.inDevMode()) {
-			console.log("AS3MXML stop() called!");
+			console.log("ActionScript3 Extension `stop()` called!");
 		}
 
 		if (this.languageClient) {

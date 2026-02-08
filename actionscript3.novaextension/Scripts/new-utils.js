@@ -1,5 +1,5 @@
 const { ActionScript3TaskAssistant } = require("./task-assistant.js");
-const { showNotification, consoleLogObject,  getStringOfFile, getProcessResults, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette ,collectInput } = require("./nova-utils.js");
+const { showNotification, consoleErrorAndObject, getStringOfFile, getProcessResults, ensureFolderIsAvailable, getStringOfWorkspaceFile, quickChoicePalette ,collectInput } = require("./nova-utils.js");
 const { determineFlexSDKBase } = require("./config-utils.js");
 const { determineProjectUUID } = require("./as3-utils.js");
 
@@ -178,7 +178,7 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 
 	// Now that we have a Project Type, let's see if we need to check what type of Application it will be
 	projectTypePromise.then((projectType) => {
-		// console.log(" PROJECT TYPE: ][" + projectType + "]]");
+		// console.log(` PROJECT TYPE: ][${projectType}]]`);
 		if(projectType==undefined) { // If it's undefined, the user aborted the selector, bail out!
 			return;
 		}
@@ -341,7 +341,7 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 													mainClassASFile.close();
 												}
 											} catch(error) {
-												console.error(error);
+												consoleErrorAndObject("makeNewProject(): *** ERROR ***",error);
 												nova.workspace.showErrorMessage("Problem creating basic source files for new project at " + projectFolder);
 											}
 
@@ -466,12 +466,12 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 											}
 
 											// All that's left now is to open the project in Nova.
-											// console.log("V@@@:");
 											getProcessResults("/usr/local/bin/nova", [ projectFolder ]).then((result) => {
 												resolve(result);
 											}).catch((error) => {
-												// console.error("@@@@@@   @@  @@  Problem opening project", error);
-												consoleLogObject(error)
+												if(nova.inDevMode()) {
+													consoleErrorAndObject("*** ERROR: problem opening project! ***",error);
+												}
 												reject(error); // Reject the promise with the error
 											});
 										} else {

@@ -1,4 +1,4 @@
-const { consoleLogObject, showNotification, getWorkspaceOrGlobalConfig, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace } = require("./nova-utils.js");
+const { consoleNoteAndObject, showNotification, getWorkspaceOrGlobalConfig, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace } = require("./nova-utils.js");
 const { getAIRSDKDefaultPath, getAIRSDKNameFromPath, getAIRSDKPathFromName, getAIRSDKInfo } = require("./sdk-utils.js");
 
 /**
@@ -51,7 +51,7 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 		}
 	}
 
-// console.log(" USING SDK AT: " + flexSDKBase);
+	// console.log(` USING SDK AT: ${flexSDKBase}`);
 	let currentSDKPath = nova.workspace.context.get("currentSDKPath");
 	// If using a different flexSDKBase than before, let's update the contexts that we use in Nova to keep track of some SDK info
 	if(flexSDKBase!=currentSDKPath) {
@@ -67,10 +67,10 @@ exports.determineFlexSDKBase = function(selectedSDK = null) {
 		currentSDKPath = airSDKInfo.path;
 	}
 
-	// console.log("Setting as3.sdk.installed[0]:      " + getWorkspaceOrGlobalConfig("as3.sdk.installed")[0]);
-	// console.log("Setting as3.compiler.sdk: " + getWorkspaceOrGlobalConfig("as3.compiler.sdk"));
-	// console.log("From Task at hand: " + selectedSDK);
-	// console.log("Using flexSDKBase ------->>>>>> : " + flexSDKBase);
+	// console.log(`Setting as3.sdk.installed[0]:      ${getWorkspaceOrGlobalConfig("as3.sdk.installed")[0]}`);
+	// console.log(`Setting as3.compiler.sdk: ${getWorkspaceOrGlobalConfig("as3.compiler.sdk")}`);
+	// console.log(`From Task at hand: ${selectedSDK}`);
+	// console.log(`Using flexSDKBase ------->>>>>> : ${flexSDKBase}`);
 	return flexSDKBase;
 }
 
@@ -87,7 +87,7 @@ exports.determineAndroidSDKBase = function() {
 	}
 	androidSDKBase = ensureExpandedUserPath(androidSDKBase);
 
-	//console.log("Using androidSDKBase: " + androidSDKBase);
+	// console.log(`Using androidSDKBase: ${androidSDKBase}`);
 	return androidSDKBase;
 }
 
@@ -109,8 +109,7 @@ exports.getAppXMLNameAndExport = function(file) {
 	};
 
 	if(nova.inDevMode()) {
-		// console.log("*** ---===[ Here are the app xml and export names settings from the project ]===--- ***");
-		// consoleLogObject(configData);
+		// consoleNoteAndObject("getAppXMLNameAndExport(): *** ---===[ Here are the app xml and export names settings from the project ]===--- ***",configData);
 	}
 
 	return configData;
@@ -123,7 +122,7 @@ exports.getAppXMLNameAndExport = function(file) {
  * or just be relative (set to `false`). Generally, false for the `asconfig.json`.
  */
 exports.getConfigsForBuildAndPacking = function(taskConfig = {}, appendWorkspacePath = false) {
-	// console.log("appendWorkspacePath: " + appendWorkspacePath);
+	// console.log(`appendWorkspacePath: ${appendWorkspacePath}`);
 	var sdkBase = "";
 	if(taskConfig["as3.compiler.sdk"]) {
 		sdkBase = taskConfig["as3.compiler.sdk"];
@@ -279,8 +278,7 @@ exports.getConfigsForBuildAndPacking = function(taskConfig = {}, appendWorkspace
 	};
 
 	if(nova.inDevMode()) {
-		console.log("*** ---===[ Here are the building and packaging settings from the project ]===--- ***");
-		consoleLogObject(configData);
+		consoleNoteAndObject("getConfigsForBuildAndPacking(): *** ---===[ Here are the building and packaging settings from the project ]===--- ***",configData);
 	}
 
 	return configData;

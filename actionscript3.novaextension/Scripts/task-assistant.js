@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleLogObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette, doesFileExist, getIPAddress, doesFolderExist, checkIfFileWasModifiedAfterOther, shouldIgnoreFileName, checkIfModifiedAfterFileDate } = require("./nova-utils.js");
+const { showNotification, cancelNotification, isWorkspace, getWorkspaceOrGlobalConfig, getProcessResults, saveAllFiles, consoleNoteAndObject, consoleErrorAndObject, resolveSymLink, getStringOfWorkspaceFile, getStringOfFile, ensureFolderIsAvailable, makeOrClearFolder, listFilesRecursively, getExec, quickChoicePalette, doesFileExist, getIPAddress, doesFolderExist, checkIfFileWasModifiedAfterOther, shouldIgnoreFileName, checkIfModifiedAfterFileDate } = require("./nova-utils.js");
 const { determineFlexSDKBase, determineAndroidSDKBase, getAppXMLNameAndExport, getConfigsForBuildAndPacking } = require("./config-utils.js");
 const { determineProjectUUID, determineTempPath, determineAneTempPath, resolveStatusCodeFromADT, convertAIRSDKToFlashPlayerVersion } = require("./as3-utils.js");
 const { getCertificatePasswordInKeychain, setCertificatePasswordInKeychain, promptForPassword, getSessionCertificatePassword, setSessionCertificatePassword } = require("./certificate-utils.js");
@@ -324,7 +324,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 			// Now that we have a task file name, let's try to get the config!
 			taskFileNamePromise.then((taskFileName) => {
-				//console.log("Task File Name: [[" + taskFileName + "]]");
+				// console.log(`Task File Name: [[${taskFileName}]]`);
 				// If it's undefined, then the user escaped the palette
 				if(taskFileName==undefined) {
 					return;
@@ -339,8 +339,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					nova.workspace.config.set("as3.packaging.lastReleaseBuilt",taskFileName);
 
 					taskJson = JSON.parse(getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName));
-					// console.log("-= TASK JSON: " + taskFileName + " =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-					// consoleLogObject(taskJson);
+					// consoleNoteAndObject("packageBuild(): -= TASK JSON: " + taskFileName + " =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-",taskJson);
 					// console.log("-= --------- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 					try {
 						if(taskJson["extensionTemplate"].startsWith("actionscript-")==false) {
@@ -383,8 +382,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}
 
 				if(nova.inDevMode()) {
-					console.log("-=Package Build taskConfig =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-					consoleLogObject(taskConfig);
+					consoleNoteAndObject("packageBuild(): -= taskConfig =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-",taskConfig);
 					console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 				}
 
@@ -505,7 +503,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		// Figure playerglobal.sec version and location
 		let currentAIRSDKVersion = nova.workspace.context.get("currentAIRSDKVersion");
 		let flashVersion = convertAIRSDKToFlashPlayerVersion(currentAIRSDKVersion);
-		// consoleLogObject(flashVersion);
+		// consoleNoteAndObject("Flash Version: ",flashVersion);
 		var playerGlobal = "player/" + flashVersion.major + "." + flashVersion.minor + "/playerglobal";
 
 		// Push the PlayerGlobal to external library
@@ -621,8 +619,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		}
 
 		if (nova.inDevMode()) {
-			console.log(" *** Attempting to Run COMPC with [[" + command + "]] ARG: \n");
-			consoleLogObject(args);
+			consoleNoteAndObject(`buildLibrary(): Attempting to Run COMPC with [[${command}]] ARG:`,args);
 		}
 		return new TaskProcessAction(command, { args: args });
 	}
@@ -648,7 +645,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}catch(error) {
 				// If there's an error, we'll figure it out later.
 				if (nova.inDevMode()) {
-					console.error("There was an error trying to read the app-xml for which profile to user: " + error);
+					consoleNoteAndObject("getProfileType(): *** ERROR: There was an error trying to read the app-xml for which profile to user: ***",error,true);
 				}
 			}
 		}
@@ -755,23 +752,23 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 
 		if(alsoIgnore) {
 			alsoIgnore.forEach((ignore) => {
-				//console.log("Ignroe: " + ignore);
-				//console.log("[["+ + "/" + releaseFolder + "/" + ignore +"]]");
+				// console.log(`package(): Ignore: ${ignore}`);
+				// console.log(`[[/${releaseFolder}/${ignore}]]");
 				try{
 					if(nova.fs.stat(basePath + "/" + releaseFolder + "/" + ignore).isFile()) {
-						//console.log("    REMOVE FILE + " + ignore + " !");
+						// console.log(`package():     REMOVE FILE + ${ignore} !`);
 						nova.fs.remove(basePath + "/" + releaseFolder + "/" + ignore);
 					} else if(nova.fs.stat(basePath + "/" + releaseFolder + "/" + ignore).isDirectory()) {
-						//console.log("    REMOVE DIR + " + ignore + " !");
+						// console.log(`package():     REMOVE DIR + ${ignore} !`);
 						nova.fs.rmdir( + "/" + releaseFolder + "/" + ignore);
 					} else {
-						//console.log("    Don't do anything " + ignore + " !");
+						// console.log(`    Don't do anything ${ignore} !`);
 					}
 				} catch(error) {
 					// @TODO, Flash Builder would remove this entry from the excluded items
-					//console.log("    Not there skip " + error);
+					//consoleLogObject("    Not there skip ",error);
 				}
-				//console.log("DONE!");
+				// console.log("DONE!");
 			});
 		}
 
@@ -804,7 +801,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				// Check if we want to disable AIR Flair. I know I do!
 				var noAndroidAirFlair = taskConfig["as3.deployment.noFlair"];
 				if(noAndroidAirFlair!=undefined) {
-					// console.log("AIR FLAIR: " + noAndroidAirFlair);
+					// console.log(`AIR FLAIR: ${noAndroidAirFlair}`);
 				} else {
 					noAndroidAirFlair = false;
 					// console.log("AIR FLAIR undefined, so now it'll be false!");
@@ -965,9 +962,9 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			if(file!=appXMLName) {
 				//args.push("-C");
 				args.push(file);
-				// console.log("SHOULD INCLUDE: " + file);
+				// console.log(`SHOULD INCLUDE: ${file}`);
 			} else {
-				// console.log("Skip: " + file);
+				// console.log(`Skip: ${file}`);
 			}
 		});
 
@@ -1006,18 +1003,17 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 		});
 
 		if (nova.inDevMode()) {
-			console.log(" *** COMMAND [[" + command + "]] ARG: \n");
-			consoleLogObject(args);
+			consoleNoteAndObject(` *** COMMAND [[${command}]] ARG:`,args);
 		}
 
 		var stdout = "";
 		var stderr = "";
 		process.onStdout(function(line) {
-			if (nova.inDevMode()) { console.log("STDOUT: " + line); }
+			if (nova.inDevMode()) { console.log(`STDOUT: ${line}`); }
 			stdout += line;
 		});
 		process.onStderr(function(line) {
-			if (nova.inDevMode()) { console.log("STDERR: " + line); }
+			if (nova.inDevMode()) { console.log(`STDERR: ${line}`); }
 			stderr += line;
 		});
 		process.start();
@@ -1025,7 +1021,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			process.onDidExit((status) => {
 				cancelNotification("-packaging");
 				if (nova.inDevMode()) {
-					consoleLogObject(status);
+					consoleNoteAndObject("package() status",status);
 				}
 				if(status==0) {
 					if(forRunOrDebug==false) {
@@ -1056,8 +1052,8 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					var message = result.message;
 					if (nova.inDevMode()) {
 						console.log("Final RESULT: ");
-						console.log("STDOUT: " + stdout);
-						console.log("STDERR: " + stderr);
+						consoleNoteAndObject("STDOUT: ",stdout);
+						consoleNoteAndObject("STDERR: ",stderr);
 					}
 					var shortError = "Unknown error";
 					if(stderr.length==0) {
@@ -1205,8 +1201,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				} catch(error) {
 					//if(lineCount==0) {
 						nova.workspace.showErrorMessage("Error writing HTML file at " + newHtmlFile + ". Please check it's content that it is valid.");
-						console.error("*** ERROR: Writing HTML file! error: ",error);
-						consoleLogObject(error);
+						consoleErrorAndObject("build() *** ERROR: Writing HTML file! error: ***",error);
 						return null;
 					//}
 				}
@@ -1221,7 +1216,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 				}).catch(error => {
 					nova.workspace.showErrorMessage("Error during asset copying: " + error);
 					if (nova.inDevMode()) {
-						console.error("Error during asset copying:", error);
+						consoleErrorAndObject("build() *** ERROR: During asset copying ***",error);
 					}
 					return null;
 				});
@@ -1338,8 +1333,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 			} catch(error) {
 				//if(lineCount==0) {
 					nova.workspace.showErrorMessage("Error handling app descriptor at " + newAppXMLFile + ". Please check it's content that it is valid.");
-					console.error("*** ERROR: APP XML file! error: ",error);
-					consoleLogObject(error);
+					consoleErrorAndObject("build() *** ERROR: APP XML file!",error);
 					return null;
 				//}
 			}
@@ -1468,8 +1462,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 		// We need the active application file to trigger this
 		args.push("src/" + mainApplicationPath);
 		if (nova.inDevMode()) {
-			console.log(" *** COMMAND [[" + command + "]] ARG: \n");
-			consoleLogObject(args);
+			consoleNoteAndObject(` *** COMMAND [[${command}]] ARG:`,args);
 		}
 
 		if(packageAfterBuild || returnAsProcess) {
@@ -1494,8 +1487,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 	debugRun(projectType, projectOS, taskConfig) {
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
 
-		// console.log("CONFIG VALUES: ");
-		// consoleLogObject(configValues);
+		// consoleNoteAndObject("CONFIG VALUES: ",configValues);
 		// console.log("CONFIG VALUES: ");
 		let flexSDKBase = determineFlexSDKBase(configValues.flexSDKBase);
 		let destDir = configValues.destDir;
@@ -1630,9 +1622,8 @@ if(doesFileExist(destDir + "/" + exportName)) {
 			var argsOut = "";
 			args.forEach(a => argsOut += a + "\n")
 			argsOut = "\nDebugger Args:\n";
-			console.log(" *** ARGS:: \\/\\/\\/\n\n" + argsOut + "\n");
-			consoleLogObject(debugArgs);
-			console.log("\n *** ARGS:: /\\/\\/\\");
+			consoleNoteAndObject(`debugRun() *** ARGS:: \\/\\/\\/\n\n${argsOut}\n`,debugArgs);
+			console.log("\ndebugRun() *** ARGS:: /\\/\\/\\");
 		}
 
 		return action;
@@ -1679,7 +1670,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 			// // Adding fake devices to test selection and fallbacks
 			// devices.push({ uuid: "123456789ABCDEF", model: "Fake Device 1"} );
 			// devices.push({ uuid: "ABCDEF123456789", model: "Fake Device 3"} );
-			// consoleLogObject(devices);
+			// consoleNoteAndObject("Devices: ",devices);
 
 			// If no preferred devices are set and we have devices, then we just default to first or ask which one and return!
 			if(!deviceId && devices.length>0) {
@@ -1828,8 +1819,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 
 			// Launch the app, don't wait for it and attach debugger!!
 			return getProcessResults(launchCommand, launchArgs).then((result) => {
-				// console.log("LAUNCHING ON IOS DEVICE BY USB!");
-				// consoleLogObject(result);
+				// consoleNoteAndObject("LAUNCHING ON IOS DEVICE BY USB!",result);
 				if(result.status==0) {
 					// console.log("HOLD ON! for a bit....");
 					// Wait for runtime to connect?
@@ -1856,8 +1846,7 @@ if(doesFileExist(destDir + "/" + exportName)) {
 							"--ez", "port", "7936"
 						], "", {}, true).then((result) => {
 							// console.log("Launched ANDROID.");
-							// console.log("RESULTS FROM LAUNCH...");
-							// consoleLogObject(result);
+							// consoleNoteAndObject("RESULTS FROM LAUNCH...",result);
 							if(result.status==0) {
 								// Wait for runtime to connect?
 								return new Promise(r => setTimeout(r, 1000)).then(() => {
@@ -2067,8 +2056,7 @@ try {
 						appXMLFile.write(appXML);
 						appXMLFile.close();
 					} catch(error) {
-						console.error("*** ERROR: APP XML file! error: ",error);
-						consoleLogObject(error);
+						consoleErrorAndObject("runOnDeviceViaUSB() *** ERROR: APP XML file! error ***",error);
 						return Promise.reject(new Error("Error handling app descriptor at " + newAppXMLFile + ". Please check it's contents that it is valid."));
 					}
 					return;
@@ -2099,7 +2087,7 @@ try {
 							}
 						} catch(error) {
 							if(nova.inDevMode()) {
-								consoleLogObject(error);
+								consoleErrorAndObject("runOnDeviceViaUSB() *** ERROR ***",error);
 							}
 						}
 						return;
@@ -2265,8 +2253,7 @@ try {
 		let command = "";
 		let args = [];
 
-// console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
-// consoleLogObject(taskConfig);
+// consoleNoteAndObject("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=",taskConfig);
 // console.log("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
 
 		const configValues = getConfigsForBuildAndPacking(taskConfig, true);
@@ -2316,8 +2303,7 @@ try {
 				args.push(destDir + "/" +  exportName.replace(".swf",".html"));
 
 				if (nova.inDevMode()) {
-					console.log(" *** Attempting to Run a webbrowser with Flash Player with [[" + command + "]] ARG: \n");
-					consoleLogObject(args);
+					consoleNoteAndObject(`*** Attempting to Run a webbrowser with Flash Player with [[${command}]] ARG:`,args);
 				}
 			} else {
 				// Since Flash Player can actually have an executable of Flash Player Debugger or just Flash Player, let's just look in that
@@ -2331,8 +2317,7 @@ try {
 				}
 
 				if (nova.inDevMode()) {
-					console.log(" *** Attempting to Run Flash Player application with [[" + command + "]] ARG: \n");
-					consoleLogObject(args);
+					consoleNoteAndObject(` *** Attempting to Run Flash Player application with [[${command}]] ARG:`,args);
 				}
 				args.push(destDir + "/" +  exportName);
 			}
@@ -2380,8 +2365,7 @@ try {
 				// Root directory goes next
 				// "--" then args go now...
 				if (nova.inDevMode()) {
-					console.log(" *** Attempting to Run ADL with [[" + command + "]] ARG: \n");
-					consoleLogObject(args);
+					consoleNoteAndObject(` *** Attempting to Run ADL with [[${command}]] ARG:`,args);
 				}
 
 				// Possible errors:
@@ -2433,7 +2417,7 @@ try {
 											// If the file exists, then remove since nova.fs.copy with throw an error.
 											// Could possibly use stats.ctime/stats.size to compare, but my end up taking more time with lots of little files
 											if (nova.fs.access(destPath, nova.fs.constants.F_OK)) {
-												// console.log(" Removing existing [" + destPath + "]");
+												// console.log(` Removing existing [${destPath}]`);
 												nova.fs.remove(destPath);
 											}
 											nova.fs.copy(resolvedPath, destPath);
@@ -2454,7 +2438,7 @@ try {
 								// If the file exists, then remove since nova.fs.copy with throw an error.
 								// Could possibly use stats.ctime/stats.size to compare, but my end up taking more time with lots of little files
 								if (nova.fs.access(destPath, nova.fs.constants.F_OK)) {
-									// console.log(" Removing existing [" + destPath + "]");
+									// console.log(` Removing existing [${destPath}]`);
 									nova.fs.remove(destPath);
 								}
 								nova.fs.copy(currPath, destPath);
@@ -2496,9 +2480,8 @@ try {
 	importFlashBuilderSettings() {
 		var projectXml =  new xmlToJson.ns3x2j(getStringOfWorkspaceFile(".project"));
 
-		// console.log("Project ");
-		// consoleLogObject(projectXml);
-		// console.log("Project NAME? "+projectXml.getNodeChildrenByName("projectDescription","name"));
+		// consoleNoteAndObject("Project ",projectXml);
+		// console.log(`Project NAME? ${projectXml.getNodeChildrenByName("projectDescription","name")}`);
 
 		// Change project name to the Flash Builder project name:
 		nova.workspace.config.set("workspace.name",projectXml.getNodeChildrenByName("projectDescription","name").textContent);
@@ -2516,8 +2499,7 @@ try {
 //			var flexPropertiesXml = pjXML.parse(flexProperties);
 			/** @NOTE Not sure we need to check any values, but if it's there, it's MXML vs AS3 project! */
 			var flexPropertiesXml = new xmlToJson.ns3x2j(flexProperties,false);
-			//console.log("compilerSourcePath> " + flexPropertiesXml.select("//flexProperties"));
-			//consoleLogObject(flexPropertiesXml.select("//flexProperties"));
+			//consoleNoteAndObject("compilerSourcePath> " + flexPropertiesXml.select("//flexProperties"));
 			nova.workspace.config.set("editor.default_syntax","mxml");
 			nova.workspace.config.set("as3.application.isFlex",true);
 			isFlex = true;
@@ -2545,7 +2527,7 @@ try {
 		nova.workspace.config.set("as3.application.projectUUID",projectUUID);
 /*
 		var swfName = (isFlex ? mainApplicationPath.replace(".mxml","-app.xml") : mainApplicationPath.replace(".as","-app.xml"));
-		console.log("Name of SWF: [" + swfName  + "]");
+		console.log(`Name of SWF: [${swfName}]`);
 */
 		var mainSrcDir = actionscriptPropertiesXml.getAttributeFromNodeByName("compiler","sourceFolderPath");
 		// If the main source director is empty or null, set it to "./" so we know that the user isn't
@@ -2589,27 +2571,25 @@ try {
 		var excludedLibs = [];
 		// Since the XML may have libraryPathEntries in multiple places, we need to take a look at the top children of it.
 		var excludedLibEntries = actionscriptPropertiesXml.findNodesByName("excludedEntries");//
-		// console.log("Excluded? ");
-		 // consoleLogObject(excludedLibEntries);
+		// consoleNoteAndObject("Excluded? ",excludedLibEntries);
 		if(excludedLibEntries.length) {
 			// If there are entries, then lets go through them and add the to our holder.
 			excludedLibEntries[0].children.forEach((duu) => {
 				excludedLibs.push(duu["@"]["path"]);
 			});
 		}
-		// console.log("Excluded libraries!");
-		// consoleLogObject(excludedLibs);
+		// consoleNoteAndObject("Excluded libraries!",excludedLibs);
 
 		var prefLibDirs = [];
 		var kind, path;
 		actionscriptPropertiesXml.findNodesByName("libraryPathEntry").forEach((libDir) => {
-			// consoleLogObject(libDir);
+			// consoleNoteAndObject("libDir:",libDir);
 			kind = libDir["@"]["kind"];
 			if(kind==1 || kind==3) {
 				path = libDir["@"]["path"];
-				// console.log(" DO WE ADD PATH: " + path);
+				// console.log(` DO WE ADD PATH: ${path}`);
 				if(excludedLibs.indexOf(path)==-1) {
-					// console.log("Add a 'Libs Dirs:` entry of [" + libDir["@"]["path"] + "]");
+					// console.log(`Add a 'Libs Dirs:` entry of [${libDir["@"]["path"]}]`);
 					prefLibDirs.push(libDir["@"]["path"]);
 				}
 			}
@@ -2732,28 +2712,29 @@ try {
 
 					if(taskJson!={}) {
 						var airSettings = actionscriptPropertiesXml.findChildNodeByName(buildTarget["children"], "airSettings");
-					//	consoleLogObject(airSettings);
-						//console.log("airCertificatePath: " + airSettings["@"]["airCertificatePath"]);
+						consoleNoteAndObject("airSettings: ",airSettings);
+
+						console.log(`airCertificatePath: ${airSettings["@"]["airCertificatePath"]}`);
 						if(airSettings["@"]["airCertificatePath"]!="") {
 							taskJson.extensionValues["as3.packaging.certificate"] = airSettings["@"]["airCertificatePath"];
 						}
-						//console.log("airTimestamp: " + airSettings["@"]["airTimestamp"]);
+						console.log(`airTimestamp: ${airSettings["@"]["airTimestamp"]}`);
 						if(airSettings["@"]["airTimestamp"]!="") {
 							taskJson.extensionValues["as3.packaging.timestamp"] = airSettings["@"]["airTimestamp"];
 						}
 
 						// @NOTE Not sure what to do here...
-						//console.log("newLaunchParams: " + airSettings["@"]["newLaunchParams"]);
-						//console.log("modifiedLaunchParams: " + airSettings["@"]["modifiedLaunchParams"]);
-						//console.log("newPackagingParams: " + airSettings["@"]["newPackagingParams"]);
-						//console.log("modifiedPackagingParams: " + airSettings["@"]["modifiedPackagingParams"]);
+						// console.log(`newLaunchParams: ${airSettings["@"]["newLaunchParams"]}`);
+						// console.log(`modifiedLaunchParams: ${airSettings["@"]["modifiedLaunchParams"]}`);
+						// console.log(`newPackagingParams: ${airSettings["@"]["newPackagingParams"]}`);
+						// console.log(`modifiedPackagingParams: ${airSettings["@"]["modifiedPackagingParams"]}`);
 
 						var airExcludes = actionscriptPropertiesXml.findChildNodeByName(airSettings["children"], "airExcludes");
 						var excludedInPackage = []
 
 						if(airExcludes) {
 							airExcludes["children"].forEach((excludes) => {
-								//console.log(" ------- EXCLUDE > " + excludes["@"]["path"]);
+								// console.log(` ------- EXCLUDE > ${excludes["@"]["path"]}`);
 								excludedInPackage.push(excludes["@"]["path"]);
 							});
 						}
@@ -2765,10 +2746,10 @@ try {
 						var anePathsInPackage = [];
 
 						if(anePaths) {
-						//	consoleLogObject(anePaths);
+						//	consoleNoteAndObject("anePaths:",anePaths);
 							anePaths["children"].forEach((anePath) => {
-						//		consoleLogObject(anePath);
-								//console.log(" +++++++ ANE PATH > " + anePath["@"]["path"]);
+								// consoleNoteAndObject(" +++++++ ANE PATH > ",anePath);
+								// console.log(` +++++++ ANE PATH > ${anePath["@"]["path"]}`);
 								anePathsInPackage.push(anePath["@"]["path"]);
 							});
 						}
@@ -2947,7 +2928,7 @@ try {
 				taskConfig[configItem] = config.get(configItem);
 			}
 		})
-		// consoleLogObject(taskConfig);
+		// consoleNoteAndObject("resolveTaskAction(): taskConfig:",taskConfig);
 
 		// Unless Tasks were made by importing from Flash Builder, they didn't include this.
 		if(!taskConfig["as3.target"]) {

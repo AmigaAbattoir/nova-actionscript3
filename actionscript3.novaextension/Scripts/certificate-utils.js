@@ -1,4 +1,4 @@
-const { getProcessResults, consoleLogObject, getStringOfWorkspaceFile, doesFolderExistAndIsAccessible, quickChoicePalette, collectInput } = require("./nova-utils.js");
+const { getProcessResults, consoleNoteAndObject, getStringOfWorkspaceFile, doesFolderExistAndIsAccessible, quickChoicePalette, collectInput } = require("./nova-utils.js");
 const { determineFlexSDKBase } = require("./config-utils.js");
 
 /**
@@ -159,7 +159,7 @@ exports.storeExportPassword = function() {
 				if(certName!==undefined) {
 					let storedPasswordExists = exports.getCertificatePasswordInKeychain(certName);
 					exports.promptForPassword(certName,storedPasswordExists).then((password) => {
-						// console.log("PROMPT PASSWORD RESOLVED WITH " + password);
+						// console.log(`storeExportPassword(): Prompt password resolved with ${password}`);
 						if(password!==undefined) {
 							// Store Password
 							exports.setCertificatePasswordInKeychain(certName,password);
@@ -189,7 +189,7 @@ exports.promptForPassword = function(certificateLocation, storedPasswordExists =
 
 			nova.workspace.showInputPanel(message,
 				{ label: "Password", prompt: "OK", secure: true }, (result) => {
-				// console.log("RESULT [[" + result + "]]");
+				// console.log(`promptForPassword() RESULT ${result}`);
 				// If user cancelled, this will be undefined
 				if(result===undefined) {
 					resolve(result);
@@ -298,7 +298,7 @@ exports.createCertificate = function() {
 
 					collectInput(prompts).then((responses) => {
 						if(responses!==null) {
-							// consoleLogObject(responses);
+							// consoleNoteAndObject("createCertificate() ",responses);
 
 							let [certFileName, certName, orgUnit, orgName, country] = responses;
 
@@ -310,7 +310,7 @@ exports.createCertificate = function() {
 							// country = country.toUpperCase().substring(0,2);
 
 							exports.createNewCertificatePassword().then((password) => {
-								// console.log(" WE GOT A PASSWORD... almost there  " + password);
+								// console.log(` WE GOT A PASSWORD... almost there ${password}`);
 
 								let flexSDKBase = determineFlexSDKBase();
 								var command = flexSDKBase + "/bin/adt";

@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { getProcessResults, getStringOfFile, consoleLogObject, ensureFolderIsAvailable } = require("./nova-utils.js");
+const { getProcessResults, ensureFolderIsAvailable } = require("./nova-utils.js");
 
 /**
  * Figures out a ProjectUUID for building releases and storing passwords.

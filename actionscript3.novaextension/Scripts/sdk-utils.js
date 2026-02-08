@@ -1,5 +1,5 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { consoleLogObject, showNotification, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace, getWorkspaceOrGlobalConfig, getStringOfFile, quickChoicePalette } = require("./nova-utils.js");
+const { consoleNoteAndObject, consoleErrorAndObject, showNotification, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace, getWorkspaceOrGlobalConfig, getStringOfFile, quickChoicePalette } = require("./nova-utils.js");
 
 exports.installSDKPrompt = function(specificSDK = "") {
 	return new Promise((resolve, reject) => {
@@ -117,13 +117,11 @@ exports.removeSDKPrompt = function() {
 					nova.workspace.showActionPanel(message, { buttons: [ "Remove","Cancel" ] },	(result) => {
 						if(result==0) { // Only Remove is pressed
 							if(nova.inDevMode()) {
-								console.log("BEFORE::")
-								consoleLogObject(sdkList);
+								consoleNoteAndObject("BEFORE::",sdkList);
 							}
 							sdkList.splice(sdk.index, 1);
 							if(nova.inDevMode()) {
-								console.log("after::")
-								consoleLogObject(sdkList);
+								consoleNoteAndObject("after::",sdkList);
 							}
 
 							nova.config.set("as3.sdk.installed",sdkList);
@@ -167,13 +165,11 @@ exports.changeDefaultSDKPrompt = function() {
 						nova.workspace.showActionPanel(message, { buttons: [ "Make Default","Cancel" ] },(result) => {
 							if(result==0) {
 								if(nova.inDevMode()) {
-									console.log("BEFORE::")
-									consoleLogObject(sdkList);
+									consoleNoteAndObject("BEFORE::",sdkList);
 								}
 								sdkList.unshift(sdkList.splice(sdk.index, 1)[0]);
 								if(nova.inDevMode()) {
-									console.log("after::")
-									consoleLogObject(sdkList);
+									consoleNoteAndObject("after::",sdkList);
 								}
 
 								//nova.config.set("as3.sdk.installed",sdkList);
@@ -309,11 +305,11 @@ exports.getAIRSDKPathFromName = function(sdkName) {
 		flexSDKBase = sdkName;
 	} else {
 		var currentSDKsInstalled = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
-		// consoleLogObject(currentSDKsInstalled);
+		// consoleNoteAndObject("currentSDKsInstalled: ",currentSDKsInstalled);
 		for(sdk of currentSDKsInstalled) {
-			// console.log("Is " + sdkName + "  the same as sdk[0]: " + sdk[0] + " or [1]: " + sdk[1]);
+			// console.log(`Is ${sdkName} the same as sdk[0]: ${sdk[0]} or [1]: ${sdk[1]}`);
 			if(sdk[1]==sdkName) {
-				// console.log("SETTING IT TO "+sdk[0])
+				// console.log(`SETTING IT TO ${sdk[0]}`);
 				flexSDKBase = sdk[0];
 				continue;
 			}
@@ -333,11 +329,11 @@ exports.getAIRSDKNameFromPath = function(sdkPath) {
 	var flexSDKName = null;
 
 	var currentSDKsInstalled = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
-	// consoleLogObject(currentSDKsInstalled);
+	// consoleNoteAndObject("currentSDKsInstalled: ",currentSDKsInstalled);
 	for(sdk of currentSDKsInstalled) {
-		// console.log("Is " + sdkPath + "  the same as sdk[0]: " + sdk[0] + " or [1]: " + sdk[1]);
+		// console.log(`Is ${sdkName} the same as sdk[0]: ${sdk[0]} or [1]: ${sdk[1]}`);
 		if(sdk[0]==sdkPath) {
-			// console.log("SETTING IT TO "+sdk[1])
+			// console.log(`SETTING IT TO ${sdk[1]}`);
 			flexSDKName = sdk[1];
 			continue;
 		}
@@ -398,7 +394,7 @@ exports.checkSDKFolderForInfo = function(sdkPath) {
 		}
 		return [sdkPath,label];
 	} catch (err) { // Fallback: use path for both
-		if (nova.inDevMode()) { console.error(err); }
+		if (nova.inDevMode()) { consoleErrorAndObject("checkSDKFolderForInfo() *** ERROR ***",err); }
 		return [sdkPath, sdkPath];
 	}
 }
