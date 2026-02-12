@@ -341,7 +341,7 @@ exports.makeNewProject = function(projectType = "", applicationType = "") {
 													mainClassASFile.close();
 												}
 											} catch(error) {
-												consoleErrorAndObject("makeNewProject(): *** ERROR ***",error);
+												consoleErrorAndObject("makeNewProject() *** ERROR ***",error);
 												nova.workspace.showErrorMessage("Problem creating basic source files for new project at " + projectFolder);
 											}
 

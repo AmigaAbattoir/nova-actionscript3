@@ -36,7 +36,7 @@ exports.getAndroidDevices = function() {
 			resolve(devices);
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				consoleErrorAndObject("getAndroidDevices(): *** ERROR: fetching Android devices ***", error);
+				consoleErrorAndObject("getAndroidDevices() *** ERROR: fetching Android devices ***", error);
 			}
 			reject([]); // Reject the promise with the error
 		});
@@ -87,7 +87,7 @@ exports.getIOSDevices = function() {
 			}
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				consoleErrorAndObject("getIOSDevices(): *** ERROR: fetching iOS devices ***",error);
+				consoleErrorAndObject("getIOSDevices() *** ERROR: fetching iOS devices ***",error);
 			}
 			reject([]);
 		});
@@ -132,7 +132,7 @@ exports.checkIfInstalledOnAndroidDevice = function(deviceId, packageId) {
 			}
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				consoleErrorAndObject(`checkIfInstalledOnAndroidDevice(): *** ERROR: During checking for app installed ${packageId} on Android device ${deviceId} ***`,error);
+				consoleErrorAndObject(`checkIfInstalledOnAndroidDevice() *** ERROR: During checking for app installed ${packageId} on Android device ${deviceId} ***`,error);
 			}
 			resolve(false);
 		});
@@ -170,7 +170,7 @@ exports.checkIfInstalledOnIOSDevice = function(deviceId, packageId) {
 			}
 		}).catch((error) => {
 			if(nova.inDevMode()) {
-				consoleErrorAndObject(`checkIfInstalledOnIOSDevice(): *** ERROR: During checking for app installed ${packageId} on iOS device ${deviceId} ***`,error);
+				consoleErrorAndObject(`checkIfInstalledOnIOSDevice() *** ERROR: During checking for app installed ${packageId} on iOS device ${deviceId} ***`,error);
 			}
 			resolve(false);
 		});

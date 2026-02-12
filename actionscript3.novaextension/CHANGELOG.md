@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog 1.1](http://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.0.0.html).
 
+## [0.12.2] - Unreleased
+
+### Changed
+
+- Updated nova-utils.js so it can be easily using in different extensions
+- Updated console logging to use newer functions from nova-utils.js and use template literals
+
 ## [0.12.1] - 2025-12-21
 
 ### Fixed

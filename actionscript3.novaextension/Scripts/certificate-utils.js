@@ -347,7 +347,7 @@ exports.createCertificate = function() {
 									resolve(true);
 								}).catch((error) => {
 									if(error.stderr.indexOf("Invalid country code: ")!=-1) {
-										nova.workspace.showErrorMessage("Error Creating certificate. \"" + country + "\" is an invalid code. You can try to regenerate a certificate leaving the country code empty.");
+										nova.workspace.showErrorMessage(`Error Creating certificate. "${country}" is an invalid code. You can try to regenerate a certificate leaving the country code empty.`);
 									}
 									resolve(error);
 								});

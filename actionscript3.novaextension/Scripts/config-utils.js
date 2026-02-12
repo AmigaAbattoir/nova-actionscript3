@@ -109,7 +109,7 @@ exports.getAppXMLNameAndExport = function(file) {
 	};
 
 	if(nova.inDevMode()) {
-		// consoleNoteAndObject("getAppXMLNameAndExport(): *** ---===[ Here are the app xml and export names settings from the project ]===--- ***",configData);
+		// consoleNoteAndObject("getAppXMLNameAndExport() *** ---===[ Here are the app xml and export names settings from the project ]===--- ***",configData);
 	}
 
 	return configData;
@@ -278,7 +278,7 @@ exports.getConfigsForBuildAndPacking = function(taskConfig = {}, appendWorkspace
 	};
 
 	if(nova.inDevMode()) {
-		consoleNoteAndObject("getConfigsForBuildAndPacking(): *** ---===[ Here are the building and packaging settings from the project ]===--- ***",configData);
+		consoleNoteAndObject("getConfigsForBuildAndPacking() *** ---===[ Here are the building and packaging settings from the project ]===--- ***",configData);
 	}
 
 	return configData;

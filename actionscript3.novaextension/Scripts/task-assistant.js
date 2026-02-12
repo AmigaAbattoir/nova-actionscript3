@@ -339,7 +339,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 					nova.workspace.config.set("as3.packaging.lastReleaseBuilt",taskFileName);
 
 					taskJson = JSON.parse(getStringOfWorkspaceFile("/.nova/Tasks/" + taskFileName));
-					// consoleNoteAndObject("packageBuild(): -= TASK JSON: " + taskFileName + " =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-",taskJson);
+					// consoleNoteAndObject(`packageBuild(): -= TASK JSON: ${taskFileName} =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-`,taskJson);
 					// console.log("-= --------- =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 					try {
 						if(taskJson["extensionTemplate"].startsWith("actionscript-")==false) {
@@ -645,7 +645,7 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			}catch(error) {
 				// If there's an error, we'll figure it out later.
 				if (nova.inDevMode()) {
-					consoleNoteAndObject("getProfileType(): *** ERROR: There was an error trying to read the app-xml for which profile to user: ***",error,true);
+					consoleNoteAndObject("getProfileType() *** ERROR: There was an error trying to read the app-xml for which profile to user: ***",error,true);
 				}
 			}
 		}
@@ -754,13 +754,14 @@ exports.ActionScript3TaskAssistant = class ActionScript3TaskAssistant {
 			alsoIgnore.forEach((ignore) => {
 				// console.log(`package(): Ignore: ${ignore}`);
 				// console.log(`[[/${releaseFolder}/${ignore}]]");
+				var ignorer = basePath + "/" + releaseFolder + "/" + ignore;
 				try{
-					if(nova.fs.stat(basePath + "/" + releaseFolder + "/" + ignore).isFile()) {
+					if(nova.fs.stat().isFile(ignorer)) {
 						// console.log(`package():     REMOVE FILE + ${ignore} !`);
-						nova.fs.remove(basePath + "/" + releaseFolder + "/" + ignore);
-					} else if(nova.fs.stat(basePath + "/" + releaseFolder + "/" + ignore).isDirectory()) {
+						nova.fs.remove(ignorer);
+					} else if(nova.fs.stat(ignorer).isDirectory()) {
 						// console.log(`package():     REMOVE DIR + ${ignore} !`);
-						nova.fs.rmdir( + "/" + releaseFolder + "/" + ignore);
+						nova.fs.rmdir(ignorer);
 					} else {
 						// console.log(`    Don't do anything ${ignore} !`);
 					}
@@ -2222,9 +2223,7 @@ try {
 		}).catch(error => {
 			cancelNotification("-runOnDevice");
 			if(nova.inDevMode()) {
-				console.error("Launch on device error: ");
-				console.error(error);
-				console.error(error.stack);
+				consoleErrorAndObject("runOnDeviceViaUSB() *** ERROR: Launch on device problem *** ",error);
 			}
 			var message = "";
 			if(error.status) {
@@ -2240,8 +2239,11 @@ try {
 			}
 			return Promise.reject(new Error("RETURNING Issue Installing Package for Device Run"));
 		});
-} catch(error) { console.error("runOnDeviceViaUSB() Issue!"); console.error(error.message); console.error(error.stack); return Promise.reject(new Error("Try/Catch on whole function failed...")); }
-	}
+} catch(error) {
+	consoleErrorAndObject("runOnDeviceViaUSB() *** ERROR: Issue! ***",error);
+	return Promise.reject(new Error("Try/Catch on whole function failed..."));
+}
+}
 
 	/**
 	 * Runs the project using Nova's task system

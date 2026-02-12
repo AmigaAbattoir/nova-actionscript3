@@ -4,7 +4,7 @@
  * Some commonly used functions I use in Panic Nova extensions
  *
  * @author Christopher Pollati
- * @version 1.0.1
+ * @version 1.0.2
  * @since 2026-02-08
  */
 
@@ -60,7 +60,7 @@ exports.getProcessResults = function(command, args = [], cwd = "", env = {}, deb
 		});
 		process.start();
 	});
-// } catch(error) { console.error("getProcessResults() *** ERROR: ***",error); }
+// } catch(error) { exports.consoleErrorAndObject("getProcessResults() *** ERROR: ***",error); }
 	return proc;
 }
 
@@ -117,15 +117,15 @@ exports.isWorkspace = function() {
  */
 exports.getWorkspaceOrGlobalConfig = function(configName) {
 	var config = nova.config.get(configName);
-	//console.log("getWorkspaceOrGlobalConfig() Config " + configName + " is [" + config + "]");
+	// console.log(`getWorkspaceOrGlobalConfig() Config ${configName} is [${config}]`);
 	if(exports.isWorkspace()) {
 		workspaceConfig = nova.workspace.config.get(configName)
-		//console.log("getWorkspaceOrGlobalConfig() Workspace Config " + configName + " is [" + workspaceConfig + "]");
+		// console.log(`getWorkspaceOrGlobalConfig() Workspace Config ${configName} is [${workspaceConfig}]`);
 		if(workspaceConfig) {
 			config = workspaceConfig;
 		}
 	}
-	//console.log("getWorkspaceOrGlobalConfig() RETURNING [" + config + "]");
+	// console.log(`getWorkspaceOrGlobalConfig() RETURNING [${config}]`);
 	return config;
 }
 
@@ -153,16 +153,16 @@ exports.consoleNoteAndObject = function(note,object,isError = false) { console.l
 /**
  * Helper to log out a warning and an object by trying to stringify it.
  *
- * @param {string} note - Some text to include before logging object
- * @param {Object} object - What you want to try to console.log()
+ * @param {string} warning - Some text to include before logging object
+ * @param {Object} object - What you want to try to console.warn()
  */
 exports.consoleWarnAndObject = function(warning,object,isError = false) { console.warn(`${warning}\n${JSON.stringify(object,null,4)}`); }
 
 /**
  * Helper to log out a error and an object by trying to stringify it.
  *
- * @param {string} note - Some text to include before logging object
- * @param {Object} object - What you want to try to console.log()
+ * @param {string} err - Some error text to include before logging object
+ * @param {Object} object - What you want to try to console.error()
  */
 exports.consoleErrorAndObject = function(err,object) { console.error(`${err}\n${JSON.stringify(object,null,4)}`); }
 
@@ -171,9 +171,7 @@ exports.consoleErrorAndObject = function(err,object) { console.error(`${err}\n${
  *
  * @param {Object} object - What you want to try to console.log()
  */
-exports.consoleLogObject = function(object) {
-	console.log(JSON.stringify(object,null,4));
-}
+exports.consoleLogObject = function(object) { console.log(JSON.stringify(object,null,4)); }
 
 /* ---- Filesystem ---- */
 
@@ -238,7 +236,7 @@ exports.getStringOfFile = function(filename, logAsError = true) {
 	var line, contents;
 	try {
 		contents = "";
-		// console.log("Trying to open: " + filename);
+		// console.log(`Trying to open: ${filename}`);
 		var file = nova.fs.open(filename);
 		if(file) {
 			do {
@@ -250,7 +248,7 @@ exports.getStringOfFile = function(filename, logAsError = true) {
 		}
 	} catch(error) {
 		if(logAsError) {
-			console.error(`nova-utils.getStringOfFile() *** ERROR: Could not open file ${filename} for reading. " + error + " ***`);
+			exports.consoleErrorAndObject(`nova-utils.getStringOfFile() *** ERROR: Could not open file ${filename} for reading. ***`,error);
 		}
 		return null;
 	}
@@ -269,7 +267,7 @@ exports.writeStringToFile = function(filename, contents) {
 		file.write(contents);
 		file.close();
 	} catch(error) {
-		console.error(`nova-utils.writeStringToFile() *** ERROR: Problem with ${filename} for writing. " + error + " ***`);
+		exports.consoleErrorAndObject(`nova-utils.writeStringToFile() *** ERROR: Problem with ${filename} for writing. ***`,error);
 		return null;
 	}
 }
@@ -286,7 +284,7 @@ exports.writeJsonToFile = function(filename, values) {
 		file.write(JSON.stringify(values,null,2));
 		file.close();
 	} catch(error) {
-		console.error(`nova-utils.writeJsonToFile() *** ERROR: Problem with ${filename} for writing JSON. " + error + " ***`);
+		exports.consoleErrorAndObject(`nova-utils.writeJsonToFile() *** ERROR: Problem with ${filename} for writing JSON. ***`,error);
 		return null;
 	}
 }
@@ -307,7 +305,7 @@ exports.doesFileExist = function(filename) {
 			}
 		}
 	} catch(err) {
-		console.error(`nova-utils.doesFileExist() *** ERROR *** ${err}`);
+		exports.consoleErrorAndObject("nova-utils.doesFileExist() *** ERROR ***",err);
 	}
 	return false;
 }
@@ -328,7 +326,7 @@ exports.doesFolderExist = function(filename) {
 			}
 		}
 	} catch(err) {
-		console.error(`nova-utils.doesFolderExist() *** ERROR *** ${err}`)
+		exports.consoleErrorAndObject("nova-utils.doesFolderExist() *** ERROR ***",err);
 	}
 	return false;
 }
@@ -348,7 +346,7 @@ exports.haveAccessTo = function(filename) {
 			}
 		}
 	} catch(err) {
-		console.error(`nova-utils.haveAccessTo() *** ERROR *** ${err}`)
+		exports.consoleErrorAndObject("nova-utils.haveAccessTo() *** ERROR ***",err);
 	}
 	return false;
 }
@@ -373,7 +371,7 @@ exports.doesFolderExistAndIsAccessible = function(folderName) {
 			}
 		}
 	} catch(err) {
-		console.error(`nova-utils.doesFolderExistAndIsAccessible() *** ERROR *** ${err}`)
+		exports.consoleErrorAndObject("nova-utils.doesFolderExistAndIsAccessible() *** ERROR ***",err);
 	}
 	return false;
 }
@@ -399,9 +397,9 @@ exports.ensureExpandedUserPath = function(filename) {
  * @returns {boolean} - True if the folder is there, otherwise false
  */
 exports.ensureFolderIsAvailable = function(folder) {
-	// console.log("export.ensureFolderIsAvailable  folder is " + folder);
+	// console.log(`export.ensureFolderIsAvailable  folder is ${folder}`);
 	if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
-		// console.log(" Making folder at " + folder + "!!!");
+		// console.log(` Making folder at ${folder}!!!`);
 		nova.fs.mkdir(folder+"/");
 	}
 	// Double check, do we have the folder?
@@ -420,7 +418,7 @@ exports.ensureFolderIsAvailable = function(folder) {
 exports.makeOrClearFolder = function(folder) {
 	try {
 		if(nova.fs.access(folder, nova.fs.F_OK | nova.fs.X_OK)===false) {
-			// console.log(" Making folder at " + folder + "!!!");
+			// console.log(` Making folder at ${folder} !!!`);
 			nova.fs.mkdir(folder+"/");
 		} else if(nova.fs.stat(folder).isDirectory()) {
 			// console.log("Trying to remove directory....");
@@ -429,8 +427,8 @@ exports.makeOrClearFolder = function(folder) {
 		}
 		return true;
 	} catch(error) {
-		nova.workspace.showErrorMessage("Failed to make folder: " + folder + "\n",error);
-		// console.error("*** ERROR: Failed to make folder " + folder + " *** ");
+		nova.workspace.showErrorMessage(`Failed to make folder: ${folder}\n${error}`);
+		// console.error(`makeOrClearFolder() *** ERROR: Failed to make folder ${folder} *** `);
 	}
 	return false;
 }
@@ -491,7 +489,7 @@ exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileE
 	}
 
 	if(buildFileStat!=undefined) {
-		if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() Output file exists... Check if any file has changed since last file time of " + buildFileStat.mtime.getTime()); }
+		if(nova.inDevMode()) { console.log(`nova-utils.checkIfModifiedAfterFileDate() Output file exists... Check if any file has changed since last file time of ${buildFileStat.mtime.getTime()}`); }
 		function anyFileModifiedAfter(referenceFileTime, folderPath) {
 			// Helper to recursively check files in a folder
 			function checkFolderRecursive(path) {
@@ -503,23 +501,23 @@ exports.checkIfModifiedAfterFileDate = function(builtFile, foldersToCheck, fileE
 						const stat = nova.fs.stat(fullPath);
 						if(stat) {
 							if(nova.inDevMode()) {
-								console.log("nova-utils.checkIfModifiedAfterFileDate() CHECKING " + entry);
+								console.log(`nova-utils.checkIfModifiedAfterFileDate() CHECKING ${entry}`);
 							}
 
 							if (stat.isDirectory()) {
-								if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() Going into folder: " + entry); }
+								if(nova.inDevMode()) { console.log(`nova-utils.checkIfModifiedAfterFileDate() Going into folder: ${entry}`); }
 								if (checkFolderRecursive(fullPath)) {
 									return true;
 								}
 							} else {
 								if (stat.mtime.getTime() > referenceFileTime) {
-									if(nova.inDevMode()) { console.log(`nova-utils.checkIfModifiedAfterFileDate() Modified file found: ${fullPath} at` + stat.mtime.getTime()); }
+									if(nova.inDevMode()) { console.log(`nova-utils.checkIfModifiedAfterFileDate() Modified file found: ${fullPath} at ${stat.mtime.getTime()}`); }
 									return true;
 								}
 							}
 						}
 					} else {
-						if(nova.inDevMode()) { console.log("nova-utils.checkIfModifiedAfterFileDate() Ignoring " + entry); }
+						if(nova.inDevMode()) { console.log(`nova-utils.checkIfModifiedAfterFileDate() Ignoring ${entry}`); }
 						continue;
 					}
 				}
@@ -744,8 +742,8 @@ exports.quickChoicePalette = function(items, placeholder, addAll = false) {
 		}, (value,index) => {
 			/*
 			nova.workspace.showInformativeMessage(`Got choice: [[${value}]]`);
-			console.log("Got choice:", value);
-			console.log("Got index:", index);
+			console.log(`Got choice: ${value}`);
+			console.log(`Got index: ${index}`);
 			*/
 			resolve({ value, index });
 		});
@@ -760,7 +758,7 @@ exports.quickChoicePalette = function(items, placeholder, addAll = false) {
  * @property {string} value - Default value to display, default is blank
  * @property {string} placeholder - Text to display if no value is present or empty
  * @property {Boolean} isRequired - If set to true, the textfield will display as dots
- * @property {string} prompt - Text to display instead for the “OK” button
+ * @property {string} prompt - Text to display instead for the OK button
  * value is empty.
  * @property {string} isSecure - Optional: if the input should be masked out
  */

@@ -10,7 +10,7 @@
  * and the hierarchical structure of the XML. It also has the ability to track the position of nodes within the XML.
  *
  * @author ChatGPT and Christopher Pollati
- * @version 1.1
+ * @version 1.1.1
  */
 exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 
@@ -365,7 +365,7 @@ exports.ns3x2j = class NotSoSimpleSimpleXMLtoJSON {
 		const after = this.xmlString.substring(this.currentIndex+1, end).replace(/\n/g, ' ');
 		const pointer = '[[' + this.xmlString[this.currentIndex] + ']]';
 
-		console.error(`Error: ${message}`);
+		console.error(`ns3x2j Error: ${message}`);
 		console.error(`${before}${pointer}${after}`);
 
 		this.error += `Error: ${message}` + "\n";
