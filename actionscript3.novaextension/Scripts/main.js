@@ -7,7 +7,7 @@ const { updateASConfigFile, loadASConfigFile } = require("/asconfig-utils.js");
 const { getAndroidDevices, getIOSDevices } = require("/device-utils.js");
 const { clearExportPassword, storeExportPassword, createCertificate } = require("/certificate-utils.js");
 const { makeNewProject, makeNewFile } = require("/new-utils.js");
-const { installSDKPrompt, removeSDKPrompt, changeDefaultSDKPrompt, resetSDKListPrompt, getAIRSDKInfo, generateAIRSDKInstalledInformation, checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault } = require("/sdk-utils.js");
+const { installSDKPrompt, removeSDKPrompt, changeDefaultSDKPrompt, resetSDKListPrompt, getAIRSDKInfo, generateAIRSDKInstalledInformation, checkSDKFolderForInfo, installSDK, installSDKAsDefault, makeSDKDefault, createFlexSDKPrompt } = require("/sdk-utils.js");
 var langserver = null;
 var taskprovider = null;
 
@@ -76,6 +76,8 @@ var sessionCertificatePassword = "";
  * When the Extension is activated
  */
 exports.activate = function() {
+	nova.commands.register("as3.restart", () => { /* Not sure this is the best way... */ restart(); });
+
 	// ---- Resolves configuration dropdowns ----
 	nova.commands.register("as3.resolver.sdk", (workspace) => {
 		return new Promise((resolve, reject) => {
@@ -127,7 +129,7 @@ exports.activate = function() {
 		});
 	});
 
-	// ---- Install SDK ----
+	// ---- AIR/Flex SDK Menu Functions ----
 	nova.commands.register("as3.sdk.installer", () => { return installSDKPrompt(); });
 
 	nova.commands.register("as3.sdk.changeDefault", () => { return changeDefaultSDKPrompt(); });
@@ -135,6 +137,8 @@ exports.activate = function() {
 	nova.commands.register("as3.sdk.reset", () => { return resetSDKListPrompt(); });
 
 	nova.commands.register("as3.sdk.remove", () => { return removeSDKPrompt(); });
+
+	nova.commands.register("as3.sdk.make", () => { return createFlexSDKPrompt(); });
 
 	// ---- Certificate Menu Functions ----
 	nova.commands.register("as3.certificate.create", (workspace) => { return createCertificate(); });
@@ -241,11 +245,18 @@ exports.activate = function() {
 		*/
 	});
 
+	// ---- Link Menu items ----
 	nova.commands.register("as3.as3reference",() => { nova.openURL("https://airsdk.dev/reference"); });
 
 	nova.commands.register("as3.as3reference.old",() => { nova.openURL("https://help.adobe.com/en_US/air/build/index.html"); });
 
-	nova.commands.register("as3.restart", () => { /* Not sure this is the best way... */ restart(); });
+	nova.commands.register("as3.flexReference",() => { nova.openURL("https://flex.apache.org/asdoc/"); });
+
+	nova.commands.register("as3.downloadAIR",() => { nova.openURL("https://airsdk.dev/docs/basics/install/macos"); });
+
+	nova.commands.register("as3.downloadFlex",() => { nova.openURL("https://flex.apache.org/download-binaries.html"); });
+
+	nova.commands.register("as3.downloadRoyale",() => { nova.openURL("https://royale.apache.org/download/"); });
 }
 
 function restart() {

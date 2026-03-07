@@ -1,5 +1,168 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
-const { consoleNoteAndObject, consoleErrorAndObject, showNotification, doesFileExist, doesFolderExistAndIsAccessible, ensureExpandedUserPath, isWorkspace, getWorkspaceOrGlobalConfig, getStringOfFile, quickChoicePalette } = require("./nova-utils.js");
+const { consoleNoteAndObject, consoleErrorAndObject, showNotification, cancelNotification, doesFileExist, doesFolderExistAndIsAccessible, makeOrClearFolder, ensureExpandedUserPath, isWorkspace, getWorkspaceOrGlobalConfig, getStringOfFile, quickChoicePalette, getProcessResults, copyFileTo } = require("./nova-utils.js");
+
+exports.checkForAnt = function() {
+	return new Promise((resolve, reject) => {
+		// First, figure out if we have access to Apache Ant
+		var antPath = "ant";
+		getProcessResults("/usr/bin/env",["ant","-version"]).then((result) => {
+			resolve(antPath);
+		}).catch((err) => {
+			antPath = null;
+			// @NOTE Not sure there's a way to figure this out through Nova, but we will assume it is this:
+			var extensionPath = ensureExpandedUserPath("~/Library/Application Support/Nova/Extensions/com.abattoirsoftware.Ant/");
+			if(doesFolderExistAndIsAccessible(extensionPath)) {
+				var entries = nova.fs.listdir(extensionPath);
+				for (var name of entries) {
+					if (name.startsWith("apache-ant-")) {
+						antPath = extensionPath + "/" + name + "/bin/ant";
+						if (doesFileExist(antPath)) {
+							resolve(antPath);
+						}
+					}
+				}
+			}
+
+			if(antPath==null) {
+				reject(null);
+			} else {
+				resolve(antPath);
+			}
+		});
+	});
+}
+
+exports.createFlexSDKPrompt = function() {
+	return new Promise((resolve, reject) => {
+		var flexSDKFile;
+		var airSDKFile;
+		var destPath;
+		var antXmlPath = nova.path.join(nova.extension.path, "/Template/harman-installer.xml");
+		var flexSDKVersion = 0
+		var airSDKVersion = 0;
+		var antPath = null;
+
+		// Make sure Ant is available, otherwise we can't do this
+		exports.checkForAnt().then((ant) => {
+			antPath = ant;
+			nova.workspace.showActionPanel("This will create an Flex AIR SDK. You will need Apache Ant installed (or the extension). Please make sure you have downloaded:\n\n 1) an Apache Flex SDK Binary Distribution (as .tar.gz)\n 2) a Harman AIR SDK for Flex (as .zip)", { buttons: [ "Not ready yet","Proceed"] }, (choice) => {
+				if(choice==1) {
+					// Make a temp folder, which we will use to extract files from the Flex and AIR SDK to get their versions:
+					var tempExtractFolder = nova.fs.tempdir + "/flexsdk";
+					// console.log(`Temp Ext: ${tempExtractFolder}`);
+					makeOrClearFolder(tempExtractFolder);
+
+					// Select Flex SDK
+					nova.workspace.showFileChooser( "Please select the Apache Flex SDK Binary Distribution.\nIt should be a .tar.gz file.", { prompt: "Flex SDK...", allowFiles: true, allowFolders: false, allowMultiple: false, filetype: ".gz" }, (location) => {
+						if(location) {
+							flexSDKFile = location[0];
+
+							// Get the Flex SDK version, then move on...
+							getProcessResults("/usr/bin/tar",["-xzf",flexSDKFile,"-C",tempExtractFolder,"--strip-components=1","*/flex-sdk-description.xml"]).then((result) => {
+								try {
+									let flexSDKInfo = getStringOfFile(nova.path.join(tempExtractFolder,"flex-sdk-description.xml"));
+									let flexSDKXML = new xmlToJson.ns3x2j(flexSDKInfo);
+									flexSDKVersion = flexSDKXML.findNodesByName("version")[0]["textContent"];
+								}catch(error) {
+									nova.workspace.showErrorMessage(`createFlexSDKPropmt() *** ERROR: Problem finding version in "flex-sdk-description.xml" file in archive.`);
+									return null;
+								}
+
+								// Now get the AIR SDK
+								nova.workspace.showFileChooser("Now select the Harman AIR SDK for Flex.\nThis should be a .zip file.", { prompt: "AIR SDK...", allowFiles: true, allowFolders: false, allowMultiple: false, filetype: ".zip" }, (location) => {
+									if(location) {
+										airSDKFile = location[0];
+
+										// Let's get the AIR SDK version
+										getProcessResults("/usr/bin/unzip",["-j",airSDKFile,"air-sdk-description.xml","-d",tempExtractFolder]).then((result) => {
+											consoleNoteAndObject("Got results;",result);
+											let airSDKInfo = getStringOfFile(nova.path.join(tempExtractFolder,"air-sdk-description.xml"));
+											let airSDKXML = new xmlToJson.ns3x2j(airSDKInfo);
+											let airVersion = airSDKXML.findNodesByName("version")[0]["textContent"];
+											let airBuild = airSDKXML.findNodesByName("build")[0]["textContent"];
+
+											airSDKVersion = airVersion + "." +airBuild;
+											if(airSDKVersion==0) {
+												nova.workspace.showErrorMessage(`Cannot find AIR SDK version information in the ZIP file at:\n\n${airSDKFile}. Please make sure you selected a Harman AIR SDK for Flex ZIP and try again!`);
+												return null;
+											}
+
+											nova.workspace.showFileChooser(`Now, create or select a folder to save this SDK!\nFlex SDK: ${flexSDKVersion}  AIR SDK: ${airSDKVersion}.\nThe Flex SDK will be extracted to this folder!`, { prompt: "Save here...", allowFiles: false, allowFolders: true, allowMultiple: false }, (location) => {
+												if(location) {
+													destPath = location[0];
+													// console.log("Destination ....",destPath);
+
+													showNotification("🗃️ Make Flex SDK...","Extracting Flex SDK","Please wait...", "-makeFlexSDK");
+													// Extract FlexSDK to temp.
+													getProcessResults("/usr/bin/tar", ["-xzf",flexSDKFile,"--strip-components=1","-C",destPath],"",{},true).then((result) => {
+														var copiedAirSDK = copyFileTo(airSDKFile, destPath);
+														var copiedAntFile = copyFileTo(antXmlPath, destPath);
+
+														if(copiedAirSDK!=null && copiedAntFile!=null) {
+															var command;
+															var args = [];
+
+															if(antPath=="ant") {
+																command = "/usr/bin/env"
+																args = [ "ant" ];
+															} else {
+																command = antPath;
+															}
+
+															args.push("-f");
+															args.push("harman-installer.xml");
+															args.push(`-Dair.sdk.version=${airSDKVersion}`);
+
+															showNotification("🗃️ Make Flex SDK...","Running ANT script to build SDK. This may take a while.","Please wait...", "-makeFlexSDK");
+															// ANT the XML...
+															getProcessResults(command, args, destPath, {}, true, true).then((result) => {
+																cancelNotification("-makeFlexSDK");
+																try {
+																	// Delete Harman XML
+																	nova.fs.remove(copiedAntFile);
+																} catch(release) { }
+
+																nova.workspace.showActionPanel(
+																	"🗃️ Make Flex SDK Completed!\n\nWould you like to install this SDK too?",
+																	{ buttons: [ "No" , "Yes", "Make Default" ] },
+																	(result) => {
+																		if(result==1) { // Add to list
+																			exports.installSDK(destPath);
+																		} else if(result==2) { // Make default
+																			exports.makeSDKDefault(destPath);
+																		}
+																	}
+																);
+															}).catch((error) => {
+																cancelNotification("-makeFlexSDK");
+																consoleErrorAndObject("createFlexSDKPrompt() *** ERROR: Failed Processing ANT XML. ***",error);
+																nova.workspace.showErrorMessage(`🗃️ Make Flex SDK failed:\n\n${error.stderr}`);
+															});
+														}
+													});
+												}
+											});
+										}).catch((error) => {
+											nova.workspace.showErrorMessage(`Problem extracting "airsdk.xml" file from archive ${airSDKFile}`);
+											return null;
+										});
+									}
+								});
+
+							}).catch((error) => {
+								nova.workspace.showErrorMessage(`Problem extracting "flex-sdk-description.xml" file from archive ${flexSDKFile}`);
+								return null;
+							});
+						}
+					});
+				}
+			});
+		}).catch((error) => {
+			nova.workspace.showErrorMessage("You need to have either Apache Ant in your system's path, or the Apache Ant extension for Nova to make the Flex with AIR SDK!");
+			resolve(null);
+		});
+	});
+}
 
 exports.installSDKPrompt = function(specificSDK = "") {
 	return new Promise((resolve, reject) => {
@@ -86,20 +249,20 @@ exports.removeSDKPrompt = function() {
 		let sdkList = nova.config.get("as3.sdk.installed");
 
 		if(sdkList==null || sdkList.length==0) {
-			nova.workspace.showInformativeMessage("The SDK list is empty and you cannot remove any.\n\nThe extension will always default to using `~/Applications/AIRSDK`.");
+			nova.workspace.showInformativeMessage("The SDK list is empty and you cannot forget any.\n\nThe extension will always default to using `~/Applications/AIRSDK`.");
 		} else {
 			var sdkChoicePromise;
 			if(sdkList.length==1) {
 				sdkChoicePromise = Promise.resolve( { "value": sdkList[0], "index": 0 } );
 			} else {
-				sdkChoicePromise = quickChoicePalette(sdkList, "Remove which SDK?").then((choice) => choice);
+				sdkChoicePromise = quickChoicePalette(sdkList, "Forget which SDK?").then((choice) => choice);
 			}
 
 			sdkChoicePromise.then((sdk) => {
 				if(sdk!==undefined && sdk.index!=null) {
 					var removedDefault = false;
 
-					var message = "Are you sure you want to remove the ";
+					var message = "Are you sure you want to forget the ";
 					if(sdk.index==0) {
 						removedDefault =true;
 						message += "default ";
@@ -126,7 +289,7 @@ exports.removeSDKPrompt = function() {
 
 							nova.config.set("as3.sdk.installed",sdkList);
 
-							message = "SDK was removed.";
+							message = "SDK was forgotten.";
 							// Refresh list
 							sdkList = nova.config.get("as3.sdk.installed");
 							if(sdkList!=null && sdkList.length>0) {

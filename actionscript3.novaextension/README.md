@@ -36,7 +36,9 @@ The goal was to be able to use all of my old Adobe Flash Builder projects and co
 
 - 📎 **Clips**
 
-- 🧩 **SDK Management** - Starting with v0.11, the extension uses a list of SDKs
+- 🧩 **SDK Management** - Starting with v0.11, the extension uses a list of known SDKs
+
+  - Starting with V01.12.2, you can make a Flex SDK with a Harman AIR SDK from the menu. (*Note:* Requires Apache Ant)
 
 - ▶️ **Tasks**
 
@@ -113,6 +115,9 @@ These are only needed if you plan on running Flash Player projects:
 
   ![](assets/flash-in-web-small.png)
 
+This is only needed if you want the extension to make a Flex SDK with a Harman AIR SDK:
+
+- **Apache Ant**
 
 ## 🚀 Usage
 
@@ -124,30 +129,36 @@ Open an `*.as`, or `*.mxml` and it should work. However, there are a few things 
 
 Starting with v0.11, SDKs are now managed through a global SDK list, making it easier to install, remove, and select AIR or Flex SDKs without manually editing paths. Once SDKs are installed, you can even select which SDK to use per Task if needed.
 
-If you’re upgrading from an earlier version, your previous `Default SDK` is automatically migrated into the `Installed SDKs` list.
+If you’re upgrading from an earlier version, your previous `Default SDK` is automatically migrated into the `Known SDKs` list.
 
 The first SDK in that list now acts as your default SDK.
 
 #### Managing SDKs
 
-Although you can edit the `Installed SDKs` list manually, it’s recommended to use these commands instead, either from the **Extensions → ActionScript 3** menu or the Command Palette:
+Although you can edit the `Known SDKs` list manually, it’s recommended to use these commands instead, either from the **Extensions → ActionScript 3** menu or the Command Palette:
 
- - **`➕ Install SDK`** - Use to add an SDK. If you already have one installed, it will ask whether to make it the new default or simply add it.
+ - **`➕ Add SDK`** - Use to add an SDK. If you already have one installed, it will ask whether to make it the new default or simply add it.
  - **`✔️ Change Default SDK`** - Sets which SDK acts as the default. If a project or task doesn't specify one, this SDK will be used.
- - **`➖ Remove SDK`** - When removing, you’ll be prompted to select which SDK to delete from the list. If you remove the first SDK in the list (the Default SDK), the extension automatically promotes the next SDK and displays a notification.
+ - **`➖ Forget SDK`** - When removing, you’ll be prompted to select which SDK to delete from the list. If you remove the first SDK in the list (the Default SDK), the extension automatically promotes the next SDK and displays a notification.
  - **`➰ Reset SDK List`** - This removes all installed SDKs and will look for one in `~/Applications/AIRSDK`
 
-After installation, the SDK appears in your `Installed SDKs` list in the extension’s preferences.
+After installation, the SDK appears in your `Known SDKs` list in the extension’s preferences.
 
-The first SDK in the `Installed SDKs` is always treated as the Default SDK, unless a specific one is set in the Project or Task preferences.
+The first SDK in the `Known SDKs` is always treated as the Default SDK, unless a specific one is set in the Project or Task preferences.
 
-#### Managing Installed SDKs Manually
+#### 🗃️ Make Flex SDK
+
+If you have [Apache Ant](https://ant.apache.org/) on your path or the [Apache Ant Extension](https://extensions.panic.com/extensions/com.abattoirsoftware/com.abattoirsoftware.Ant/) extension for Nova, this extension can combine the AIR/Flex SDK for you. It uses [Josh Tynjala's harman-installer.xml Ant file](https://joshblog.net/2024/how-to-install-apache-flex-with-adobe-air-from-harman/) to merge the two archives together.
+
+You will need to manually download the two files first, since the Harman AIR SDKs require you accepting the terms before downloading. Once you have downloaded the files, use the menu option to `🗃️ Make Flex SDK`. It will prompt you first for the Mac OS X Binaries of Apache Flex as a `.tar.gz` file and then the Harman AIR `.zip`. After that it will ask you were you want to save the SDK. You should create a new folder and the extension will handle the extraction and combining. Once completed, it will ask if you want to add the SDK or make it the default.
+
+#### Managing Adding SDKs Manually
 
 You can view or modify your installed SDKs manually:
 
  1.	Go to **Extensions → Extension Library...**
  2.	Select **ActionScript 3**, then open the Preferences tab
- 3.	Scroll to `Installed SDKs` to view or edit the list
+ 3.	Scroll to `Known SDKs` to view or edit the list
 
 To change the Default SDK, make sure you drag the path up to the top of the list!
 
@@ -162,7 +173,7 @@ To configure it:
  2. Select the _Task_ (e.g. AIR - Desktop, AIR - Android, Flash, etc.)
  3. Under Use a specific SDK for this task, choose an SDK from the dropdown.
 
-If set to _None_, the Task automatically uses the default SDK (the first entry in the `Installed SDKs` list).
+If set to _None_, the Task automatically uses the default SDK (the first entry in the `Known SDKs` list).
 
 Library Tasks always use the Project SDK and cannot override it.
 

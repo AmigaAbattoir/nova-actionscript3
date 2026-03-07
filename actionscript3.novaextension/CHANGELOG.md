@@ -5,8 +5,15 @@ and this project adheres to [Semantic Versioning 2.0](http://semver.org/spec/v2.
 
 ## [0.12.2] - Unreleased
 
+### Added
+
+- Links to download AIR, Flex, and Royale SDKs
+- Can create an AIR SDK with Flex (if ANT is on path or the extension is installed)
+
 ### Changed
 
+- Renamed menu options "Install SDK" to "Add SDK" and "Remove SDK" to "Forget SDK" since we don't add or delete any files
+- Renamed `Known SDKs` to `Known SDKs`
 - Updated nova-utils.js so it can be easily using in different extensions
 - Updated console logging to use newer functions from nova-utils.js and use template literals
 

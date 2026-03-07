@@ -4,8 +4,8 @@
  * Some commonly used functions I use in Panic Nova extensions
  *
  * @author Christopher Pollati
- * @version 1.0.2
- * @since 2026-02-08
+ * @version 1.1.0
+ * @since 2026-02-16
  */
 
 /* ---- Processes ---- */
@@ -18,29 +18,45 @@
  * @param {Array} args - An array with the arguments for the command (optional)
  * @param {string} cwd - The working directory (defaults to current, extension's directory)
  * @param {Object} env - Additional envs to set for the process (optional)
+ * @param {boolean} debugOutput - Enable this to console.log() the command, args, cwd, and env, as
+ * well as the status, stdout and stderr once complete
+ * @param {boolean} logOutput - Enable this an the process with use `console` to print out stdout
+ * and stderr as the events occur
  * @returns {Promise} - If the status is 0, then it `resolves` otherwise `rejects`. Both will
  * return back an object containing status, stdout and stderr.
  */
-exports.getProcessResults = function(command, args = [], cwd = "", env = {}, debugOutput = false) {
-// try{
-	debugOutput = true;
-
-	var proc = new Promise((resolve, reject) => {
+exports.getProcessResults = function(command, args = [], cwd = "", env = {}, debugOutput = false, logOutput = false) {
+	var proc;
+try{
+	proc = new Promise((resolve, reject) => {
 		var stdout = "";
 		var stderr = "";
 
+		if(debugOutput) {
+			exports.consoleNoteAndObject("nova-utils.getProcessResults() command: ",command);
+			exports.consoleNoteAndObject("nova-utils.getProcessResults() args: ",args);
+			exports.consoleNoteAndObject("nova-utils.getProcessResults() cwd: ",cwd);
+			exports.consoleNoteAndObject("nova-utils.getProcessResults() env: ",env);
+		}
+
 		var process = new Process(command, { args: args, cwd: cwd, env: env });
-		process.onStdout(line => stdout += line);
-		process.onStderr(line => stderr += line);
+		process.onStdout(line => {
+			stdout += line
+			if(logOutput) {
+				console.log(line.replace(/\r?\n$/, '')); // Removed extra new-line at end
+			}
+		});
+		process.onStderr(line => {
+			stderr += line
+			if(logOutput) {
+				console.error(line.replace(/\r?\n$/, '')); // Removed extra new-line at end
+			}
+		});
 		process.onDidExit(status => {
 			if(debugOutput) {
 				exports.consoleNoteAndObject("nova-utils.getProcessResults() status: ",status);
 				exports.consoleNoteAndObject("nova-utils.getProcessResults() stdout: ",stdout);
 				exports.consoleNoteAndObject("nova-utils.getProcessResults() stderr: ",stderr);
-				exports.consoleNoteAndObject("nova-utils.getProcessResults() command: ",command);
-				exports.consoleNoteAndObject("nova-utils.getProcessResults() args: ",args);
-				exports.consoleNoteAndObject("nova-utils.getProcessResults() cwd: ",cwd);
-				exports.consoleNoteAndObject("nova-utils.getProcessResults() env: ",env);
 			}
 			let results = { status: status, stdout: stdout, stderr: stderr };
 			if(debugOutput) {
@@ -60,7 +76,7 @@ exports.getProcessResults = function(command, args = [], cwd = "", env = {}, deb
 		});
 		process.start();
 	});
-// } catch(error) { exports.consoleErrorAndObject("getProcessResults() *** ERROR: ***",error); }
+} catch(error) { exports.consoleErrorAndObject("getProcessResults() *** ERROR: ***",error); }
 	return proc;
 }
 
@@ -349,6 +365,24 @@ exports.haveAccessTo = function(filename) {
 		exports.consoleErrorAndObject("nova-utils.haveAccessTo() *** ERROR ***",err);
 	}
 	return false;
+}
+
+/**
+ * Copies a file to a folder using that file's name.
+ * @param {string} file - The path to the file
+ * @param {string} destination - The location to copy the file to.
+ * @returns {null|string} - If copied, it will return the location of the file, otherwise `null`
+ */
+exports.copyFileTo = function(file, destination) {
+	var result = null;
+	try {
+		var filename = file.split("/").pop();
+		nova.fs.copy(file, destination + "/" + filename);
+		result = destination + "/" + filename;
+	} catch(err) {
+		exports.consoleErrorAndObject("nova-utils.haveAccessTo() *** ERROR ***",err);
+	}
+	return result;
 }
 
 /**

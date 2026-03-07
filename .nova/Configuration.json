@@ -5,7 +5,8 @@
   "editor.default_syntax" : "javascript",
   "index.ignored_file_patterns" : [
     "ignore\/",
-    "*\/language-server\/**"
+    "*\/language-server\/**",
+	"*/debugger/**"
   ],
   "workspace.art_style" : 0,
   "workspace.color" : 0,

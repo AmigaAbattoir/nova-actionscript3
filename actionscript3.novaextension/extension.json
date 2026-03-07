@@ -190,11 +190,11 @@
 			"children": [
 				{
 					"key": "as3.sdk.installed",
-					"title": "Installed SDKs",
+					"title": "Known SDKs",
 					"allowFolders": true,
 					"allowFiles": false,
 					"type": "pathArray",
-					"description": "The paths to SDKs that you have installed that can be used for building and running the extension.\n\nThe top-most entry will be the default one. If there are no entries, then it will default to `~/Applications/AIRSDK`.\n\nIt is recommened that you use the menu option in `Extension -> ActionScript 3` or the commands to `➕ Install SDK`, `➖ Remove SDK` or `➰ Reset SDK List` to help ensure that it's a valid AIR/FLEX SDK. (Note: Don't think in Nova we can disable the +/-/choose buttons on pathArray)"
+					"description": "The paths to SDKs that you have installed that can be used for building and running the extension.\n\nThe top-most entry will be the default one. If there are no entries, then it will default to `~/Applications/AIRSDK`.\n\nIt is recommened that you use the menu option in `Extension -> ActionScript 3` or the commands to `➕ Add SDK`, `➖ Forget SDK` or `➰ Reset SDK List` to help ensure that it's a valid AIR/FLEX SDK. (Note: Don't think in Nova we can disable the +/-/choose buttons on pathArray)"
 				},
 				{
 					"key": "as3.sdk.animate",
@@ -789,7 +789,7 @@
 		],
 		"extensions": [
 			{
-				"title": "➕ Install SDK",
+				"title": "➕ Add SDK",
 				"command": "as3.sdk.installer"
 			},
 			{
@@ -797,12 +797,16 @@
 				"command": "as3.sdk.changeDefault"
 			},
 			{
-				"title": "➖ Remove SDK",
+				"title": "➖ Forget SDK",
 				"command": "as3.sdk.remove"
 			},
 			{
 				"title": "➰ Reset SDK List",
 				"command": "as3.sdk.reset"
+			},
+			{
+				"title": "🗃️ Make Flex SDK",
+				"command": "as3.sdk.make"
 			},
 			{"separator": true},
 			{
@@ -826,15 +830,6 @@
 			},
 			{"separator": true},
 			{
-				"title": "📕 AIR / ActionScript 3 Reference",
-				"command": "as3.as3reference"
-			},
-			{
-				"title": "📖 Adobe AIR - Help at Adobe",
-				"command": "as3.as3reference.old"
-			},
-			{"separator": true},
-			{
 				"title": "🔓 Clear Certificate Password",
 				"command": "as3.certificate.clearPassword"
 			},
@@ -848,8 +843,29 @@
 			},
 			{"separator": true},
 			{
-				"title": "🆕 Create New AS3/Flex Project...",
-				"command": "as3.new.project"
+				"title": "📕 AIR / ActionScript 3 ASDocs",
+				"command": "as3.as3reference"
+			},
+			{
+				"title": "📖 Adobe AIR - Help at Adobe",
+				"command": "as3.as3reference.old"
+			},
+			{
+				"title": "📕 Flex ASDocs",
+				"command": "as3.flexReference"
+			},
+			{"separator": true},
+			{
+				"title": "🗳️ Download AIR SDK",
+				"command": "as3.downloadAIR"
+			},
+			{
+				"title": "🗳️ Download Flex SDK",
+				"command": "as3.downloadFlex"
+			},
+			{
+				"title": "🗳️ Download RoyaleSDK",
+				"command": "as3.downloadRoyale"
 			},
 			{"separator": true},
 			{
@@ -859,7 +875,6 @@
 			{
 				"title": "Check ANE temp dir",
 				"command": "as3.check.aneTemp"
-			}
-		]
+			}		]
 	}
 }
