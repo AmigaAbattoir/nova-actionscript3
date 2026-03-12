@@ -1,6 +1,9 @@
 const xmlToJson = require('./not-so-simple-simple-xml-to-json.js');
 const { consoleNoteAndObject, consoleErrorAndObject, showNotification, cancelNotification, doesFileExist, doesFolderExistAndIsAccessible, makeOrClearFolder, ensureExpandedUserPath, isWorkspace, getWorkspaceOrGlobalConfig, getStringOfFile, quickChoicePalette, getProcessResults, copyFileTo } = require("./nova-utils.js");
 
+/**
+ * Tries to see if Apache Ant is installed on path or if the extension is installed
+ */
 exports.checkForAnt = function() {
 	return new Promise((resolve, reject) => {
 		// First, figure out if we have access to Apache Ant
@@ -32,6 +35,9 @@ exports.checkForAnt = function() {
 	});
 }
 
+/**
+ * UI for asking if they want to make a Flex SDK from a new Harman AIR SDK
+ */
 exports.createFlexSDKPrompt = function() {
 	return new Promise((resolve, reject) => {
 		var flexSDKFile;
@@ -164,6 +170,10 @@ exports.createFlexSDKPrompt = function() {
 	});
 }
 
+/**
+ * UI to prompt to add an SDK to list of know SDKs
+ * @param {string} specificSDK - The full path to the SDK
+ */
 exports.installSDKPrompt = function(specificSDK = "") {
 	return new Promise((resolve, reject) => {
 		nova.workspace.showFileChooser(
@@ -243,6 +253,9 @@ exports.installSDKPrompt = function(specificSDK = "") {
 	});
 }
 
+/**
+ * UI to remove an SDK.
+ */
 exports.removeSDKPrompt = function() {
 	return new Promise((resolve, reject) => {
 		let sdkCompleteList = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
@@ -308,6 +321,9 @@ exports.removeSDKPrompt = function() {
 	});
 }
 
+/**
+ * UI to ask which SDK to make the default one
+ */
 exports.changeDefaultSDKPrompt = function() {
 	return new Promise((resolve, reject) => {
 		let sdkCompleteList = JSON.parse(nova.workspace.context.get("currentSDKsInstalled"));
@@ -353,6 +369,9 @@ exports.changeDefaultSDKPrompt = function() {
 	});
 }
 
+/**
+ * UI to handle resetting the list of known SDKs
+ */
 exports.resetSDKListPrompt = function() {
 	return new Promise((resolve, reject) => {
 		let sdkList = nova.config.get("as3.sdk.installed");
@@ -505,6 +524,11 @@ exports.getAIRSDKNameFromPath = function(sdkPath) {
 	return flexSDKName;
 }
 
+/**
+ * Checks if a particular SDK is alreadu installed
+ * @param {string} sdkName - The name of the SDK
+ * @returns {boolean}  - If that SDK is installed `true`, otherwise `false`
+ */
 exports.isAIRSDKInstalled = function(sdkName) {
 	var result = false;
 
@@ -562,6 +586,10 @@ exports.checkSDKFolderForInfo = function(sdkPath) {
 	}
 }
 
+/**
+ * Adds SDK to list of known SDKs
+ * @param {string} sdkPath - The full path to the SDK
+ */
 exports.installSDK = function(sdkPath) {
 	var installed = nova.config.get("as3.sdk.installed")
 	if(installed==null) {
@@ -571,6 +599,10 @@ exports.installSDK = function(sdkPath) {
 	nova.config.set("as3.sdk.installed",installed);
 }
 
+/**
+ * Adds SDK to the top of the list of known SDKs
+ * @param {string} sdkPath - The full path to the SDK
+ */
 exports.installSDKAsDefault = function(sdkPath) {
 	var installed = nova.config.get("as3.sdk.installed")
 	if(installed==null) {
@@ -580,6 +612,10 @@ exports.installSDKAsDefault = function(sdkPath) {
 	nova.config.set("as3.sdk.installed",installed);
 }
 
+/**
+ * Moves the SDK to the top of the list of known SDKs
+ * @param {string} sdkPath - The full path to the SDK
+ */
 exports.makeSDKDefault = function(sdkPath) {
 	var installed = nova.config.get("as3.sdk.installed")
 	if(installed==null) {
