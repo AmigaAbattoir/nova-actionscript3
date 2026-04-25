@@ -1,3 +1,9 @@
+🚨 **This repository has moved**
+
+Active development is now on GitLab: https://gitlab.com/AmigaAbattoir/nova-actionscript3
+
+This repo is archived and no longer maintained.
+
 # ActionScript 3 and MXML Extension for Panic's Nova
 
 🚀 **Work In Progress** 🚀
